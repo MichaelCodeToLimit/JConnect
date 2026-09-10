@@ -6,19 +6,18 @@
   "main": "src/main/main.js",
   "license": "UNLICENSED",
   "private": true,
+  "author": "Michael Davies",
   "scripts": {
     "start": "electron .",
     "start:b": "electron . --profile=b --port=47811",
     "icons": "node scripts/make-icons.js",
-    "dist": "node scripts/make-icons.js && electron-builder"
+    "dist": "node scripts/make-icons.js && electron-builder",
+    "dist:win": "node scripts/make-icons.js && electron-builder --win --x64"
   },
   "dependencies": {
     "qrcode": "^1.5.4",
     "tweetnacl": "^1.0.3",
     "ws": "^8.18.0"
-  },
-  "optionalDependencies": {
-    "@nut-tree-fork/nut-js": "^4.2.6"
   },
   "devDependencies": {
     "electron": "^38.0.0",
@@ -27,10 +26,24 @@
   "build": {
     "appId": "app.jconnect.desktop",
     "productName": "JConnect",
-    "files": ["src/**/*", "assets/**/*", "package.json"],
+    "files": ["src/**/*", "!src/web/test{,/**/*}", "assets/**/*", "package.json"],
     "directories": { "output": "dist" },
-    "win": { "target": "nsis", "icon": "assets/icon.png" },
-    "nsis": { "oneClick": true, "perMachine": false, "runAfterFinish": true },
+    "publish": null,
+    "npmRebuild": false,
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }, { "target": "portable", "arch": ["x64"] }],
+      "icon": "assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "runAfterFinish": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "JConnect",
+      "artifactName": "JConnect-Setup-${version}.exe"
+    },
+    "portable": { "artifactName": "JConnect-${version}-Portable.exe" },
     "mac": { "target": "dmg", "icon": "assets/icon.png", "category": "public.app-category.productivity" },
     "linux": { "target": ["AppImage", "deb"], "icon": "assets/icon.png", "category": "Network" }
   }

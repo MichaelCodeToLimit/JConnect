@@ -473,6 +473,7 @@
       const key = JSON.stringify([title, text, spinner, password, actions.map((a) => a[0])]);
       if (key === this._overlayKey && !this.dom.overlay.hidden) return;
       this._overlayKey = key;
+      if (this.adapter.report) this.adapter.report('overlay', { title, text });
       this.closeMenu();
       this.dom.overlay.hidden = false;
       this.dom.title.textContent = title;

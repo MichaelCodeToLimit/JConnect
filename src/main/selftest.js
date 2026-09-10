@@ -13,6 +13,9 @@ function run({ spec, showMain, openSession, app }) {
   const start = async () => {
     const result = await win.webContents.executeJavaScript(`window.JConnectApp.pairWithUrl(${JSON.stringify(url)}, ${JSON.stringify(code)})`);
     log('pair', JSON.stringify(result));
+    await new Promise((r) => setTimeout(r, 800));
+    const home = await win.webContents.capturePage();
+    fs.writeFileSync(out.replace(/\.png$/, '-main.png'), home.toPNG());
     if (result && result.ok) openSession(result.computerId);
   };
   if (win.webContents.isLoading()) win.webContents.once('did-finish-load', () => start().catch((e) => log('error', e.message)));
@@ -21,7 +24,7 @@ function run({ spec, showMain, openSession, app }) {
   return {
     report(sessionWin, state, info) {
       log(state, JSON.stringify(info || {}));
-      if (state === 'stats' && !captured && info && info.framesDecoded > 30) {
+      if (state === 'stats' && !captured && info && info.framesDecoded > 150) {
         captured = true;
         setTimeout(async () => {
           const image = await sessionWin.webContents.capturePage();

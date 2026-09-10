@@ -142,6 +142,13 @@ app.on('window-all-closed', () => { /* JConnect stays ready in the background */
 app.on('activate', () => showMain());
 app.on('web-contents-created', (_event, contents) => {
   contents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  if (!app.isPackaged) {
+    contents.on('console-message', (e, level, message, line, source) => {
+      const text = e && e.message !== undefined ? e.message : message;
+      const where = e && e.sourceId !== undefined ? `${e.sourceId}:${e.lineNumber}` : `${source}:${line}`;
+      console.log(`[renderer] ${String(where).split('/').pop()} ${text}`);
+    });
+  }
   contents.on('will-navigate', (e, url) => { if (!url.startsWith('file://')) e.preventDefault(); });
 });
 
@@ -369,7 +376,7 @@ function registerIpc({ deviceIdFromKey, verify }) {
     if (capture.win && event.sender === capture.win.webContents) throw new Error('Not allowed');
     return fn(event, ...a);
   });
-  const text = (v, max) => String(v ?? '').replace(/[ -]/g, '').trim().slice(0, max);
+  const text = (v, max) => String(v ?? '').replace(/\p{Cc}/gu, '').trim().slice(0, max);
 
   handle('jc:state', () => snapshot());
   handle('jc:identity', () => store.device());
@@ -391,7 +398,8 @@ function registerIpc({ deviceIdFromKey, verify }) {
     const ifaces = localInterfaces();
     const best = ifaces.find((i) => !i.tailscale) || ifaces[0];
     const address = best ? best.address : '127.0.0.1';
-    const url = `http://${address}:${host.port}/?code=${host.pairingCode}&id=${store.id}`;
+    const key = store.publicKey.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    const url = `http://${address}:${host.port}/?code=${host.pairingCode}&id=${store.id}&k=${key}`;
     const dataUrl = await QRCode.toDataURL(url, { margin: 1, width: 240, errorCorrectionLevel: 'M' });
     return { code: host.pairingCode, url, dataUrl };
   });
@@ -537,7 +545,7 @@ function registerIpc({ deviceIdFromKey, verify }) {
 function setSetting(key, value) {
   const booleans = ['remoteAccess', 'startAtLogin', 'travelMode', 'travelOwnerOnly', 'emergencyShutdown'];
   if (key === 'deviceName') {
-    const name = String(value ?? '').replace(/[ -]/g, '').trim().slice(0, 64);
+    const name = String(value ?? '').replace(/\p{Cc}/gu, '').trim().slice(0, 64);
     store.setSetting('deviceName', name || null);
     discovery.announce();
     return;
@@ -635,7 +643,8 @@ function notify(title, body) {
 }
 
 function applyLoginItem() {
-  if (!app.isPackaged || process.platform === 'linux') return;
+  // Named profiles are for trying things out side by side; never register those at login.
+  if (!app.isPackaged || process.platform === 'linux' || args.profile) return;
   app.setLoginItemSettings({ openAtLogin: !!store.settings.startAtLogin, args: ['--hidden'] });
 }
 
