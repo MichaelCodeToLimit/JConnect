@@ -15,7 +15,11 @@
     "dist:win": "node scripts/make-icons.js && electron-builder --win --x64"
   },
   "dependencies": {
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/xterm": "^6.0.0",
     "qrcode": "^1.5.4",
+    "scrypt-js": "^3.0.1",
+    "ssh2": "^1.17.0",
     "tweetnacl": "^1.0.3",
     "ws": "^8.18.0"
   },
@@ -26,12 +30,40 @@
   "build": {
     "appId": "app.jconnect.desktop",
     "productName": "JConnect",
-    "files": ["src/**/*", "!src/web/test{,/**/*}", "assets/**/*", "package.json"],
-    "directories": { "output": "dist" },
+    "files": [
+      "src/**/*",
+      "!src/web/test{,/**/*}",
+      "assets/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist"
+    },
     "publish": null,
     "npmRebuild": false,
+    "electronFuses": {
+      "runAsNode": false,
+      "enableCookieEncryption": true,
+      "enableNodeOptionsEnvironmentVariable": false,
+      "enableNodeCliInspectArguments": false,
+      "enableEmbeddedAsarIntegrityValidation": true,
+      "onlyLoadAppFromAsar": true
+    },
     "win": {
-      "target": [{ "target": "nsis", "arch": ["x64"] }, { "target": "portable", "arch": ["x64"] }],
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
       "icon": "assets/icon.png"
     },
     "nsis": {
@@ -43,8 +75,21 @@
       "shortcutName": "JConnect",
       "artifactName": "JConnect-Setup-${version}.exe"
     },
-    "portable": { "artifactName": "JConnect-${version}-Portable.exe" },
-    "mac": { "target": "dmg", "icon": "assets/icon.png", "category": "public.app-category.productivity" },
-    "linux": { "target": ["AppImage", "deb"], "icon": "assets/icon.png", "category": "Network" }
+    "portable": {
+      "artifactName": "JConnect-${version}-Portable.exe"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "assets/icon.png",
+      "category": "public.app-category.productivity"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "assets/icon.png",
+      "category": "Network"
+    }
   }
 }

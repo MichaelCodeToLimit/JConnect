@@ -1,17 +1,19 @@
 #!/usr/bin/env node
-// JConnect optional relay.
+// JConnect relay (the internet leg of JVPN).
 //
 // Computers normally connect directly (LAN, Tailscale, other private routes). When no direct path
-// exists, a computer can keep an outbound connection to this relay, and a trusted device can reach
-// it through the relay instead. The relay only pipes bytes: it never sees keys, can't read what it
-// forwards if the agents encrypt, and can't impersonate a computer because devices authenticate
-// each other end to end with their own signing keys.
+// exists, a computer keeps an outbound connection to this relay, and a trusted device reaches it
+// through the relay instead. The relay only pipes bytes: devices run the end-to-end encrypted
+// JConnect channel through it, so the relay can't read, change or impersonate anything.
 //
-//   Host control:  ws://relay/host      -> {t:'register', id, publicKey, ts, sig}
-//   Client:        ws://relay/connect?to=<deviceId>
+//   Host control:  ws://relay/host      -> {t:'register', id, publicKey, ts, sig, token?}
+//   Client:        ws://relay/connect?to=<deviceId>[&ticket=<ticket>]
 //   Host tunnel:   ws://relay/accept?tunnel=<token>
 //   Presence:      GET /presence?ids=a,b,c  -> {"online":["a"]}
 //   Health:        GET /health
+//
+// On its own the relay is open (useful on a private network). Mounted inside JConnect Cloud it
+// is given authorize hooks so only devices on the same account can register, look up or dial.
 
 const http = require('http');
 const crypto = require('crypto');
@@ -19,7 +21,7 @@ const { WebSocketServer } = require('ws');
 const nacl = require('tweetnacl');
 
 const PORT = Number(process.env.PORT || process.env.JCONNECT_RELAY_PORT || 47880);
-const MAX_PAYLOAD = 4 * 1024 * 1024;
+const MAX_PAYLOAD = 8 * 1024 * 1024;
 const TUNNEL_ACCEPT_TIMEOUT_MS = 15000;
 const REGISTER_CLOCK_SKEW_MS = 5 * 60 * 1000;
 const MAX_TUNNELS_PER_HOST = 8;
@@ -51,51 +53,68 @@ function log(...args) {
   console.log(new Date().toISOString(), '[relay]', ...args);
 }
 
-function createRelay({ port = PORT, host } = {}) {
-  const hosts = new Map();    // deviceId -> { ws, tunnels: Set<token> }
-  const pending = new Map();  // token -> { client, hostId, timer, ip }
-  const pendingPerIp = new Map();
+const allowAll = async () => ({ account: null });
 
-  const server = http.createServer((req, res) => {
-    const url = new URL(req.url, 'http://relay');
+// Adds the relay to an existing HTTP(S) server.
+//   authorizeHost({ id, publicKey, token, req })        -> {account} | null
+//   authorizeConnect({ to, hostAccount, url, req })      -> true | false
+//   presenceFor({ ids, req })                            -> ids the caller may see
+function attachRelay(server, { authorizeHost = allowAll, authorizeConnect = async () => true, presenceFor = async ({ ids }) => ids } = {}) {
+  const hosts = new Map(); // deviceId -> { ws, tunnels: Set<token>, account }
+  const pending = new Map(); // token -> { client, hostId, timer, ip }
+  const pendingPerIp = new Map();
+  const wss = new WebSocketServer({ noServer: true, maxPayload: MAX_PAYLOAD, perMessageDeflate: false });
+
+  async function handleRequest(req, res, url) {
     const send = (code, body) => {
       res.writeHead(code, { 'content-type': 'application/json', 'cache-control': 'no-store' });
       res.end(JSON.stringify(body));
     };
-    if (url.pathname === '/health') return send(200, { app: 'jconnect-relay', ok: true, hosts: hosts.size });
+    if (url.pathname === '/health') {
+      send(200, { app: 'jconnect-relay', ok: true, hosts: hosts.size });
+      return true;
+    }
     if (url.pathname === '/presence') {
       const ids = (url.searchParams.get('ids') || '').split(',').filter((x) => /^[0-9a-f]{20}$/.test(x)).slice(0, 100);
-      return send(200, { online: ids.filter((id) => hosts.has(id)) });
+      const visible = await presenceFor({ ids, req });
+      if (!visible) {
+        send(401, { error: 'unauthorized' });
+        return true;
+      }
+      send(200, { online: visible.filter((id) => hosts.has(id)) });
+      return true;
     }
-    send(404, { error: 'not-found' });
-  });
+    return false;
+  }
 
-  const wss = new WebSocketServer({ noServer: true, maxPayload: MAX_PAYLOAD, perMessageDeflate: false });
-
-  server.on('upgrade', (req, socket, head) => {
+  function handleUpgrade(req, socket, head) {
     const url = new URL(req.url, 'http://relay');
-    if (!['/host', '/connect', '/accept'].includes(url.pathname)) { socket.destroy(); return; }
+    if (!['/host', '/connect', '/accept'].includes(url.pathname)) return false;
     wss.handleUpgrade(req, socket, head, (ws) => {
       ws.isAlive = true;
       ws.on('pong', () => { ws.isAlive = true; });
+      ws.on('error', () => {});
       if (url.pathname === '/host') onHost(ws, req);
-      else if (url.pathname === '/connect') onConnect(ws, req, url.searchParams.get('to'));
+      else if (url.pathname === '/connect') onConnect(ws, req, url);
       else onAccept(ws, url.searchParams.get('tunnel'));
     });
-  });
+    return true;
+  }
 
   function onHost(ws, req) {
     let hostId = null;
+    let registering = false;
     const registerTimer = setTimeout(() => { if (!hostId) ws.close(4001, 'register-timeout'); }, 10000);
 
-    ws.on('message', (data, isBinary) => {
+    ws.on('message', async (data, isBinary) => {
       if (isBinary) return;
       let msg;
       try { msg = JSON.parse(data.toString('utf8')); } catch { return; }
       if (!msg || typeof msg !== 'object') return;
 
-      if (msg.t === 'register' && !hostId) {
-        const { id, publicKey, ts, sig } = msg;
+      if (msg.t === 'register' && !hostId && !registering) {
+        registering = true;
+        const { id, publicKey, ts, sig, token } = msg;
         const fresh = Math.abs(Date.now() - Number(ts)) < REGISTER_CLOCK_SKEW_MS;
         if (typeof id !== 'string' || typeof publicKey !== 'string' || !fresh
           || deviceIdFromKey(publicKey) !== id || !verifyText(registerText(id, ts), sig, publicKey)) {
@@ -103,11 +122,17 @@ function createRelay({ port = PORT, host } = {}) {
           ws.close(4003, 'bad-register');
           return;
         }
+        const grant = await authorizeHost({ id, publicKey, token, req }).catch(() => null);
+        if (!grant) {
+          ws.close(4003, 'unauthorized');
+          return;
+        }
+        if (ws.readyState !== ws.OPEN) return;
         clearTimeout(registerTimer);
         const previous = hosts.get(id);
         if (previous) previous.ws.close(4000, 'replaced');
         hostId = id;
-        hosts.set(id, { ws, tunnels: new Set() });
+        hosts.set(id, { ws, tunnels: new Set(), account: grant.account || null });
         ws.send(JSON.stringify({ t: 'registered', id }));
         log('host online', id);
       } else if (msg.t === 'ping') {
@@ -125,21 +150,23 @@ function createRelay({ port = PORT, host } = {}) {
     });
   }
 
-  function onConnect(client, req, to) {
+  async function onConnect(client, req, url) {
     const ip = clientIp(req);
+    const to = url.searchParams.get('to');
+    const early = [];
+    const buffer = (data, isBinary) => { if (early.length < 64) early.push([data, isBinary]); };
+    client.on('message', buffer);
+
     const hostEntry = typeof to === 'string' ? hosts.get(to) : null;
     if (!hostEntry) { client.close(4004, 'unreachable'); return; }
+    const allowed = await authorizeConnect({ to, hostAccount: hostEntry.account, url, req }).catch(() => false);
+    if (!allowed) { client.close(4003, 'unauthorized'); return; }
+    if (client.readyState !== client.OPEN) return;
     if (hostEntry.tunnels.size >= MAX_TUNNELS_PER_HOST) { client.close(4029, 'busy'); return; }
     const perIp = pendingPerIp.get(ip) || 0;
     if (perIp >= MAX_PENDING_PER_IP) { client.close(4029, 'busy'); return; }
 
     const token = crypto.randomBytes(24).toString('base64url');
-    const early = [];
-    const buffer = (data, isBinary) => {
-      if (early.length < 64) early.push([data, isBinary]);
-    };
-    client.on('message', buffer);
-
     const timer = setTimeout(() => {
       dropPending(token);
       client.close(4004, 'unreachable');
@@ -148,7 +175,7 @@ function createRelay({ port = PORT, host } = {}) {
     pending.set(token, { client, hostId: to, timer, ip, early, buffer });
     pendingPerIp.set(ip, perIp + 1);
     client.on('close', () => dropPending(token));
-    hostEntry.ws.send(JSON.stringify({ t: 'incoming', tunnel: token, ip }));
+    hostEntry.ws.send(JSON.stringify({ t: 'incoming', tunnel: token }));
   }
 
   function dropPending(token) {
@@ -197,19 +224,42 @@ function createRelay({ port = PORT, host } = {}) {
   }, PING_INTERVAL_MS);
 
   return {
+    hosts,
+    handleRequest,
+    handleUpgrade,
+    close() {
+      clearInterval(heartbeat);
+      for (const ws of wss.clients) ws.terminate();
+    },
+  };
+}
+
+function createRelay({ port = PORT, host } = {}) {
+  const server = http.createServer();
+  const relay = attachRelay(server);
+  server.on('request', async (req, res) => {
+    const url = new URL(req.url, 'http://relay');
+    if (await relay.handleRequest(req, res, url)) return;
+    res.writeHead(404, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ error: 'not-found' }));
+  });
+  server.on('upgrade', (req, socket, head) => {
+    if (!relay.handleUpgrade(req, socket, head)) socket.destroy();
+  });
+
+  return {
     server,
     listen() {
       return new Promise((resolve) => server.listen(port, host, () => resolve(server.address().port)));
     },
     close() {
-      clearInterval(heartbeat);
-      for (const ws of wss.clients) ws.terminate();
+      relay.close();
       return new Promise((resolve) => server.close(() => resolve()));
     },
   };
 }
 
-module.exports = { createRelay, deviceIdFromKey, registerText };
+module.exports = { createRelay, attachRelay, deviceIdFromKey, registerText, verifyText };
 
 if (require.main === module) {
   createRelay().listen().then((port) => log(`listening on port ${port}`));

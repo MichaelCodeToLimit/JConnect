@@ -16,6 +16,20 @@ function run({ spec, showMain, openSession, app }) {
     await new Promise((r) => setTimeout(r, 800));
     const home = await win.webContents.capturePage();
     fs.writeFileSync(out.replace(/\.png$/, '-main.png'), home.toPNG());
+    if (process.env.JCONNECT_SELFTEST_UI) {
+      const screens = [
+        ['account', "document.getElementById('account-btn').click()"],
+        ['networks', "document.querySelector('.chip') && document.querySelector('.chip').click()"],
+        ['settings', "document.getElementById('settings-btn').click()"],
+      ];
+      for (const [label, script] of screens) {
+        await win.webContents.executeJavaScript(`document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })); ${script}; true`);
+        await new Promise((r) => setTimeout(r, 2500));
+        fs.writeFileSync(out.replace(/\.png$/, `-${label}.png`), (await win.webContents.capturePage()).toPNG());
+        log('ui', label);
+      }
+      await win.webContents.executeJavaScript("document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })); true");
+    }
     if (result && result.ok) openSession(result.computerId);
   };
   if (win.webContents.isLoading()) win.webContents.once('did-finish-load', () => start().catch((e) => log('error', e.message)));

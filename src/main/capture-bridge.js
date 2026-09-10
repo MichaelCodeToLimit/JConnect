@@ -70,7 +70,7 @@ class CaptureBridge extends EventEmitter {
     if (this.win && !this.win.isDestroyed()) this.win.webContents.send(channel, data);
   }
 
-  async start(sid, { displayId, quality }) {
+  async start(sid, { displayId, quality, iceServers = [] }) {
     await this._ensureWindow();
     const source = await this._source(displayId);
     if (!source) throw new Error('No screen is available to share.');
@@ -82,6 +82,7 @@ class CaptureBridge extends EventEmitter {
       width: display.width,
       height: display.height,
       quality,
+      iceServers,
       audio: process.platform === 'win32',
     });
   }

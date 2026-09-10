@@ -213,7 +213,12 @@
     const controller = new AbortController();
     pairing.abort = () => controller.abort();
     try {
-      const computer = await conn.pair(pairing.target, pairing.info, code, { signal: controller.signal });
+      const computer = await conn.pair(pairing.target, pairing.info, code, {
+        signal: controller.signal,
+        onPending: (sas) => {
+          $('pair-wait-text').textContent = `Waiting for ${pairing.info.name} to allow ${identity.name}… Make sure the computer shows ${sas.slice(0, 3)} ${sas.slice(3)}.`;
+        },
+      });
       computers.upsert(computer);
       liveStatus.set(computer.id, { state: 'ready' });
       pairing.computer = computer;

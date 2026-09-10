@@ -1,12 +1,13 @@
 // Runs the real host agent (src/main/host.js + security.js) against the real web client scripts
-// (src/web/identity.js + connection.js) loaded into a browser-like sandbox. Media is faked; everything
-// about pairing, trust, signatures and session negotiation is real.
-//   node --test src/web/test/
+// (src/web/identity.js + connection.js + src/shared/secure-channel.js) loaded into a browser-like
+// sandbox. Media is faked; pairing, trust, encryption, proofs and session negotiation are real.
+//   node --test src/web/test/connection.test.js
 const test = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const crypto = require('crypto');
 const { EventEmitter } = require('events');
 const nacl = require('tweetnacl');
 const { WebSocket } = require('ws');
@@ -14,6 +15,7 @@ const { WebSocket } = require('ws');
 const { HostAgent } = require('../../main/host');
 const { Security } = require('../../main/security');
 const { deviceIdFromKey } = require('../../main/store');
+const JCSecure = require('../../shared/secure-channel');
 
 const WEB = path.join(__dirname, '..');
 const b64 = (u8) => Buffer.from(u8).toString('base64');
@@ -25,9 +27,11 @@ class FakeStore extends EventEmitter {
     this.keyPair = nacl.sign.keyPair();
     this.publicKey = b64(this.keyPair.publicKey);
     this.id = deviceIdFromKey(this.publicKey);
-    this.password = null;
     this.data = {
-      settings: { remoteAccess: true, requirePassword: false, passwordHash: null, travelMode: false, travelOwnerOnly: true, emergencyShutdown: false },
+      settings: {
+        remoteAccess: true, requirePassword: false, passwordHash: null, travelMode: false, travelOwnerOnly: true,
+        emergencyShutdown: false, allowBrowserClients: true, accountTrust: false, shareSsh: false, shareRdp: false,
+      },
       trusted: [],
       computers: [],
       securityLog: [],
@@ -46,7 +50,19 @@ class FakeStore extends EventEmitter {
   }
   updateTrusted(id, patch) { const t = this.data.trusted.find((x) => x.id === id); if (t) Object.assign(t, patch); }
   removeTrusted(id) { this.data.trusted = this.data.trusted.filter((t) => t.id !== id); }
-  checkPassword(pw) { return pw === this.password; }
+  setPassword(password) {
+    const salt = crypto.randomBytes(16);
+    const verifier = crypto.scryptSync(Buffer.from(JCSecure.normalizeSecret(password)), salt, 32, { N: 32768, r: 8, p: 1, maxmem: 256 * 1024 * 1024 });
+    this.data.settings.passwordHash = `v2:${salt.toString('base64')}:${verifier.toString('base64')}`;
+    this.data.settings.requirePassword = true;
+  }
+  passwordSalt() { return String(this.settings.passwordHash || '').split(':')[1] || null; }
+  checkPasswordProof(proof, th) {
+    const parts = String(this.settings.passwordHash || '').split(':');
+    const expected = Buffer.from(JCSecure.passwordProof(new Uint8Array(Buffer.from(parts[2], 'base64')), th));
+    const given = Buffer.from(String(proof), 'base64');
+    return given.length === expected.length && crypto.timingSafeEqual(given, expected);
+  }
 }
 
 class FakeCapture extends EventEmitter {
@@ -67,14 +83,15 @@ async function startHost(t) {
   const agent = new HostAgent({ store, security, input, capture });
   agent.askOwner = async () => ({ allow: false });
   await agent.listen(0);
-  const port = agent.server.address().port;
+  const { port } = agent;
   t.after(() => agent.close());
   return { store, security, capture, agent, port };
 }
 
 class FakePC {
-  constructor() {
+  constructor(config) {
     FakePC.instances.push(this);
+    this.config = config;
     this.localDescription = null;
     this.remoteDescription = null;
     this.connectionState = 'new';
@@ -111,9 +128,14 @@ function loadClient(port, { search = '' } = {}) {
   // (In a real browser there is only one realm, so this is purely a test-harness concern.)
   ctx.__outerEncode = (s) => Array.from(new TextEncoder().encode(String(s)));
   vm.runInContext('self.TextEncoder = class { encode(s) { return new Uint8Array(__outerEncode(s)); } };', ctx);
-  for (const file of ['vendor/nacl-fast.min.js', 'identity.js', 'connection.js']) {
-    vm.runInContext(fs.readFileSync(path.join(WEB, file), 'utf8'), ctx, { filename: file });
-  }
+  const files = [
+    path.join(WEB, 'vendor', 'nacl-fast.min.js'),
+    path.join(WEB, 'vendor', 'scrypt.js'),
+    path.join(WEB, '..', 'shared', 'secure-channel.js'),
+    path.join(WEB, 'identity.js'),
+    path.join(WEB, 'connection.js'),
+  ];
+  for (const file of files) vm.runInContext(fs.readFileSync(file, 'utf8'), ctx, { filename: path.basename(file) });
   return ctx;
 }
 
@@ -134,7 +156,7 @@ async function pairWithCode(client, host) {
   return conn.pair(target, info, host.agent.pairingCode);
 }
 
-function waitForState(states, wanted, ms = 3000) {
+function waitForState(states, wanted, ms = 5000) {
   return new Promise((resolve, reject) => {
     const started = Date.now();
     const tick = () => {
@@ -182,10 +204,10 @@ test('scanning the code pairs the phone, and the first paired device becomes the
   assert.strictEqual(again.id, host.store.id);
 });
 
-test('without a code, the computer asks its owner, and "Cancel" is respected', async (t) => {
+test('without a code, the computer asks its owner with a matching verification code, and "Cancel" is respected', async (t) => {
   const host = await startHost(t);
   const asked = [];
-  host.agent.askOwner = async (device) => { asked.push(device.name); return { allow: asked.length > 1 }; };
+  host.agent.askOwner = async (device) => { asked.push(device); return { allow: asked.length > 1 }; };
 
   const client = loadClient(host.port);
   client.JCIdentity.rename("Michael's phone");
@@ -194,9 +216,12 @@ test('without a code, the computer asks its owner, and "Cancel" is respected', a
   const info = await conn.hostInfo(target);
 
   await rejectsWith(conn.pair(target, info, null), 'denied');
-  const computer = await conn.pair(target, info, null);
+  const shown = [];
+  const computer = await conn.pair(target, info, null, { onPending: (sas) => shown.push(sas) });
   assert.strictEqual(computer.id, host.store.id);
-  assert.deepStrictEqual(asked, ["Michael's phone", "Michael's phone"]);
+  assert.deepStrictEqual(asked.map((d) => d.name), ["Michael's phone", "Michael's phone"]);
+  assert.match(asked[1].sas, /^\d{6}$/);
+  assert.deepStrictEqual(shown, [asked[1].sas], 'phone and computer show the same code');
   assert.strictEqual(host.store.data.trusted[0].owner, false);
 });
 
@@ -250,6 +275,28 @@ test('Connect negotiates a session with signed offer and answer', async (t) => {
   assert.strictEqual(host.agent.sessionList().length, 1);
   assert.strictEqual(host.agent.sessionList()[0].deviceId, client.JCIdentity.id);
   assert.strictEqual(FakePC.instances.at(-1).remoteDescription.sdp, FAKE_OFFER);
+});
+
+test('a password-protected computer accepts the right password proof and rejects a wrong one', async (t) => {
+  const host = await startHost(t);
+  const client = loadClient(host.port);
+  const computer = await pairWithCode(client, host);
+  host.store.setPassword('open sesame');
+
+  const states = [];
+  const session = client.JCConnection.connect(computer, { onStream() {}, onState: (s) => states.push(s) });
+  t.after(() => session.close());
+
+  await waitForState(states, 'password');
+  states.length = 0;
+  session.providePassword('wrong guess');
+  const wrong = await waitForState(states, 'password', 15000);
+  assert.strictEqual(wrong.wrong, true);
+  assert.strictEqual(host.store.data.securityLog[0].kind, 'bad-password');
+
+  states.length = 0;
+  session.providePassword('open sesame');
+  await waitForState(states, 'connected', 15000);
 });
 
 test('an offer that is not signed by the paired computer stops the session', async (t) => {

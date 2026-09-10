@@ -1,17 +1,21 @@
 const http = require('http');
+const net = require('net');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { EventEmitter } = require('events');
-const { WebSocketServer, WebSocket } = require('ws');
+const { WebSocketServer } = require('ws');
+const JCSecure = require('../shared/secure-channel');
 const { verify, deviceIdFromKey } = require('./store');
 const { macAddresses, pathKind } = require('./discovery');
+const { scrypt } = require('./kdf');
 
-const AUTH_PREFIX = 'jconnect-auth:';
-const HOST_PREFIX = 'jconnect-host:';
-const SDP_PREFIX = 'jconnect-sdp:';
+const { PREFIX } = JCSecure;
 const QUALITIES = ['saver', 'balanced', 'sharp'];
 const AUTH_TIMEOUT_MS = 150000;
+const MAX_STREAMS = 16;
+const STREAM_HIGH_WATER = 8 * 1024 * 1024;
+const SERVICE_LABELS = { ssh: 'SSH', rdp: 'Remote Desktop' };
 
 const SRC = path.join(__dirname, '..');
 const JS = 'text/javascript; charset=utf-8';
@@ -26,7 +30,9 @@ const STATIC_FILES = {
   '/input.js': [path.join(WEB, 'input.js'), JS],
   '/connection.js': [path.join(WEB, 'connection.js'), JS],
   '/app.js': [path.join(WEB, 'app.js'), JS],
+  '/secure-channel.js': [path.join(SRC, 'shared', 'secure-channel.js'), JS],
   '/vendor/nacl-fast.min.js': [path.join(WEB, 'vendor', 'nacl-fast.min.js'), JS],
+  '/vendor/scrypt.js': [path.join(WEB, 'vendor', 'scrypt.js'), JS],
   '/icon.png': [path.join(SRC, '..', 'assets', 'icon.png'), 'image/png'],
 };
 const MANIFEST = JSON.stringify({
@@ -34,7 +40,7 @@ const MANIFEST = JSON.stringify({
   background_color: '#0b0d12', theme_color: '#2f6bff',
   icons: [{ src: '/icon.png', sizes: '512x512', type: 'image/png' }],
 });
-const CSP = "default-src 'self'; connect-src 'self' ws: wss:; img-src 'self' data:; media-src 'self' blob: mediastream:; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'";
+const CSP = "default-src 'self'; connect-src 'self' ws: wss:; img-src 'self' data:; media-src 'self' blob: mediastream:; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'";
 
 const cleanText = (value, max) => String(value ?? '').replace(/\p{Cc}/gu, '').trim().slice(0, max);
 const normalizeIp = (ip) => (ip || '?').replace(/^::ffff:/, '');
@@ -53,12 +59,17 @@ class HostAgent extends EventEmitter {
     this.promptLog = new Map();
     this.pendingPrompts = 0;
     this.askOwner = async () => ({ allow: false });
+    // Injected by the account module: devices signed in to the same JConnect account.
+    this.accountDevices = () => [];
+    // Injected by JVPN: STUN/TURN servers for sessions that cross the internet.
+    this.iceServersFor = async () => [];
+    this._kdfChain = Promise.resolve();
     this.rotateCode();
     this._codeTimer = setInterval(() => this.rotateCode(), 10 * 60 * 1000);
 
     capture.on('offer', (sid, sdp) => {
       const conn = this._connForSession(sid);
-      if (conn) this._send(conn, 'offer', { sdp, sig: store.sign(SDP_PREFIX + sdp) });
+      if (conn) this._send(conn, 'offer', { sdp, sig: store.sign(PREFIX.sdp + sdp) });
     });
     capture.on('ice', (sid, candidate) => {
       const conn = this._connForSession(sid);
@@ -93,33 +104,22 @@ class HostAgent extends EventEmitter {
         });
         server.listen(port, () => {
           this.server = server;
-          this.port = port;
-          this.wss = new WebSocketServer({ server, path: '/ws', maxPayload: 256 * 1024 });
+          this.port = server.address().port;
+          this.wss = new WebSocketServer({ server, path: '/ws', maxPayload: 8 * 1024 * 1024, perMessageDeflate: false });
           this.wss.on('connection', (ws, req) => this._onSocket(ws, req));
           this._heartbeat = setInterval(() => this._beat(), 5000);
-          resolve(port);
+          resolve(this.port);
         });
       };
-      attempt(preferredPort, 9);
+      attempt(preferredPort, preferredPort ? 9 : 0);
     });
   }
 
+  // Only what another device needs to recognize this computer. Everything else is sent after
+  // the encrypted channel is established and the device has proven who it is.
   info() {
     const d = this.store.device();
-    return {
-      app: 'jconnect',
-      v: 1,
-      id: d.id,
-      name: d.name,
-      os: d.os,
-      publicKey: d.publicKey,
-      port: this.port,
-      travelMode: this.security.travelMode,
-      lockdown: !!this.security.lockdown,
-      remoteAccess: !!this.store.settings.remoteAccess,
-      pairing: this.security.pairingAllowed(),
-      mac: macAddresses(),
-    };
+    return { app: 'jconnect', v: JCSecure.VERSION, id: d.id, name: d.name, os: d.os, publicKey: d.publicKey, port: this.port };
   }
 
   _http(req, res) {
@@ -135,12 +135,12 @@ class HostAgent extends EventEmitter {
       res.end(JSON.stringify(this.info()));
       return;
     }
-    if (pathname === '/manifest.json') {
+    const entry = this.store.settings.allowBrowserClients !== false && STATIC_FILES[pathname];
+    if (pathname === '/manifest.json' && entry !== false) {
       res.writeHead(200, { ...headers, 'Content-Type': 'application/manifest+json' });
       res.end(MANIFEST);
       return;
     }
-    const entry = STATIC_FILES[pathname];
     if (!entry) {
       res.writeHead(404, headers);
       res.end('Not found');
@@ -157,12 +157,33 @@ class HostAgent extends EventEmitter {
     });
   }
 
-  _onSocket(ws, req) {
+  // A tunnel that arrived through the JVPN relay: same protocol, end-to-end encrypted.
+  acceptTunnel(ws) {
+    this._onSocket(ws, null, 'jvpn');
+  }
+
+  async _onSocket(ws, req, via = null) {
+    const ip = via || normalizeIp(req && req.socket && req.socket.remoteAddress);
+    const d = this.store.device();
+    let channel;
+    try {
+      channel = await JCSecure.accept(JCSecure.fromNodeSocket(ws), {
+        id: d.id,
+        publicKey: d.publicKey,
+        sign: (text) => this.store.sign(text),
+        info: { name: d.name, os: d.os, port: this.port },
+      });
+    } catch {
+      try { ws.terminate(); } catch { /* gone */ }
+      return;
+    }
+
     const conn = {
       cid: crypto.randomUUID(),
       ws,
-      ip: normalizeIp(req.socket.remoteAddress),
-      nonce: crypto.randomBytes(24).toString('base64'),
+      channel,
+      ip,
+      path: via === 'jvpn' ? 'jvpn' : pathKind(ip),
       state: 'hello',
       key: null,
       device: null,
@@ -170,27 +191,32 @@ class HostAgent extends EventEmitter {
       alive: true,
       pairing: false,
       authAttempts: 0,
+      streams: new Map(),
     };
     this.conns.set(conn.cid, conn);
-    conn.authTimer = setTimeout(() => { if (conn.state !== 'authed') ws.close(4001, 'timeout'); }, AUTH_TIMEOUT_MS);
+    conn.authTimer = setTimeout(() => { if (conn.state !== 'authed') channel.close(4001, 'timeout'); }, AUTH_TIMEOUT_MS);
 
     ws.on('pong', () => { conn.alive = true; });
-    ws.on('message', (data, isBinary) => {
-      if (isBinary) return;
-      let msg;
-      try { msg = JSON.parse(data.toString('utf8')); } catch { return; }
-      if (!msg || typeof msg.type !== 'string') return;
+    channel.on('*', (msg) => {
       Promise.resolve(this._onMessage(conn, msg)).catch((err) => console.warn('[jconnect] host:', err.message));
     });
-    ws.on('close', () => {
+    channel.on('data', (sid, bytes) => this._streamData(conn, sid, bytes));
+    channel.on('closed', () => {
       clearTimeout(conn.authTimer);
+      this._closeStreams(conn);
       this._endSession(conn);
       this.conns.delete(conn.cid);
       this.emit('change');
     });
-    ws.on('error', () => {});
 
-    this._send(conn, 'hello', { ...this.info(), nonce: conn.nonce, requiresPassword: !!this.store.settings.requirePassword });
+    const s = this.store.settings;
+    const requiresPassword = !!(s.requirePassword && s.passwordHash);
+    this._send(conn, 'welcome', {
+      requiresPassword,
+      passwordSalt: requiresPassword ? this.store.passwordSalt() : undefined,
+      pairing: this.security.pairingAllowed(),
+      path: conn.path,
+    });
   }
 
   async _onMessage(conn, msg) {
@@ -203,9 +229,9 @@ class HostAgent extends EventEmitter {
       case 'session-start': return authed ? this._startSession(conn, msg) : undefined;
       case 'answer':
         if (!session || typeof msg.sdp !== 'string') return undefined;
-        if (!verify(SDP_PREFIX + msg.sdp, msg.sig, conn.device.publicKey)) {
+        if (!verify(PREFIX.sdp + msg.sdp, msg.sig, conn.device.publicKey)) {
           this.security.report('bad-signature', { ip: conn.ip, deviceName: conn.device.name, deviceId: conn.device.id });
-          conn.ws.close(4003, 'security');
+          conn.channel.close(4003, 'security');
           return undefined;
         }
         return this.capture.signal(session.sid, { type: 'answer', sdp: msg.sdp });
@@ -229,6 +255,18 @@ class HostAgent extends EventEmitter {
           this._send(conn, 'restored', {});
         }
         return undefined;
+      case 'stream-open': return authed ? this._openStream(conn, msg) : undefined;
+      case 'stream-close': return this._closeStream(conn, Number(msg.sid));
+      case 'stream-pause':
+      case 'stream-resume': {
+        const stream = conn.streams.get(Number(msg.sid));
+        if (!stream) return undefined;
+        stream.paused = msg.type === 'stream-pause';
+        if (stream.paused) stream.socket.pause();
+        else if (!stream.throttled) stream.socket.resume();
+        return undefined;
+      }
+      case 'ping': return this._send(conn, 'pong', { t: msg.t });
       default:
         return undefined;
     }
@@ -237,36 +275,39 @@ class HostAgent extends EventEmitter {
   _auth(conn, msg) {
     if (conn.state === 'authed' || conn.pairing) return;
     if (++conn.authAttempts > 6) {
-      conn.ws.close(4001, 'too-many-attempts');
+      conn.channel.close(4001, 'too-many-attempts');
       return;
     }
-    const { publicKey, sig, nonce } = msg;
-    if (typeof publicKey !== 'string' || typeof sig !== 'string' || typeof nonce !== 'string' || nonce.length > 64) {
-      conn.ws.close(4000, 'bad-request');
+    const { publicKey, sig } = msg;
+    if (typeof publicKey !== 'string' || typeof sig !== 'string' || Buffer.from(publicKey, 'base64').length !== 32) {
+      conn.channel.close(4000, 'bad-request');
       return;
     }
     const id = deviceIdFromKey(publicKey);
     const name = cleanText(msg.name, 64) || 'Device';
+    const osName = cleanText(msg.os, 32);
     const report = (kind) => this.security.report(kind, { ip: conn.ip, deviceName: name, deviceId: id });
 
-    if (!verify(`${AUTH_PREFIX}${conn.nonce}:${this.store.id}`, sig, publicKey)) {
+    // The signature covers this channel's transcript, so it can't be replayed on another connection.
+    if (!verify(PREFIX.client + conn.channel.thB64, sig, publicKey)) {
       report('bad-signature');
       this._reject(conn, 'security', true);
       return;
     }
-    if (msg.id && msg.id !== id && this.store.data.trusted.some((t) => t.id === msg.id)) {
-      report('impersonation');
-      this._reject(conn, 'security', true);
-      return;
-    }
 
-    conn.key = { id, publicKey, name, os: cleanText(msg.os, 32), nonce };
-    const trusted = this.store.findTrusted(publicKey);
     const { settings } = this.store;
+    const accountDevice = this.accountDevices().find((dev) => dev.publicKey === publicKey) || null;
+    conn.key = { id, publicKey, name, os: osName, account: !!accountDevice };
+    let trusted = this.store.findTrusted(publicKey);
 
     if (!settings.remoteAccess) {
       this._reject(conn, 'disabled', true);
       return;
+    }
+    if (!trusted && accountDevice && settings.accountTrust && !this.security.travelMode && !this.security.lockdown) {
+      this.store.addTrusted({ id, name, os: osName, publicKey, owner: true, via: 'account' });
+      this.store.log({ kind: 'paired', level: 'info', deviceName: name, message: `${name} can use this computer because it's signed in to your JConnect account.` });
+      trusted = this.store.findTrusted(publicKey);
     }
     if (!trusted) {
       if (this.security.travelMode || this.security.lockdown) {
@@ -291,7 +332,7 @@ class HostAgent extends EventEmitter {
         this._reject(conn, 'password-required', false);
         return;
       }
-      if (!this.store.checkPassword(msg.password)) {
+      if (!this.store.checkPasswordProof(msg.password, conn.channel.th)) {
         const level = report('bad-password');
         this._reject(conn, 'password', level !== 'low');
         return;
@@ -301,21 +342,28 @@ class HostAgent extends EventEmitter {
     conn.state = 'authed';
     conn.device = trusted;
     clearTimeout(conn.authTimer);
-    this.store.updateTrusted(trusted.id, { lastSeen: Date.now(), os: conn.key.os || trusted.os });
+    this.store.updateTrusted(trusted.id, { lastSeen: Date.now(), os: osName || trusted.os });
     this._send(conn, 'auth-ok', {
-      sig: this.store.sign(`${HOST_PREFIX}${nonce}:${id}`),
       permission: trusted.permission || 'control',
       owner: !!trusted.owner,
       locked: !!this.security.lockdown,
       lockdown: trusted.owner ? this.security.lockdown : null,
       inputAvailable: this.input.available,
+      mac: macAddresses(),
+      services: this._services(),
     });
     this.emit('change');
   }
 
   _reject(conn, reason, close) {
     this._send(conn, 'auth-fail', { reason, canPair: reason === 'untrusted' && this.security.pairingAllowed() });
-    if (close) setTimeout(() => conn.ws.close(4001, reason), 100);
+    if (close) setTimeout(() => conn.channel.close(4001, reason), 100);
+  }
+
+  _derive(secret, salt) {
+    const run = this._kdfChain.then(() => scrypt(secret, salt));
+    this._kdfChain = run.catch(() => {});
+    return run;
   }
 
   async _pair(conn, msg) {
@@ -326,13 +374,21 @@ class HostAgent extends EventEmitter {
       return;
     }
 
-    if (msg.code != null) {
-      const code = String(msg.code).replace(/\D/g, '');
-      const ok = code.length === 6 && crypto.timingSafeEqual(Buffer.from(code), Buffer.from(this.pairingCode));
+    if (typeof msg.proof === 'string') {
+      conn.pairing = true;
+      let ok = false;
+      try {
+        const expected = Buffer.from(await this._derive(JCSecure.normalizeSecret(this.pairingCode), JCSecure.pairSalt(conn.channel.th)));
+        const given = Buffer.from(msg.proof, 'base64');
+        ok = given.length === expected.length && crypto.timingSafeEqual(given, expected);
+      } finally {
+        conn.pairing = false;
+      }
+      if (conn.channel.isClosed) return;
       if (!ok) {
         const level = this.security.report('bad-code', { ip: conn.ip, deviceName: key.name, deviceId: key.id });
         this._send(conn, 'pair-result', { ok: false, reason: 'code' });
-        if (level !== 'low') setTimeout(() => conn.ws.close(4001, 'paused'), 100);
+        if (level !== 'low') setTimeout(() => conn.channel.close(4001, 'paused'), 100);
         return;
       }
       this.rotateCode();
@@ -350,15 +406,15 @@ class HostAgent extends EventEmitter {
 
     conn.pairing = true;
     this.pendingPrompts++;
-    this._send(conn, 'pair-result', { pending: true });
+    this._send(conn, 'pair-result', { pending: true, sas: conn.channel.sas });
     let decision = { allow: false };
     try {
-      decision = await this.askOwner(key);
+      decision = await this.askOwner({ ...key, sas: conn.channel.sas });
     } finally {
       conn.pairing = false;
       this.pendingPrompts--;
     }
-    if (conn.ws.readyState !== WebSocket.OPEN) return;
+    if (conn.channel.isClosed) return;
     if (!decision.allow) {
       this.security.report('pairing-denied', { ip: conn.ip, deviceName: key.name, deviceId: key.id });
       this._send(conn, 'pair-result', { ok: false, reason: 'denied' });
@@ -375,8 +431,7 @@ class HostAgent extends EventEmitter {
     const info = this.info();
     this._send(conn, 'pair-result', {
       ok: true,
-      sig: this.store.sign(`${HOST_PREFIX}${key.nonce}:${key.id}`),
-      host: { id: info.id, name: info.name, os: info.os, publicKey: info.publicKey, mac: info.mac, port: info.port },
+      host: { id: info.id, name: info.name, os: info.os, publicKey: info.publicKey, mac: macAddresses(), port: info.port },
     });
     this.emit('change');
   }
@@ -398,12 +453,15 @@ class HostAgent extends EventEmitter {
       name: conn.device.name,
       os: conn.device.os,
       ip: conn.ip,
-      path: pathKind(conn.ip),
+      path: conn.path,
       since: Date.now(),
       displayId,
       permission: conn.device.permission || 'control',
       requested: ['auto', ...QUALITIES].includes(msg.quality) ? msg.quality : 'auto',
     };
+    const crossesInternet = conn.path === 'jvpn' || conn.path === 'internet' || msg.ice === 'internet';
+    const iceServers = crossesInternet ? await this.iceServersFor(conn).catch(() => []) : [];
+
     this.sessions.set(session.sid, session);
     conn.sessionId = session.sid;
     this._send(conn, 'session', {
@@ -412,16 +470,17 @@ class HostAgent extends EventEmitter {
       displayId,
       permission: session.permission,
       inputAvailable: this.input.available,
+      iceServers,
     });
     try {
-      await this.capture.start(session.sid, { displayId, quality: this._quality(session) });
+      await this.capture.start(session.sid, { displayId, quality: this._quality(session), iceServers });
     } catch (err) {
       console.warn('[jconnect] capture failed:', err.message);
       this._send(conn, 'session-denied', { reason: 'capture' });
       this._endSession(conn);
       return;
     }
-    this.store.log({ kind: 'session', level: 'info', deviceName: session.name, message: `${session.name} connected.` });
+    this.store.log({ kind: 'session', level: 'info', deviceName: session.name, message: `${session.name} connected${conn.path === 'jvpn' ? ' through JVPN' : ''}.` });
     this.emit('change');
   }
 
@@ -452,19 +511,98 @@ class HostAgent extends EventEmitter {
     this.emit('change');
   }
 
+  // ---- JVPN streams: SSH, Remote Desktop and other shared services, carried inside the channel ----
+
+  _services() {
+    const s = this.store.settings;
+    return { ssh: !!s.shareSsh, rdp: !!s.shareRdp };
+  }
+
+  _servicePort(service) {
+    const s = this.store.settings;
+    if (service === 'ssh' && s.shareSsh) return Number(s.sshPort) || 22;
+    if (service === 'rdp' && s.shareRdp) return 3389;
+    return 0;
+  }
+
+  _openStream(conn, msg) {
+    const sid = Number(msg.sid);
+    if (!Number.isInteger(sid) || sid <= 0 || sid > 0xffffffff || conn.streams.has(sid)) return;
+    const fail = (reason) => this._send(conn, 'stream-fail', { sid, reason });
+    if (conn.streams.size >= MAX_STREAMS) { fail('busy'); return; }
+    if (this.security.lockdown) { fail('locked'); return; }
+    if ((conn.device.permission || 'control') !== 'control') { fail('view-only'); return; }
+    const service = String(msg.service || '');
+    const port = this._servicePort(service);
+    if (!port) { fail('not-shared'); return; }
+
+    const socket = net.connect({ host: '127.0.0.1', port });
+    const stream = { sid, socket, service, open: false, paused: false, throttled: false };
+    conn.streams.set(sid, stream);
+    socket.setNoDelay(true);
+    socket.once('connect', () => {
+      stream.open = true;
+      this._send(conn, 'stream-ok', { sid });
+      this.store.log({ kind: 'stream', level: 'info', deviceName: conn.device.name, message: `${conn.device.name} opened ${SERVICE_LABELS[service] || service} through JVPN.` });
+    });
+    socket.on('data', (chunk) => {
+      conn.channel.sendData(sid, chunk);
+      if (!stream.throttled && conn.channel.buffered() > STREAM_HIGH_WATER) {
+        stream.throttled = true;
+        socket.pause();
+        const check = setInterval(() => {
+          if (conn.channel.isClosed || conn.channel.buffered() < STREAM_HIGH_WATER / 4) {
+            clearInterval(check);
+            stream.throttled = false;
+            if (!stream.paused) socket.resume();
+          }
+        }, 25);
+      }
+    });
+    socket.on('drain', () => this._send(conn, 'stream-resume', { sid }));
+    socket.on('error', (err) => {
+      if (!stream.open) fail(err.code === 'ECONNREFUSED' ? 'not-running' : 'unreachable');
+    });
+    socket.on('close', () => {
+      if (conn.streams.get(sid) !== stream) return;
+      conn.streams.delete(sid);
+      if (stream.open) this._send(conn, 'stream-close', { sid });
+    });
+  }
+
+  _streamData(conn, sid, bytes) {
+    const stream = conn.streams.get(sid);
+    if (!stream || !stream.open) return;
+    if (!stream.socket.write(Buffer.from(bytes))) this._send(conn, 'stream-pause', { sid });
+  }
+
+  _closeStream(conn, sid) {
+    const stream = conn.streams.get(sid);
+    if (!stream) return;
+    conn.streams.delete(sid);
+    stream.socket.destroy();
+  }
+
+  _closeStreams(conn) {
+    for (const stream of conn.streams.values()) stream.socket.destroy();
+    conn.streams.clear();
+  }
+
+  // ---- plumbing ----
+
   _connForSession(sid) {
     const session = this.sessions.get(sid);
     return session ? this.conns.get(session.cid) : null;
   }
 
   _send(conn, type, data = {}) {
-    if (conn.ws.readyState === WebSocket.OPEN) conn.ws.send(JSON.stringify({ type, ...data }));
+    return conn.channel.send(type, data);
   }
 
   _beat() {
     for (const conn of this.conns.values()) {
       if (!conn.alive) {
-        conn.ws.terminate();
+        try { conn.ws.terminate(); } catch { /* gone */ }
         continue;
       }
       conn.alive = false;
@@ -479,10 +617,19 @@ class HostAgent extends EventEmitter {
     return [...this.sessions.values()].map(({ sid, deviceId, name, os, path: kind, since, permission }) => ({ sid, deviceId, name, os, path: kind, since, permission }));
   }
 
+  streamList() {
+    const out = [];
+    for (const conn of this.conns.values()) {
+      for (const s of conn.streams.values()) out.push({ deviceId: conn.device && conn.device.id, name: conn.device && conn.device.name, service: s.service });
+    }
+    return out;
+  }
+
   _closeWithNotice(conn, kind, extra = {}) {
     this._send(conn, 'notice', { kind, ...extra });
     this._endSession(conn);
-    setTimeout(() => conn.ws.close(4002, kind), 100);
+    this._closeStreams(conn);
+    setTimeout(() => conn.channel.close(4002, kind), 100);
   }
 
   disconnectSession(sid) {
@@ -505,6 +652,7 @@ class HostAgent extends EventEmitter {
     for (const conn of this.conns.values()) {
       if (conn.state !== 'authed' || conn.device.id !== deviceId) continue;
       conn.device = trusted;
+      if (trusted.permission !== 'control') this._closeStreams(conn);
       const session = conn.sessionId && this.sessions.get(conn.sessionId);
       if (session && session.permission !== trusted.permission) {
         session.permission = trusted.permission;
@@ -514,6 +662,17 @@ class HostAgent extends EventEmitter {
     }
     this.applyTravelMode();
     this.emit('change');
+  }
+
+  applyServices() {
+    const services = this._services();
+    for (const conn of this.conns.values()) {
+      if (conn.state !== 'authed') continue;
+      for (const stream of [...conn.streams.values()]) {
+        if (!services[stream.service]) this._closeStream(conn, stream.sid);
+      }
+      this._send(conn, 'notice', { kind: 'services', services });
+    }
   }
 
   applyRemoteAccess() {
@@ -532,6 +691,7 @@ class HostAgent extends EventEmitter {
 
   lockdownNow(entry) {
     for (const conn of this.conns.values()) {
+      this._closeStreams(conn);
       if (conn.state === 'authed' && conn.device.owner) {
         this._endSession(conn);
         this._send(conn, 'notice', { kind: 'security-alert', level: 'high', message: entry.message, lockdown: this.security.lockdown });
@@ -558,9 +718,10 @@ class HostAgent extends EventEmitter {
   close() {
     clearInterval(this._codeTimer);
     clearInterval(this._heartbeat);
-    for (const conn of this.conns.values()) conn.ws.close(1001, 'shutdown');
+    for (const conn of this.conns.values()) conn.channel.close(1001, 'shutdown');
+    if (this.wss) this.wss.close();
     if (this.server) this.server.close();
   }
 }
 
-module.exports = { HostAgent, AUTH_PREFIX, HOST_PREFIX, SDP_PREFIX };
+module.exports = { HostAgent };

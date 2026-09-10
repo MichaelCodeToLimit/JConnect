@@ -62,8 +62,11 @@ class ResourceMonitor extends EventEmitter {
     let cap = this.cpuStep;
     if (this.thermal === 'serious' || this.thermal === 'critical') cap = 0;
     else if (this.thermal === 'fair') cap = Math.min(cap, 1);
-    if (this.speedLimit < 70) cap = 0;
-    else if (this.speedLimit < 90) cap = Math.min(cap, 1);
+    // Windows reports a low "speed limit" whenever cores are idle or parked, so there it only counts
+    // alongside real CPU pressure. On macOS it reflects actual thermal throttling.
+    const throttled = process.platform === 'darwin' || this.cpu > 0.7;
+    if (throttled && this.speedLimit < 70) cap = 0;
+    else if (throttled && this.speedLimit < 90) cap = Math.min(cap, 1);
     if (this.isTravelMode()) {
       cap = Math.min(cap, 1);
       if (powerMonitor.isOnBatteryPower()) cap = 0;

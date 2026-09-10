@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data:">
+  <title>SSH — JConnect</title>
+  <link rel="stylesheet" href="../../../node_modules/@xterm/xterm/css/xterm.css">
+  <link rel="stylesheet" href="../../shared/theme.css">
+  <link rel="stylesheet" href="terminal.css">
+</head>
+<body>
+  <header class="bar">
+    <span class="dot warn" id="dot"></span>
+    <span class="name" id="name">SSH</span>
+    <span class="status" id="status">Connecting…</span>
+    <span class="lock" title="Encrypted">🔒 Encrypted</span>
+    <span class="spacer"></span>
+    <button class="tbtn" id="copy-key" type="button">Copy my SSH key</button>
+    <button class="tbtn" id="reconnect" type="button" hidden>Reconnect</button>
+    <button class="tbtn danger" id="disconnect" type="button">Disconnect</button>
+  </header>
+  <main id="term"></main>
+  <div class="overlay" id="overlay" hidden>
+    <form class="card" id="prompt-form">
+      <h2 id="prompt-title"></h2>
+      <p id="prompt-detail" class="detail"></p>
+      <input id="prompt-input" autocomplete="off" spellcheck="false">
+      <div class="actions">
+        <button type="button" class="tbtn" id="prompt-cancel">Cancel</button>
+        <button type="submit" class="tbtn primary" id="prompt-ok">OK</button>
+      </div>
+    </form>
+  </div>
+  <script src="../../../node_modules/@xterm/xterm/lib/xterm.js"></script>
+  <script src="../../../node_modules/@xterm/addon-fit/lib/addon-fit.js"></script>
+  <script src="terminal.js"></script>
+</body>
+</html>

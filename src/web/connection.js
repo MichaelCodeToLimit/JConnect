@@ -1,14 +1,15 @@
-// Connection layer for the JConnect web client. Speaks the host agent's /ws protocol (src/main/host.js):
-//   host  -> hello {id, name, os, publicKey, nonce, requiresPassword, lockdown, pairing, ...}
-//   client-> auth  {publicKey, id, name, os, nonce, sig('jconnect-auth:<hostNonce>:<hostId>'), password?}
-//   host  -> auth-ok {sig('jconnect-host:<clientNonce>:<clientId>'), permission, owner, locked, lockdown}
-//          | auth-fail {reason, canPair}
-//   client-> pair {code?}          host -> pair-result {pending} | {ok:false, reason} | {ok:true, sig, host}
-//   client-> session-start         host -> session {sid, displays, permission, inputAvailable} | session-denied
+// Connection layer for the JConnect web client. Speaks protocol v2 (src/shared/secure-channel.js):
+// an X25519 + XSalsa20-Poly1305 channel bound to the computer's Ed25519 identity. Inside it:
+//   client-> auth  {publicKey, name, os, sig('jconnect-v2-client:' + th), password?: scrypt proof}
+//   host  -> auth-ok {permission, owner, locked, lockdown, mac, services} | auth-fail {reason, canPair}
+//   client-> pair {proof?}          host -> pair-result {pending, sas} | {ok:false, reason} | {ok:true, host}
+//   client-> session-start          host -> session {sid, displays, permission, iceServers} | session-denied
 //   host  -> offer {sdp, sig('jconnect-sdp:<sdp>')}   client -> answer {sdp, sig}   both -> ice {candidate}
 //   host  -> notice {kind}, tick   client -> session-end, owner-restore -> restored
+// Pairing codes and passwords are never sent: both sides derive scrypt proofs bound to the channel.
 (function () {
   const identity = window.JCIdentity;
+  const S = window.JCSecure;
   const PORT = 47801;
   const HELLO_TIMEOUT_MS = 6000;
   const ICE_SERVERS = [{ urls: 'stun:stun.l.google.com:19302' }];
@@ -17,7 +18,6 @@
   const b64url = (s) => String(s || '').replace(/-/g, '+').replace(/_/g, '/').replace(/\s/g, '+');
   const padB64 = (s) => { const t = b64url(s); return t + '='.repeat((4 - (t.length % 4)) % 4); };
   const wsUrl = ({ host, port }) => `ws://${host.includes(':') ? `[${host}]` : host}:${port || PORT}/ws`;
-  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
   function isTailscale(host) {
     if (/^fd7a:115c:a1e0:/i.test(host) || /\.ts\.net$/i.test(host)) return true;
@@ -36,63 +36,75 @@
     constructor(code, detail) { super(detail || code); this.code = code; this.detail = detail || ''; }
   }
 
-  function nonce() { return identity.randomToken(18); }
+  // scrypt runs in the browser; results are only used as proofs bound to one encrypted channel.
+  function derive(secret, salt) {
+    return window.scrypt.scrypt(secret, salt, S.SCRYPT.N, S.SCRYPT.r, S.SCRYPT.p, S.SCRYPT.dkLen);
+  }
+  let lastVerifier = null;
 
-  // A WebSocket with a message queue, so nothing that arrives early is lost.
-  function openSocket(target, timeoutMs = HELLO_TIMEOUT_MS) {
-    return new Promise((resolve, reject) => {
-      let ws;
-      try { ws = new WebSocket(wsUrl(target)); } catch (err) { reject(new JCError('unreachable', err.message)); return; }
-      const inbox = [];
-      const waiters = [];
-      let closedInfo = null;
-      const timer = setTimeout(() => { ws.close(); reject(new JCError('unreachable', `timeout ${target.host}`)); }, timeoutMs);
+  // An encrypted channel with a message queue, so nothing that arrives early is lost.
+  async function openSocket(target, timeoutMs = HELLO_TIMEOUT_MS, expectedKey = null) {
+    let ws;
+    try { ws = new WebSocket(wsUrl(target)); } catch (err) { throw new JCError('unreachable', err.message); }
+    let channel;
+    try {
+      channel = await S.connect(S.fromBrowserSocket(ws), {
+        verify: async (text, sig, key) => identity.verify(text, sig, key),
+        expectedKey: expectedKey || null,
+        timeoutMs,
+      });
+    } catch (err) {
+      try { ws.close(); } catch { /* closed */ }
+      const code = { identity: 'host-changed', security: 'host-changed', outdated: 'outdated', protocol: 'outdated' }[err.code] || 'unreachable';
+      throw new JCError(code, `${err.code || err.message} ${target.host}`);
+    }
 
-      ws.onmessage = (e) => {
-        let msg;
-        try { msg = JSON.parse(e.data); } catch { return; }
-        if (!msg || typeof msg.type !== 'string') return;
-        if (sock.onNotice && (msg.type === 'notice' || msg.type === 'offer' || msg.type === 'ice' || msg.type === 'tick')) {
-          if (sock.onNotice(msg)) return;
-        }
-        const i = waiters.findIndex((w) => w.types.includes(msg.type));
-        if (i >= 0) { const [w] = waiters.splice(i, 1); clearTimeout(w.timer); w.resolve(msg); } else inbox.push(msg);
-      };
-      ws.onclose = (e) => {
-        clearTimeout(timer);
-        closedInfo = { code: e.code, reason: e.reason };
-        for (const w of waiters.splice(0)) { clearTimeout(w.timer); w.reject(new JCError('closed', `${e.code} ${e.reason}`)); }
-        if (sock.onClose) sock.onClose(closedInfo);
-        reject(new JCError('unreachable', `closed ${e.code} ${target.host}`));
-      };
-      ws.onerror = () => {};
-
-      const sock = {
-        ws,
-        target,
-        onNotice: null,
-        onClose: null,
-        send(type, data = {}) { if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type, ...data })); },
-        next(types, ms = 20000) {
-          const list = Array.isArray(types) ? types : [types];
-          const i = inbox.findIndex((m) => list.includes(m.type));
-          if (i >= 0) return Promise.resolve(inbox.splice(i, 1)[0]);
-          if (closedInfo) return Promise.reject(new JCError('closed', `${closedInfo.code} ${closedInfo.reason}`));
-          return new Promise((res, rej) => {
-            const w = { types: list, resolve: res, reject: rej, timer: 0 };
-            if (ms) w.timer = setTimeout(() => { waiters.splice(waiters.indexOf(w), 1); rej(new JCError('unreachable', `no ${list.join('/')}`)); }, ms);
-            waiters.push(w);
-          });
-        },
-        close(code = 1000) { try { ws.close(code); } catch { /* already closed */ } },
-      };
-
-      sock.next('hello', timeoutMs).then((hello) => {
-        clearTimeout(timer);
-        sock.hello = hello;
-        resolve(sock);
-      }, (err) => { clearTimeout(timer); ws.close(); reject(err); });
+    const inbox = [];
+    const waiters = [];
+    let closedInfo = null;
+    const sock = {
+      ws,
+      channel,
+      target,
+      hello: channel.hello,
+      welcome: channel.welcome,
+      sas: channel.sas,
+      onNotice: null,
+      onClose: null,
+      send(type, data = {}) { channel.send(type, data); },
+      next(types, ms = 20000) {
+        const list = Array.isArray(types) ? types : [types];
+        const i = inbox.findIndex((m) => list.includes(m.type));
+        if (i >= 0) return Promise.resolve(inbox.splice(i, 1)[0]);
+        if (closedInfo) return Promise.reject(new JCError('closed', `${closedInfo.code} ${closedInfo.reason}`));
+        return new Promise((res, rej) => {
+          const w = { types: list, resolve: res, reject: rej, timer: 0 };
+          if (ms) w.timer = setTimeout(() => { waiters.splice(waiters.indexOf(w), 1); rej(new JCError('unreachable', `no ${list.join('/')}`)); }, ms);
+          waiters.push(w);
+        });
+      },
+      close(code = 1000) { channel.close(code, ''); },
+    };
+    channel.on('*', (msg) => {
+      if (sock.onNotice && (msg.type === 'notice' || msg.type === 'offer' || msg.type === 'ice' || msg.type === 'tick')) {
+        if (sock.onNotice(msg)) return;
+      }
+      const i = waiters.findIndex((w) => w.types.includes(msg.type));
+      if (i >= 0) {
+        const [w] = waiters.splice(i, 1);
+        clearTimeout(w.timer);
+        w.resolve(msg);
+      } else if (msg.type !== 'tick') {
+        inbox.push(msg);
+        if (inbox.length > 100) inbox.shift();
+      }
     });
+    channel.on('closed', (info) => {
+      closedInfo = info;
+      for (const w of waiters.splice(0)) { clearTimeout(w.timer); w.reject(new JCError('closed', `${info.code} ${info.reason}`)); }
+      if (sock.onClose) sock.onClose(info);
+    });
+    return sock;
   }
 
   function candidates(computer) {
@@ -113,19 +125,16 @@
       let changed = false;
       const errors = [];
       for (const target of list) {
-        openSocket(target, timeoutMs).then((sock) => {
-          const h = sock.hello;
-          const same = h.id === computer.id && (!computer.publicKey || h.publicKey === computer.publicKey)
-            && identity.deviceIdFromKey(h.publicKey) === h.id;
-          if (!same) {
-            if (h.id === computer.id) changed = true;
+        openSocket(target, timeoutMs, computer.publicKey || null).then((sock) => {
+          if (sock.hello.id !== computer.id) {
             sock.close();
-            throw new JCError(h.id === computer.id ? 'host-changed' : 'unreachable', `${target.host} is ${h.name}`);
+            throw new JCError('unreachable', `${target.host} is ${sock.hello.name}`);
           }
           if (won) { sock.close(); return; }
           won = true;
           resolve(sock);
         }).catch((err) => {
+          if (err.code === 'host-changed') changed = true;
           errors.push(err.detail || err.message);
           if (--pending === 0 && !won) reject(new JCError(changed ? 'host-changed' : 'unreachable', errors.join('\n')));
         });
@@ -134,32 +143,30 @@
   }
 
   async function authenticate(sock, { password } = {}) {
-    const h = sock.hello;
-    const myNonce = nonce();
+    let proof;
+    if (password && sock.welcome && sock.welcome.passwordSalt) {
+      const salt = sock.welcome.passwordSalt;
+      if (!lastVerifier || lastVerifier.hostId !== sock.hello.id || lastVerifier.salt !== salt || lastVerifier.password !== password) {
+        lastVerifier = { hostId: sock.hello.id, salt, password, verifier: await derive(S.normalizeSecret(password), S.unb64(salt)) };
+      }
+      proof = S.b64(S.passwordProof(lastVerifier.verifier, sock.channel.th));
+    }
     sock.send('auth', {
-      id: identity.id,
-      publicKey: identity.publicKey,
       name: identity.name,
       os: identity.os,
-      nonce: myNonce,
-      sig: identity.sign(`jconnect-auth:${h.nonce}:${h.id}`),
-      ...(password ? { password } : {}),
+      publicKey: identity.publicKey,
+      sig: identity.sign(S.PREFIX.client + sock.channel.thB64),
+      password: proof,
     });
     const res = await sock.next(['auth-ok', 'auth-fail']);
-    if (res.type === 'auth-ok') {
-      if (!identity.verify(`jconnect-host:${myNonce}:${identity.id}`, res.sig, h.publicKey)) {
-        sock.close();
-        throw new JCError('host-changed', 'host signature did not verify');
-      }
-      return { ...res, myNonce };
-    }
+    if (res.type === 'auth-ok') return res;
+    if (res.reason === 'password') lastVerifier = null;
     const map = {
       untrusted: 'not-trusted', disabled: 'access-disabled', travel: 'travel', locked: 'lockdown',
       'password-required': 'password-required', password: 'bad-password', security: 'security',
     };
     const err = new JCError(map[res.reason] || 'denied', `auth-fail ${res.reason}`);
     err.canPair = !!res.canPair;
-    err.myNonce = myNonce; // the host signs a later pairing approval with this nonce
     throw err;
   }
 
@@ -186,53 +193,54 @@
   }
 
   async function hostInfo(target) {
-    const sock = await openSocket(target);
+    const sock = await openSocket(target, HELLO_TIMEOUT_MS, target.publicKey || null);
     sock.close();
     const h = sock.hello;
-    if (identity.deviceIdFromKey(h.publicKey) !== h.id) throw new JCError('host-changed', 'id not bound to key');
-    if ((target.id && target.id !== h.id) || (target.publicKey && target.publicKey !== h.publicKey)) {
-      throw new JCError('host-changed', 'QR code does not match this computer');
-    }
+    if (target.id && target.id !== h.id) throw new JCError('host-changed', 'QR code does not match this computer');
     return h;
   }
 
-  async function pair(target, info, code, { signal } = {}) {
-    const sock = await openSocket(target);
+  async function pair(target, info, code, { signal, onPending } = {}) {
+    const sock = await openSocket(target, HELLO_TIMEOUT_MS, info.publicKey);
     const abort = () => sock.close();
     if (signal) signal.addEventListener('abort', abort, { once: true });
     try {
       const h = sock.hello;
-      if (h.id !== info.id || h.publicKey !== info.publicKey) throw new JCError('host-changed', 'computer changed during pairing');
+      if (h.id !== info.id) throw new JCError('host-changed', 'computer changed during pairing');
       const address = { host: target.host, port: target.port || h.port || PORT };
-      const computer = { id: h.id, name: h.name, os: h.os, publicKey: h.publicKey, mac: h.mac || [], addresses: [address] };
+      const computer = { id: h.id, name: h.name, os: h.os, publicKey: h.publicKey, mac: [], addresses: [address] };
 
-      let myNonce;
       try {
-        await authenticate(sock);
-        return computer; // already trusted
+        const auth = await authenticate(sock);
+        return { ...computer, mac: auth.mac || [] }; // already trusted
       } catch (err) {
+        if (err.code === 'password-required') return computer; // trusted; the password is asked on Connect
         if (err.code !== 'not-trusted') throw err;
         if (!err.canPair) throw new JCError('pairing-closed', err.detail);
-        myNonce = err.myNonce;
       }
 
-      // The host kept this connection in its "proven" state; ask to pair.
-      sock.send('pair', code ? { code: String(code).replace(/\D/g, '') } : {});
+      const digits = code ? String(code).replace(/\D/g, '') : '';
+      const proof = digits ? S.b64(await derive(S.normalizeSecret(digits), S.pairSalt(sock.channel.th))) : null;
+      sock.send('pair', proof ? { proof } : {});
       for (;;) {
         const res = await sock.next('pair-result', 0); // someone at the computer may take a while to answer
-        if (res.pending) continue;
+        if (res.pending) {
+          if (onPending) onPending(res.sas || sock.sas);
+          continue;
+        }
         if (!res.ok) {
           const reasons = { code: 'bad-code', denied: 'denied', busy: 'busy', travel: 'pairing-closed', paused: 'pairing-closed' };
           throw new JCError(reasons[res.reason] || 'denied', `pair-result ${res.reason}`);
         }
         const host = res.host || {};
         if (host.publicKey !== h.publicKey || host.id !== h.id) throw new JCError('host-changed', 'pair-result host mismatch');
-        // Our auth message carried a nonce before pairing; the host signs its approval with it.
-        if (!identity.verify(`jconnect-host:${myNonce}:${identity.id}`, res.sig, h.publicKey)) {
-          throw new JCError('host-changed', 'pair-result signature');
-        }
-        return { ...computer, name: host.name || computer.name, os: host.os || computer.os, mac: host.mac || computer.mac,
-          addresses: [address, ...(host.port && host.port !== address.port ? [{ host: target.host, port: host.port }] : [])] };
+        return {
+          ...computer,
+          name: host.name || computer.name,
+          os: host.os || computer.os,
+          mac: host.mac || [],
+          addresses: [address, ...(host.port && host.port !== address.port ? [{ host: target.host, port: host.port }] : [])],
+        };
       }
     } finally {
       if (signal) signal.removeEventListener('abort', abort);
@@ -244,7 +252,6 @@
     try {
       const sock = await reach(computer, 2500);
       sock.close();
-      if (sock.hello.lockdown) return { state: 'lockdown' };
       return { state: pathState(sock.target.host) };
     } catch {
       return { state: 'offline' };
@@ -327,7 +334,8 @@
           auth = await authenticate(sock, { password });
         } catch (err) {
           if (err.code === 'password-required' || err.code === 'bad-password') {
-            sock.onClose = null;
+            if (sock) sock.onClose = null;
+            teardown();
             if (err.code === 'bad-password') password = null;
             state({ state: 'password', wrong: err.code === 'bad-password' });
             return;
@@ -344,11 +352,11 @@
         }
 
         viewOnly = auth.permission !== 'control' || auth.inputAvailable === false;
-        await startMedia(auth);
+        await startMedia();
       } catch (err) {
         teardown();
         if (closed || ended) return;
-        if (['not-trusted', 'access-disabled', 'travel', 'security', 'host-changed', 'denied'].includes(err.code)) {
+        if (['not-trusted', 'access-disabled', 'travel', 'security', 'host-changed', 'denied', 'outdated'].includes(err.code)) {
           endWith(err.code, err.detail);
           return;
         }
@@ -367,67 +375,73 @@
 
     async function startMedia() {
       const s = sock;
-      pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
-      const thisPc = pc;
+      let thisPc = null;
       let sessionInfo = null;
-
-      pc.ontrack = (e) => {
-        const stream = e.streams && e.streams[0] ? e.streams[0] : new MediaStream([e.track]);
-        onStream(stream);
-      };
-      pc.ondatachannel = (e) => {
-        const ch = e.channel;
-        channels.push(ch);
-        ch.onmessage = (m) => handleChannelMessage(ch, m.data);
-      };
-      pc.onicecandidate = (e) => { if (e.candidate) s.send('ice', { candidate: e.candidate.toJSON() }); };
-      pc.onconnectionstatechange = () => {
-        if (thisPc !== pc) return;
-        const cs = pc.connectionState;
-        if (cs === 'connected') {
-          clearTimeout(disconnectTimer);
-          failingSince = 0;
-          attempt = 1;
-          state({ state: 'connected', viewOnly, addresses: [{ host: s.target.host, port: s.target.port }], displays: sessionInfo && sessionInfo.displays });
-        } else if (cs === 'disconnected') {
-          clearTimeout(disconnectTimer);
-          disconnectTimer = setTimeout(() => lost('media path lost'), 3000);
-        } else if (cs === 'failed') {
-          lost('media path failed');
-        }
-      };
-
       const pendingIce = [];
-      s.onNotice = (msg) => {
-        if (msg.type === 'tick') return true;
-        if (msg.type === 'ice') {
-          if (!msg.candidate) return true;
-          if (thisPc.remoteDescription) thisPc.addIceCandidate(msg.candidate).catch(() => {});
-          else pendingIce.push(msg.candidate);
-          return true;
-        }
-        if (msg.type === 'offer') {
-          handleOffer(msg).catch((err) => lost(`offer failed: ${err.message}`));
-          return true;
-        }
-        if (msg.type === 'notice') { handleNotice(msg); return true; }
-        return false;
-      };
+      const pendingOffers = [];
+
+      function makePeer(iceServers) {
+        pc = new RTCPeerConnection({ iceServers: iceServers && iceServers.length ? iceServers : ICE_SERVERS });
+        thisPc = pc;
+        pc.ontrack = (e) => {
+          const stream = e.streams && e.streams[0] ? e.streams[0] : new MediaStream([e.track]);
+          onStream(stream);
+        };
+        pc.ondatachannel = (e) => {
+          const ch = e.channel;
+          channels.push(ch);
+          ch.onmessage = (m) => handleChannelMessage(ch, m.data);
+        };
+        pc.onicecandidate = (e) => { if (e.candidate) s.send('ice', { candidate: e.candidate.toJSON() }); };
+        pc.onconnectionstatechange = () => {
+          if (thisPc !== pc) return;
+          const cs = pc.connectionState;
+          if (cs === 'connected') {
+            clearTimeout(disconnectTimer);
+            failingSince = 0;
+            attempt = 1;
+            state({ state: 'connected', viewOnly, addresses: [{ host: s.target.host, port: s.target.port }], displays: sessionInfo && sessionInfo.displays });
+          } else if (cs === 'disconnected') {
+            clearTimeout(disconnectTimer);
+            disconnectTimer = setTimeout(() => lost('media path lost'), 3000);
+          } else if (cs === 'failed') {
+            lost('media path failed');
+          }
+        };
+      }
 
       async function handleOffer(msg) {
         if (!identity.verify(`jconnect-sdp:${msg.sdp}`, msg.sig, computer.publicKey || s.hello.publicKey)) {
           endWith('host-changed', 'offer signature did not verify');
           return;
         }
-        await thisPc.setRemoteDescription({ type: 'offer', sdp: msg.sdp });
-        for (const c of pendingIce.splice(0)) thisPc.addIceCandidate(c).catch(() => {});
-        const answer = await thisPc.createAnswer();
-        await thisPc.setLocalDescription(answer);
-        const sdp = thisPc.localDescription.sdp;
+        const peer = thisPc;
+        await peer.setRemoteDescription({ type: 'offer', sdp: msg.sdp });
+        for (const c of pendingIce.splice(0)) peer.addIceCandidate(c).catch(() => {});
+        const answer = await peer.createAnswer();
+        await peer.setLocalDescription(answer);
+        const sdp = peer.localDescription.sdp;
         s.send('answer', { sdp, sig: identity.sign(`jconnect-sdp:${sdp}`) });
       }
 
-      s.send('session-start', { quality: 'auto' });
+      s.onNotice = (msg) => {
+        if (msg.type === 'tick') return true;
+        if (msg.type === 'ice') {
+          if (!msg.candidate) return true;
+          if (thisPc && thisPc.remoteDescription) thisPc.addIceCandidate(msg.candidate).catch(() => {});
+          else pendingIce.push(msg.candidate);
+          return true;
+        }
+        if (msg.type === 'offer') {
+          if (thisPc) handleOffer(msg).catch((err) => lost(`offer failed: ${err.message}`));
+          else pendingOffers.push(msg);
+          return true;
+        }
+        if (msg.type === 'notice') { handleNotice(msg); return true; }
+        return false;
+      };
+
+      s.send('session-start', { quality: 'auto', ice: pathState(s.target.host) === 'internet' ? 'internet' : undefined });
       const res = await s.next(['session', 'session-denied']);
       if (res.type === 'session-denied') {
         if (res.reason === 'locked') {
@@ -440,6 +454,8 @@
       }
       sessionInfo = res;
       viewOnly = viewOnly || res.permission !== 'control' || res.inputAvailable === false;
+      makePeer(res.iceServers);
+      for (const msg of pendingOffers.splice(0)) handleOffer(msg).catch((err) => lost(`offer failed: ${err.message}`));
     }
 
     function handleChannelMessage(ch, data) {
@@ -495,6 +511,7 @@
       providePassword(pw) {
         password = pw;
         teardown();
+        ended = false;
         attempt = 0;
         schedule(0);
       },
@@ -530,6 +547,7 @@
       lockdown: `${name} has paused remote access for safety.`,
       security: `${name} stopped the connection to keep things safe.`,
       'host-changed': `${name} doesn't look like the computer you paired with, so JConnect stopped to keep you safe.`,
+      outdated: `${name} and this page use different versions of JConnect. Update JConnect on the computer, then reload this page.`,
       'ended-by-owner': `Someone at ${name} ended the connection.`,
       capture: `${name} couldn't share its screen right now.`,
       sleeping: `This device can't wake ${name}. Wake it from a computer on the same network, or press a key on it.`,

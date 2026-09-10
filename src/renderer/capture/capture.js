@@ -3,10 +3,11 @@
   'use strict';
 
   const bridge = window.capture;
+  // Screen content compresses well; these keep text sharp without overloading a software encoder.
   const QUALITY = {
-    sharp: { maxBitrate: 20000000, maxFramerate: 60, maxWidth: 0 },
-    balanced: { maxBitrate: 8000000, maxFramerate: 30, maxWidth: 1920 },
-    saver: { maxBitrate: 2500000, maxFramerate: 20, maxWidth: 1280 },
+    sharp: { maxBitrate: 10000000, maxFramerate: 30, maxWidth: 0 },
+    balanced: { maxBitrate: 5000000, maxFramerate: 30, maxWidth: 1920 },
+    saver: { maxBitrate: 1500000, maxFramerate: 15, maxWidth: 1280 },
   };
   const sessions = new Map();
 
@@ -20,7 +21,7 @@
         chromeMediaSourceId: sourceId,
         maxWidth: width,
         maxHeight: height,
-        maxFrameRate: 60,
+        maxFrameRate: 30,
       },
     };
     if (audio) {
@@ -44,20 +45,25 @@
         if (!params.encodings || !params.encodings.length) return null;
         Object.assign(params.encodings[0], { maxBitrate: q.maxBitrate, maxFramerate: q.maxFramerate, scaleResolutionDownBy: scale });
         // Desktop text must stay sharp: lower the frame rate before lowering resolution (except in Data saver).
+        // Without an explicit preference the track's contentHint decides, so never echo back a default.
         if (withPreference) params.degradationPreference = session.quality === 'saver' ? 'maintain-framerate' : 'maintain-resolution';
+        else delete params.degradationPreference;
         return params;
       };
       try {
         const params = build(true);
         if (params) await session.videoSender.setParameters(params);
-      } catch {
+        if (!session.reportedMode) report(`quality mode: ${session.quality}, preference applied`);
+      } catch (first) {
         try {
           const params = build(false);
           if (params) await session.videoSender.setParameters(params);
+          if (!session.reportedMode) report(`quality mode: ${session.quality}, preference rejected (${first.message}); using contentHint`);
         } catch (err) {
           report(`quality: ${err.message}`);
         }
       }
+      session.reportedMode = true;
     });
     return session.qualityChain;
   }
@@ -75,8 +81,8 @@
     if (reason) bridge.send('ended', { sid, reason });
   }
 
-  bridge.on('start', async ({ sid, sourceId, width, height, quality, audio }) => {
-    const pc = new RTCPeerConnection({ iceServers: [], bundlePolicy: 'max-bundle' });
+  bridge.on('start', async ({ sid, sourceId, width, height, quality, audio, iceServers }) => {
+    const pc = new RTCPeerConnection({ iceServers: Array.isArray(iceServers) ? iceServers : [], bundlePolicy: 'max-bundle' });
     const session = { sid, pc, stream: null, videoSender: null, width, height, quality, remoteSet: false, pendingIce: [] };
     sessions.set(sid, session);
 

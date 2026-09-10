@@ -2,39 +2,88 @@
 
 **Open. Connect. Work.**
 
-JConnect is a remote-device app built around one idea: remote access should be as easy as using a computer normally. No IP addresses, ports, VPN setup, or accounts. Install it, pair once, press **Connect**.
+JConnect is a remote-device app built around one idea: remote access should be as easy as using a computer normally. There are no IP addresses, ports or VPN settings to learn, and no required account. Install it, pair once, and press **Connect**.
 
 ## Install on Windows
 
 Run `dist\JConnect-Setup-<version>.exe`. It installs for the current user without admin rights, adds Start menu and desktop shortcuts, and starts JConnect. `dist\JConnect-<version>-Portable.exe` runs without installing.
 
-The build isn't code-signed, so Windows SmartScreen may say "Windows protected your PC". Choose **More info → Run anyway**. The first time JConnect starts, Windows Firewall asks whether to allow it on your network. Allow it on private networks so other devices can reach this computer.
+The build isn't code-signed, so Windows SmartScreen may say "Windows protected your PC". Choose **More info → Run anyway**. The first time JConnect starts, Windows Firewall asks whether to allow it on your network. Allow it on private networks so your other devices can reach this computer.
 
 ## Using it
 
 1. Install JConnect on both computers.
 2. On the computer you're using, open **Add Computer**. Nearby JConnect computers appear automatically.
-3. Press **Pair**, then either type the 6-digit code shown at the bottom of JConnect on the other computer, or choose **Ask for permission** so someone there can press **Allow**.
+3. Press **Pair**. Then either type the 6-digit code shown at the bottom of JConnect on the other computer, or choose **Ask for permission**. Someone at that computer checks that both screens show the same verification code and presses **Allow**.
 4. Press **Connect**. The remote computer fills the window. Move the pointer to the top edge, or press **Ctrl+Alt+Home**, to reveal **← Home PC · Display · Devices · ⋯**.
 
-**From a phone, tablet, or TV:** on the computer, open **Settings → Use this computer from a phone** and scan the QR code. The phone opens JConnect in its browser. Nothing needs to be installed.
+**From a phone, tablet or TV:** on the computer, open **Settings → Use this computer from a phone** and scan the QR code. The phone opens JConnect in its browser, with nothing to install.
 
 Closing the window keeps the computer available; JConnect stays in the system tray.
 
-## What's included
+## Security
 
-| Area | What it does |
-| --- | --- |
-| Connections | Direct device-to-device over LAN, Tailscale or other private networks, with no cloud required. Every known path is tried at once and the best one wins. |
-| Discovery | LAN broadcast discovery and Tailscale peer detection, with friendly device names. |
-| Pairing | Per-device Ed25519 keys and a 6-digit code, QR code, or an on-screen "Allow" prompt. The computer proves its identity on every connection, and offers and answers are signed. |
-| Session | WebRTC screen and sound streaming, mouse, keyboard, wheel and touch control, multiple displays, and switching between computers. |
-| Recovery | Automatic reconnection, plain-language messages, Wake-on-LAN, and sleep and shutdown awareness. |
-| Owner controls | See who is connected, disconnect people, remove devices, view-only permission, an optional password, and trusted people groups. |
-| Travel Mode | Only your own devices may connect, pairing is off, and streaming is lighter. Security levels run from low (log and block) through medium (pause pairing and notify) to high (Emergency Lockdown). Optional emergency shutdown. |
-| Resource protection | Lowers streaming quality when CPU, thermal state, or battery calls for it. JConnect never closes your apps. |
-| Extras | Import `.rdp` files (opens them with Remote Desktop) and desktop shortcuts that connect with a double-click. |
-| Relay (optional) | `server/relay` reaches computers across the internet when there is no direct path. |
+Every connection uses JConnect protocol v2, whichever network carries it (LAN, JVPN, Tailscale or another VPN):
+
+- **Encrypted end to end.** Each connection runs an ephemeral X25519 key exchange. Messages, remote-control input, SSH and Remote Desktop data are then sealed with XSalsa20-Poly1305. Frames are numbered, so altered, replayed or reordered data closes the connection. Screen and sound travel over WebRTC, which is DTLS-SRTP encrypted, and its keys are signed inside the channel.
+- **Both sides prove who they are.** Every device has an Ed25519 identity key, and its ID is derived from that key. The computer signs each connection's transcript, and the other device checks it against the key it paired with. The connecting device signs the same transcript, so a stolen or replayed message can't be reused.
+- **Secrets never cross the network.** Pairing codes and passwords are turned into scrypt proofs bound to that one connection. The code isn't sent, and an eavesdropper can't replay the proof. "Ask for permission" pairing shows a matching verification code on both screens.
+- **Stored safely.** Device keys, API keys, account tokens and SSH keys are encrypted with the operating system's key store (DPAPI on Windows).
+- **Least exposure.** Discovery announces only a name and public key, and you can turn that off. Windows get only the permissions they need. The packaged app has Electron fuses set: no Node mode, no inspector, and asar integrity checked.
+- **Travel Mode and Emergency Lockdown** still apply to every path, JVPN included.
+
+## JVPN — JConnect's own network
+
+JVPN is on by default, so you don't need another VPN:
+
+- **At home**, devices connect directly over the local network.
+- **Away from home**, sign in to your JConnect account. Each computer then keeps an outbound, signed connection to JConnect Cloud's relay, and your other devices reach it through that relay. The relay only passes encrypted bytes: it can't read, change or impersonate anything. Only devices registered to your account can see or dial each other, and every dial uses a one-minute ticket.
+- **What it carries**: remote desktop, SSH and Remote Desktop (RDP) to your JConnect computers. Turn these on in **Settings → Share through JVPN**.
+
+JVPN is built into JConnect. It doesn't install a system-wide network adapter, so other apps don't see it as a VPN.
+
+## Account and sync (optional)
+
+Click the person icon at the top of JConnect to sign in or create an account.
+
+- Your password stays on the device. It's turned into two keys: one the server checks, and one that encrypts your data before upload.
+- Computers, SSH hosts and your list of devices sync between your devices, stored on the server only as ciphertext.
+- Two-step sign-in with an authenticator app is available under **Account**.
+- **Trust my account's devices** (off by default) lets your own signed-in devices connect without pairing.
+
+## Networks and VPNs
+
+Open **Add Computer → Import from a network**, or click a network chip on the home screen.
+
+| Network | Status and start | Import machines |
+| --- | --- | --- |
+| JVPN | Built in | Devices signed in to your account |
+| Tailscale | Starts the service and brings Tailscale up (sign-in opens your browser) | Every machine on your tailnet |
+| Twingate | Starts the client | Resources, using a read-only API key |
+| ZeroTier | Starts the service and joins your networks | Members, using a Central API token |
+| WireGuard | Connects a tunnel file you add | Peers listed in the tunnel file |
+| Windows VPN | Dials connections from Windows Settings | — |
+
+When JConnect imports machines, it checks what each one offers (JConnect, SSH, Remote Desktop) and adds your choices to **My Computers**. **Connect using…** on any computer picks the network JConnect should use. When you press Connect, JConnect starts that VPN, asking Windows for permission only when the VPN needs it, then connects. JConnect never changes a VPN's own settings.
+
+## SSH
+
+- **Add SSH host**, or import every named host from `~/.ssh/config`.
+- **Open SSH terminal** on a JConnect computer to reach its SSH server through JVPN.
+- Sign-in tries your SSH agent, then this device's own JConnect SSH key (**Copy my SSH key**), then asks for a password.
+- A host's key is remembered the first time you connect. If it later changes, JConnect stops and says so.
+
+## JConnect Cloud (self-hosted)
+
+```bash
+cd server/cloud
+npm install
+npm start          # listens on port 47900
+```
+
+- **TLS:** set `TLS_CERT` and `TLS_KEY`, or put it behind a reverse proxy. JConnect only accepts `http://` cloud addresses on private networks.
+- **TURN:** set `TURN_PUBLIC_HOST` (and optionally `TURN_PORT`) to relay remote-desktop media when two networks block direct connections.
+- **Data:** stored in `server/cloud/data/cloud.json`.
 
 ## Development
 
@@ -43,19 +92,29 @@ npm install
 npm start                    # run JConnect
 npm run start:b              # a second copy with its own identity, for testing on one PC
 npm run dist:win             # build dist/JConnect-Setup-*.exe and the portable exe
-node --test src/web/test/connection.test.js server/relay/test/relay.test.js
+node --test test/*.test.js src/web/test/connection.test.js server/relay/test/relay.test.js server/cloud/test/cloud.test.js
 ```
 
 Project layout:
 
-- `src/main` — Electron main process: host agent (`host.js`), discovery, pairing store, security and Travel Mode, input injection, tray, and windows
-- `src/renderer` — the desktop window, the remote session window, and the hidden screen-capture page
-- `src/shared` — the handshake protocol and viewer shared by desktop windows
-- `src/web` — the browser client served to phones, tablets and TVs
-- `server/relay` — the optional relay server
+- `src/main`: Electron main process
+  - host agent (`host.js`)
+  - JVPN (`jvpn.js`)
+  - account and sync (`account.js`)
+  - networks and VPNs (`vpn/`)
+  - routes (`routes.js`)
+  - SSH (`ssh.js`)
+  - security, input, tray and windows
+- `src/shared`: the v2 secure channel, the client protocol, and the remote-desktop viewer
+- `src/renderer`: the main window, remote session, SSH terminal, and hidden screen-capture page
+- `src/web`: the browser client for phones, tablets and TVs
+- `server/cloud`: JConnect Cloud (accounts, sync, relay, TURN)
+- `server/relay`: the standalone relay
 
 ## Known limits
 
-- Windows can't be controlled while it shows the secure desktop (UAC prompts, Ctrl+Alt+Del, lock screen). Windows running as administrator ignore input from JConnect unless JConnect also runs as administrator.
+- Windows can't be controlled on the secure desktop (UAC prompts, Ctrl+Alt+Del, the lock screen). Apps running as administrator ignore input from JConnect unless JConnect also runs as administrator.
+- SSH to a JConnect computer needs an SSH server running on it (for example Windows OpenSSH Server).
+- The phone web page is served over plain http on your local network. The connection itself is still end-to-end encrypted, but use the desktop app on networks you don't trust.
 - Remote control on macOS and Linux hosts needs `npm install @nut-tree-fork/nut-js` before building. macOS also asks for Screen Recording and Accessibility permission.
 - Camera sharing is described in the product vision as a future feature and isn't built yet.

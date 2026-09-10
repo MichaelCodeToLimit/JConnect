@@ -4,8 +4,9 @@
 
   const { HostConnection, failure } = global.JConnectProtocol;
 
-  const FATAL = new Set(['untrusted', 'revoked', 'identity', 'travel', 'disabled', 'locked', 'cancelled', 'ended-by-owner', 'gone', 'security', 'capture']);
-  const RETRYABLE = new Set(['cancelled', 'ended-by-owner', 'disabled', 'locked', 'travel', 'capture']);
+  const NETWORK_PROBLEMS = ['elevation-cancelled', 'not-installed', 'vpn-not-connected', 'account-required'];
+  const FATAL = new Set(['untrusted', 'revoked', 'identity', 'travel', 'disabled', 'locked', 'cancelled', 'ended-by-owner', 'gone', 'security', 'capture', 'outdated', 'protocol', ...NETWORK_PROBLEMS]);
+  const RETRYABLE = new Set(['cancelled', 'ended-by-owner', 'disabled', 'locked', 'travel', 'capture', ...NETWORK_PROBLEMS]);
   const QUALITY_LABELS = [['auto', 'Automatic'], ['sharp', 'Sharp'], ['balanced', 'Balanced'], ['saver', 'Data saver']];
 
   const storage = {
@@ -113,6 +114,11 @@
       this.bindKeyboard();
       this.bindBar();
       this.bindTouchKeyboard();
+      if (this.adapter.onProgress) {
+        this.cleanups.push(this.adapter.onProgress((text) => {
+          if (!this.live && !this.stopped && text) this.overlay({ title: text, spinner: true, actions: [['Cancel', () => this.exit()]] });
+        }));
+      }
       try { this.target = await this.adapter.target(); } catch { this.target = null; }
       if (!this.target) {
         this.fatal('gone');
@@ -210,6 +216,7 @@
 
     async connectOnce() {
       const route = await this.adapter.resolve();
+      if (route && route.reason && route.reason !== 'unreachable') throw failure(route.reason);
       if (!route || route.unreachable) {
         if (route && route.lastState === 'security-shutdown') this.hostDown = 'security-shutdown';
         throw failure(route && route.gone ? 'gone' : route && route.wakeable ? 'wakeable' : 'unreachable');
@@ -217,7 +224,8 @@
 
       const conn = new HostConnection(route.url, this.adapter);
       this.conn = conn;
-      const hello = await conn.open();
+      if (route.kind && this.adapter.report) this.adapter.report('route', { kind: route.kind });
+      const hello = await conn.open({ expectedKey: this.target.publicKey || null });
       if (this.target.publicKey && hello.publicKey !== this.target.publicKey) throw failure('identity');
 
       let auth = await conn.authenticate({ password: this.password || undefined });
@@ -232,11 +240,12 @@
       if (auth.locked) throw failure(auth.owner ? 'lockdown-owner' : 'locked', { conn, lockdown: auth.lockdown });
 
       this.permission = auth.permission || 'control';
+      if (this.adapter.onAuthenticated) this.adapter.onAuthenticated(auth);
       conn.on('notice', (m) => this.onNotice(m));
       conn.on('closed', () => { if (this.conn === conn) this.drop(); });
 
       const sessionReply = conn.next(['session', 'session-denied'], 10000);
-      conn.send('session-start', { displayId: this.displayId, quality: this.quality });
+      conn.send('session-start', { displayId: this.displayId, quality: this.quality, ice: route.kind === 'jvpn' || route.kind === 'internet' ? 'internet' : undefined });
       const session = await sessionReply;
       if (session.type === 'session-denied') throw failure(session.reason === 'locked' ? 'locked' : 'capture');
       this.displays = session.displays || [];
@@ -246,7 +255,7 @@
         setTimeout(() => this.toast(`${this.target.name} can be viewed, but remote control isn't available on it.`), 1500);
       }
 
-      const pc = new RTCPeerConnection({ iceServers: [], bundlePolicy: 'max-bundle' });
+      const pc = new RTCPeerConnection({ iceServers: session.iceServers || [], bundlePolicy: 'max-bundle' });
       this.pc = pc;
       const pendingIce = [];
       let remoteSet = false;
@@ -410,6 +419,12 @@
         gone: ['This computer is no longer in your list.', ''],
         security: [`JConnect couldn't verify ${name}.`, 'The connection was stopped to keep you safe.'],
         capture: [`${name} couldn't share its screen.`, 'Try again in a moment.'],
+        'not-installed': [`The VPN chosen for ${name} isn’t installed.`, 'Pick another network for this computer in JConnect.'],
+        'elevation-cancelled': ['Starting the VPN needs administrator permission.', 'Try again and choose Yes when Windows asks.'],
+        'vpn-not-connected': [`The VPN for ${name} didn’t connect.`, 'Open the VPN app to check that you’re signed in.'],
+        'account-required': [`Sign in to reach ${name} from anywhere.`, 'Open JConnect and sign in to your account.'],
+        outdated: [`${name} uses a different version of JConnect.`, 'Update JConnect on both computers, then try again.'],
+        protocol: [`${name} uses a different version of JConnect.`, 'Update JConnect on both computers, then try again.'],
       };
       const [title, text] = messages[code] || [`Couldn't connect to ${name}.`, ''];
       const actions = [['Close', () => this.exit()]];

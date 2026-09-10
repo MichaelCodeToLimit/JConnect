@@ -5,6 +5,8 @@ const crypto = require('crypto');
 const { EventEmitter } = require('events');
 const nacl = require('tweetnacl');
 const { app, safeStorage } = require('electron');
+const JCSecure = require('../shared/secure-channel');
+const { scryptSync } = require('./kdf');
 
 const DEFAULT_SETTINGS = {
   deviceName: null,
@@ -16,7 +18,31 @@ const DEFAULT_SETTINGS = {
   travelOwnerOnly: true,
   emergencyShutdown: false,
   quality: 'auto',
+  // Security
+  hideFromNearby: false,
+  allowBrowserClients: true,
+  accountTrust: false,
+  // JVPN and networks
+  jvpnEnabled: true,
+  defaultVia: 'jvpn',
+  stunServers: ['stun:stun.l.google.com:19302'],
+  // Services other devices may reach through JVPN
+  shareSsh: false,
+  sshPort: 22,
+  shareRdp: false,
 };
+
+const EMPTY = () => ({
+  settings: { ...DEFAULT_SETTINGS },
+  trusted: [],
+  computers: [],
+  securityLog: [],
+  lockdown: null,
+  account: null,
+  vpn: {},
+  ssh: { hosts: [], keys: [], knownHosts: {} },
+  tombstones: { computers: {}, sshHosts: {} },
+});
 
 function osLabel() {
   switch (process.platform) {
@@ -59,13 +85,26 @@ class Store extends EventEmitter {
   }
 
   _load() {
-    const empty = { settings: { ...DEFAULT_SETTINGS }, trusted: [], computers: [], securityLog: [], lockdown: null };
+    const empty = EMPTY();
+    let raw;
     try {
-      const raw = JSON.parse(fs.readFileSync(this.file, 'utf8'));
-      return { ...empty, ...raw, settings: { ...DEFAULT_SETTINGS, ...raw.settings } };
+      raw = JSON.parse(fs.readFileSync(this.file, 'utf8'));
     } catch {
       return empty;
     }
+    const data = {
+      ...empty,
+      ...raw,
+      settings: { ...DEFAULT_SETTINGS, ...raw.settings },
+      ssh: { ...empty.ssh, ...raw.ssh },
+      tombstones: { ...empty.tombstones, ...raw.tombstones },
+    };
+    // Passwords from before protocol v2 can't produce proofs; they have to be set again.
+    if (data.settings.passwordHash && !String(data.settings.passwordHash).startsWith('v2:')) {
+      data.settings.passwordHash = null;
+      data.settings.requirePassword = false;
+    }
+    return data;
   }
 
   _ensureIdentity() {
@@ -104,6 +143,24 @@ class Store extends EventEmitter {
     return Buffer.from(nacl.sign.detached(Buffer.from(String(text), 'utf8'), this.keyPair.secretKey)).toString('base64');
   }
 
+  // Secrets (API keys, tokens, SSH keys, saved passwords) are encrypted with the OS keychain.
+  seal(text) {
+    if (text == null) return null;
+    if (safeStorage.isEncryptionAvailable()) return `enc:${safeStorage.encryptString(String(text)).toString('base64')}`;
+    return `raw:${Buffer.from(String(text)).toString('base64')}`;
+  }
+
+  unseal(value) {
+    if (!value || typeof value !== 'string') return null;
+    try {
+      if (value.startsWith('enc:')) return safeStorage.decryptString(Buffer.from(value.slice(4), 'base64'));
+      if (value.startsWith('raw:')) return Buffer.from(value.slice(4), 'base64').toString('utf8');
+    } catch {
+      return null;
+    }
+    return null;
+  }
+
   save() {
     clearTimeout(this._saveTimer);
     this._saveTimer = setTimeout(() => this.saveNow(), 150);
@@ -114,7 +171,7 @@ class Store extends EventEmitter {
     clearTimeout(this._saveTimer);
     fs.mkdirSync(path.dirname(this.file), { recursive: true });
     const tmp = `${this.file}.tmp`;
-    fs.writeFileSync(tmp, JSON.stringify(this.data, null, 2));
+    fs.writeFileSync(tmp, JSON.stringify(this.data, null, 2), { mode: 0o600 });
     fs.renameSync(tmp, this.file);
   }
 
@@ -128,6 +185,8 @@ class Store extends EventEmitter {
     this.update((d) => { d.settings[key] = value; });
   }
 
+  // ---- password (stored as a scrypt verifier; the password itself never leaves the other device) ----
+
   setPassword(password) {
     this.update((d) => {
       if (!password) {
@@ -136,21 +195,27 @@ class Store extends EventEmitter {
         return;
       }
       const salt = crypto.randomBytes(16);
-      const hash = crypto.scryptSync(String(password), salt, 32);
-      d.settings.passwordHash = `${salt.toString('base64')}:${hash.toString('base64')}`;
+      const verifier = scryptSync(JCSecure.normalizeSecret(password), salt);
+      d.settings.passwordHash = `v2:${salt.toString('base64')}:${Buffer.from(verifier).toString('base64')}`;
       d.settings.requirePassword = true;
     });
   }
 
-  checkPassword(password) {
-    const stored = this.settings.passwordHash;
-    if (!stored || typeof password !== 'string') return false;
-    const [salt, hash] = stored.split(':').map((s) => Buffer.from(s, 'base64'));
-    const candidate = crypto.scryptSync(password, salt, 32);
-    return crypto.timingSafeEqual(candidate, hash);
+  passwordSalt() {
+    const parts = String(this.settings.passwordHash || '').split(':');
+    return parts[0] === 'v2' ? parts[1] : null;
   }
 
-  // Devices allowed to use this computer.
+  checkPasswordProof(proofB64, th) {
+    const parts = String(this.settings.passwordHash || '').split(':');
+    if (parts[0] !== 'v2' || typeof proofB64 !== 'string') return false;
+    const expected = Buffer.from(JCSecure.passwordProof(new Uint8Array(Buffer.from(parts[2], 'base64')), th));
+    const given = Buffer.from(proofB64, 'base64');
+    return given.length === expected.length && crypto.timingSafeEqual(given, expected);
+  }
+
+  // ---- devices allowed to use this computer ----
+
   findTrusted(publicKey) { return this.data.trusted.find((t) => t.publicKey === publicKey) || null; }
 
   addTrusted(device) {
@@ -171,7 +236,8 @@ class Store extends EventEmitter {
     this.update((d) => { d.trusted = d.trusted.filter((t) => t.id !== id); });
   }
 
-  // Computers this device can use.
+  // ---- computers this device can use ----
+
   getComputer(id) { return this.data.computers.find((c) => c.id === id) || null; }
 
   upsertComputer(computer) {
@@ -179,25 +245,35 @@ class Store extends EventEmitter {
       const existing = d.computers.find((c) => c.id === computer.id);
       if (existing) {
         const addresses = mergeAddresses(existing.addresses, computer.addresses);
-        Object.assign(existing, computer, { addresses, name: existing.renamed ? existing.name : computer.name || existing.name });
+        Object.assign(existing, computer, {
+          addresses,
+          name: existing.renamed ? existing.name : computer.name || existing.name,
+          updatedAt: Date.now(),
+        });
       } else {
-        d.computers.push({ type: 'jconnect', addresses: [], mac: [], person: null, addedAt: Date.now(), ...computer });
+        d.computers.push({ type: 'jconnect', via: 'auto', addresses: [], mac: [], person: null, addedAt: Date.now(), updatedAt: Date.now(), ...computer });
       }
+      delete d.tombstones.computers[computer.id];
     });
     return this.getComputer(computer.id);
   }
 
-  updateComputer(id, patch) {
+  updateComputer(id, patch, { quiet = false } = {}) {
     this.update((d) => {
       const c = d.computers.find((x) => x.id === id);
       if (!c) return;
-      if (patch.addresses) patch = { ...patch, addresses: mergeAddresses(c.addresses, patch.addresses) };
-      Object.assign(c, patch);
+      const next = { ...patch };
+      if (next.addresses) next.addresses = mergeAddresses(c.addresses, next.addresses);
+      Object.assign(c, next);
+      if (!quiet) c.updatedAt = Date.now();
     });
   }
 
   removeComputer(id) {
-    this.update((d) => { d.computers = d.computers.filter((c) => c.id !== id); });
+    this.update((d) => {
+      d.computers = d.computers.filter((c) => c.id !== id);
+      d.tombstones.computers[id] = Date.now();
+    });
   }
 
   log(event) {
@@ -218,4 +294,4 @@ function mergeAddresses(a = [], b = []) {
   return [...map.values()].sort((x, y) => (y.lastOk || 0) - (x.lastOk || 0)).slice(0, 12);
 }
 
-module.exports = { Store, osLabel, deviceIdFromKey, verify };
+module.exports = { Store, osLabel, deviceIdFromKey, verify, DEFAULT_SETTINGS };

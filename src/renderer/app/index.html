@@ -10,11 +10,16 @@
 <body>
   <header class="top">
     <div class="brand"><img src="../../../assets/icon.png" alt="" width="26" height="26"><span>JConnect</span></div>
-    <button class="icon-btn" id="settings-btn" type="button" aria-label="Settings" title="Settings">⚙</button>
+    <div class="top-actions">
+      <button class="icon-btn account-btn" id="account-btn" type="button" aria-label="Account" title="Account">👤</button>
+      <button class="icon-btn" id="settings-btn" type="button" aria-label="Settings" title="Settings">⚙</button>
+    </div>
   </header>
   <main id="home"><div class="spinner"></div></main>
   <footer id="footer"></footer>
   <div id="toast" class="toast" role="status" hidden></div>
+  <script src="../../web/vendor/nacl-fast.min.js"></script>
+  <script src="../../shared/secure-channel.js"></script>
   <script src="../../shared/protocol.js"></script>
   <script src="app.js"></script>
 </body>

@@ -1,0 +1,18 @@
+{
+  "name": "jconnect-cloud",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Optional, self-hostable JConnect Cloud: accounts, end-to-end encrypted sync, JVPN relay and TURN",
+  "main": "cloud.js",
+  "scripts": {
+    "start": "node cloud.js",
+    "test": "node --test test/cloud.test.js"
+  },
+  "dependencies": {
+    "tweetnacl": "^1.0.3",
+    "ws": "^8.18.0"
+  },
+  "optionalDependencies": {
+    "node-turn": "^0.0.6"
+  }
+}

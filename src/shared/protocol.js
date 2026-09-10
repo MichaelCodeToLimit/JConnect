@@ -1,171 +1,73 @@
-// Client side of the JConnect handshake. Used by the desktop app and the browser client.
+// Desktop client for a JConnect computer: an encrypted protocol v2 channel (see secure-channel.js).
 (function (global) {
   'use strict';
 
-  const AUTH = 'jconnect-auth:';
-  const HOST = 'jconnect-host:';
-  const SDP = 'jconnect-sdp:';
-
-  function nonce() {
-    const bytes = new Uint8Array(18);
-    crypto.getRandomValues(bytes);
-    let s = '';
-    for (const b of bytes) s += String.fromCharCode(b);
-    return btoa(s);
-  }
-
-  function failure(code, extra) {
-    const err = new Error(code);
-    err.code = code;
-    return Object.assign(err, extra);
-  }
+  const S = global.JCSecure;
+  const { failure } = S;
 
   class HostConnection {
+    // adapter: identity(), sign(text), verify(text, sig, key), derive(secretBytes, saltBytes)
     constructor(url, adapter) {
       this.url = url;
       this.adapter = adapter;
-      this.listeners = new Map();
-      this.waiters = new Set();
+      this.channel = null;
       this.hello = null;
-      this.isClosed = false;
-      this.lastNonce = null;
-      this.lastMessageAt = Date.now();
-      this.whenClosed = new Promise((resolve) => { this._resolveClosed = resolve; });
+      this.welcome = null;
+      this.sas = null;
     }
 
-    open(timeoutMs = 6000) {
-      return new Promise((resolve, reject) => {
-        let ws;
-        try {
-          ws = new WebSocket(this.url);
-        } catch {
-          reject(failure('unreachable'));
-          return;
-        }
-        this.ws = ws;
-        const timer = setTimeout(() => {
-          reject(failure('unreachable'));
-          this.close();
-        }, timeoutMs);
-
-        ws.onmessage = (event) => {
-          let msg;
-          try { msg = JSON.parse(event.data); } catch { return; }
-          if (!msg || typeof msg.type !== 'string') return;
-          this.lastMessageAt = Date.now();
-          if (msg.type === 'hello' && !this.hello) {
-            clearTimeout(timer);
-            this.hello = msg;
-            resolve(msg);
-          }
-          this._dispatch(msg);
-        };
-        ws.onclose = (event) => {
-          clearTimeout(timer);
-          this.isClosed = true;
-          if (!this.hello) reject(failure('unreachable'));
-          const code = event.code >= 4000 && event.reason ? event.reason : 'closed';
-          for (const waiter of [...this.waiters]) waiter.fail(failure(code));
-          this._emit('closed', { code: event.code, reason: event.reason });
-          this._resolveClosed({ code: event.code, reason: event.reason });
-        };
-        ws.onerror = () => {};
-      });
-    }
-
-    _dispatch(msg) {
-      for (const waiter of [...this.waiters]) {
-        if (waiter.types.includes(msg.type)) waiter.done(msg);
+    async open({ expectedKey = null, timeoutMs } = {}) {
+      let ws;
+      try {
+        ws = new WebSocket(this.url);
+      } catch {
+        throw failure('unreachable');
       }
-      this._emit(msg.type, msg);
-    }
-
-    _emit(type, msg) {
-      const set = this.listeners.get(type);
-      if (!set) return;
-      for (const fn of [...set]) {
-        try { fn(msg); } catch (err) { console.error(err); }
+      this.ws = ws;
+      try {
+        this.channel = await S.connect(S.fromBrowserSocket(ws), {
+          verify: (text, sig, key) => this.adapter.verify(text, sig, key),
+          expectedKey,
+          timeoutMs,
+        });
+      } catch (err) {
+        try { ws.close(); } catch { /* closed */ }
+        throw err;
       }
+      this.hello = this.channel.hello;
+      this.welcome = this.channel.welcome;
+      this.sas = this.channel.sas;
+      return this.hello;
     }
 
-    on(type, fn) {
-      if (!this.listeners.has(type)) this.listeners.set(type, new Set());
-      this.listeners.get(type).add(fn);
-      return () => this.listeners.get(type).delete(fn);
-    }
+    get lastMessageAt() { return this.channel ? this.channel.lastMessageAt : 0; }
+    get whenClosed() { return this.channel ? this.channel.whenClosed : Promise.resolve({ code: 1006 }); }
+    get isClosed() { return !this.channel || this.channel.isClosed; }
 
-    next(types, timeoutMs = 10000) {
-      if (this.isClosed) return Promise.reject(failure('closed'));
-      return new Promise((resolve, reject) => {
-        const waiter = { types };
-        const finish = () => { clearTimeout(waiter.timer); this.waiters.delete(waiter); };
-        waiter.done = (msg) => { finish(); resolve(msg); };
-        waiter.fail = (err) => { finish(); reject(err); };
-        waiter.timer = setTimeout(() => waiter.fail(failure('timeout')), timeoutMs);
-        this.waiters.add(waiter);
-      });
-    }
-
-    send(type, data = {}) {
-      if (this.ws && this.ws.readyState === WebSocket.OPEN) this.ws.send(JSON.stringify({ ...data, type }));
-    }
+    on(type, fn) { return this.channel ? this.channel.on(type, fn) : () => {}; }
+    next(types, timeoutMs) { return this.channel ? this.channel.next(types, timeoutMs) : Promise.reject(failure('closed')); }
+    send(type, data) { return this.channel ? this.channel.send(type, data) : false; }
 
     async authenticate({ password } = {}) {
       const me = await this.adapter.identity();
-      const myNonce = nonce();
-      this.lastNonce = myNonce;
-      const sig = await this.adapter.sign(`${AUTH}${this.hello.nonce}:${this.hello.id}`);
-      const reply = this.next(['auth-ok', 'auth-fail'], 15000);
-      this.send('auth', { id: me.id, name: me.name, os: me.os, publicKey: me.publicKey, sig, nonce: myNonce, password });
-      const res = await reply;
-      if (res.type === 'auth-fail') return { ok: false, reason: res.reason, canPair: !!res.canPair };
-      // The computer proves it holds its private key before we trust anything else it says.
-      if (!(await this.adapter.verify(`${HOST}${myNonce}:${me.id}`, res.sig, this.hello.publicKey))) {
-        this.close();
-        throw failure('security');
-      }
-      return {
-        ok: true,
-        permission: res.permission,
-        owner: !!res.owner,
-        locked: !!res.locked,
-        lockdown: res.lockdown,
-        inputAvailable: res.inputAvailable !== false,
-      };
+      return S.authenticate(this.channel, {
+        identity: { ...me, sign: (text) => this.adapter.sign(text) },
+        password,
+        derive: (secret, salt) => this.adapter.derive(secret, salt),
+      });
     }
 
-    async pair({ code, onPending } = {}) {
-      const me = await this.adapter.identity();
-      const withCode = code != null;
-      let reply = this.next(['pair-result'], withCode ? 15000 : 130000);
-      this.send('pair', withCode ? { code: String(code) } : {});
-      for (;;) {
-        const res = await reply;
-        if (res.pending) {
-          reply = this.next(['pair-result'], 130000);
-          if (onPending) onPending();
-          continue;
-        }
-        if (!res.ok) return { ok: false, reason: res.reason };
-        if (!(await this.adapter.verify(`${HOST}${this.lastNonce}:${me.id}`, res.sig, this.hello.publicKey))) {
-          this.close();
-          throw failure('security');
-        }
-        return { ok: true, host: res.host };
-      }
+    pair({ code, onPending } = {}) {
+      return S.pair(this.channel, { code, onPending, derive: (secret, salt) => this.adapter.derive(secret, salt) });
     }
 
-    verifySdp(sdp, sig) {
-      return this.adapter.verify(SDP + sdp, sig, this.hello.publicKey);
-    }
-
-    signSdp(sdp) {
-      return this.adapter.sign(SDP + sdp);
-    }
+    verifySdp(sdp, sig) { return this.adapter.verify(S.PREFIX.sdp + sdp, sig, this.hello.publicKey); }
+    signSdp(sdp) { return this.adapter.sign(S.PREFIX.sdp + sdp); }
 
     close() {
-      if (this.ws && this.ws.readyState <= 1) {
-        try { this.ws.close(1000); } catch { /* already closing */ }
+      if (this.channel) this.channel.close(1000, '');
+      else if (this.ws) {
+        try { this.ws.close(); } catch { /* closed */ }
       }
     }
   }
