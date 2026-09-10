@@ -1,0 +1,37 @@
+{
+  "name": "jconnect",
+  "productName": "JConnect",
+  "version": "0.1.0",
+  "description": "JConnect — Just Connect. Open. Connect. Work.",
+  "main": "src/main/main.js",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "start:b": "electron . --profile=b --port=47811",
+    "icons": "node scripts/make-icons.js",
+    "dist": "node scripts/make-icons.js && electron-builder"
+  },
+  "dependencies": {
+    "qrcode": "^1.5.4",
+    "tweetnacl": "^1.0.3",
+    "ws": "^8.18.0"
+  },
+  "optionalDependencies": {
+    "@nut-tree-fork/nut-js": "^4.2.6"
+  },
+  "devDependencies": {
+    "electron": "^38.0.0",
+    "electron-builder": "^26.0.0"
+  },
+  "build": {
+    "appId": "app.jconnect.desktop",
+    "productName": "JConnect",
+    "files": ["src/**/*", "assets/**/*", "package.json"],
+    "directories": { "output": "dist" },
+    "win": { "target": "nsis", "icon": "assets/icon.png" },
+    "nsis": { "oneClick": true, "perMachine": false, "runAfterFinish": true },
+    "mac": { "target": "dmg", "icon": "assets/icon.png", "category": "public.app-category.productivity" },
+    "linux": { "target": ["AppImage", "deb"], "icon": "assets/icon.png", "category": "Network" }
+  }
+}

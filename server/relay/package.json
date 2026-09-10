@@ -1,0 +1,19 @@
+{
+  "name": "jconnect-relay",
+  "version": "0.1.0",
+  "description": "Optional JConnect relay for reaching computers when no direct or private path exists.",
+  "main": "relay.js",
+  "private": true,
+  "license": "UNLICENSED",
+  "scripts": {
+    "start": "node relay.js",
+    "test": "node --test test/"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "tweetnacl": "^1.0.3",
+    "ws": "^8.18.0"
+  }
+}

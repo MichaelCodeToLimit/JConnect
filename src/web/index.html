@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#0f1115">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>JConnect</title>
+  <link rel="stylesheet" href="web.css">
+</head>
+<body>
+  <!-- My computers -->
+  <main id="screen-home" class="screen">
+    <header class="top">
+      <div class="brand">
+        <span class="logo" aria-hidden="true"></span>
+        <h1>JConnect</h1>
+      </div>
+      <button class="link" id="rename-self" type="button" title="Rename this device"></button>
+    </header>
+
+    <section>
+      <h2>My Computers</h2>
+      <ul id="computer-list" class="computers"></ul>
+      <div id="empty-home" class="empty" hidden>
+        <p class="big">No computers yet.</p>
+        <p>On the computer you want to use, open JConnect and choose <strong>Use from a phone</strong>. Then scan the code it shows.</p>
+      </div>
+    </section>
+
+    <button id="use-another" class="primary wide" type="button">Use Another Computer</button>
+    <p class="tagline">Just Connect. And That's It.</p>
+  </main>
+
+  <!-- "Use this computer?" -->
+  <main id="screen-pair" class="screen" hidden>
+    <div class="center-card">
+      <span class="device-icon" aria-hidden="true"></span>
+      <h1 id="pair-name">Computer</h1>
+      <p id="pair-os" class="muted"></p>
+
+      <div id="pair-ask">
+        <p class="question">Use this computer?</p>
+        <div class="row">
+          <button id="pair-cancel" class="secondary" type="button">Cancel</button>
+          <button id="pair-allow" class="primary" type="button">Allow</button>
+        </div>
+      </div>
+
+      <div id="pair-code-entry" hidden>
+        <p class="question">Enter the code shown on <span class="pair-name-inline">the computer</span></p>
+        <input id="pair-code" class="code-input" inputmode="numeric" autocomplete="one-time-code" maxlength="7" placeholder="000-000" aria-label="Pairing code">
+        <div class="row">
+          <button id="pair-code-cancel" class="secondary" type="button">Cancel</button>
+          <button id="pair-code-ok" class="primary" type="button">Pair</button>
+        </div>
+      </div>
+
+      <div id="pair-wait" hidden>
+        <div class="spinner" aria-hidden="true"></div>
+        <p id="pair-wait-text">Waiting for the computer to allow this device…</p>
+        <button id="pair-wait-cancel" class="link" type="button">Cancel</button>
+      </div>
+
+      <div id="pair-done" hidden>
+        <p class="question">You're all set.</p>
+        <button id="pair-connect" class="primary wide" type="button">Connect</button>
+      </div>
+
+      <p id="pair-error" class="error" role="alert" hidden></p>
+    </div>
+  </main>
+
+  <!-- Remote computer -->
+  <main id="screen-session" class="screen session" hidden>
+    <div id="surface" class="surface" tabindex="0">
+      <video id="remote" autoplay playsinline muted></video>
+    </div>
+
+    <!-- Hidden until the pointer touches the top edge, or the pull tab is tapped. -->
+    <div id="edge" class="edge" aria-hidden="true"></div>
+    <button id="pull-tab" class="pull-tab" type="button" aria-label="Show controls"></button>
+    <nav id="bar" class="bar" aria-label="Session controls">
+      <span id="bar-name" class="bar-name">Computer</span>
+      <button id="bar-keyboard" type="button">Keyboard</button>
+      <button id="bar-touch" type="button">Touch: Direct</button>
+      <div class="menu-wrap">
+        <button id="bar-keys" type="button" aria-haspopup="true" aria-expanded="false">Keys</button>
+        <div id="keys-menu" class="menu" hidden>
+          <button type="button" data-combo="ControlLeft,AltLeft,Delete">Ctrl + Alt + Del</button>
+          <button type="button" data-combo="MetaLeft">Start / Windows key</button>
+          <button type="button" data-combo="AltLeft,Tab">Switch app</button>
+          <button type="button" data-combo="Escape">Esc</button>
+          <button type="button" data-combo="MetaLeft,KeyD">Show desktop</button>
+        </div>
+      </div>
+      <button id="bar-sound" type="button">Sound off</button>
+      <button id="bar-fullscreen" type="button">Full screen</button>
+      <button id="bar-disconnect" class="danger" type="button">Disconnect</button>
+    </nav>
+    <input id="soft-keyboard" class="soft-keyboard" type="text" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="Keyboard">
+
+    <div id="overlay" class="overlay" hidden>
+      <div class="overlay-card">
+        <div id="overlay-spinner" class="spinner" aria-hidden="true"></div>
+        <p id="overlay-title" class="question">Connecting…</p>
+        <p id="overlay-text" class="muted"></p>
+        <div class="row">
+          <button id="overlay-back" class="secondary" type="button">Back</button>
+          <button id="overlay-retry" class="primary" type="button" hidden>Try Again</button>
+        </div>
+        <details id="overlay-details" class="details" hidden>
+          <summary>Details</summary>
+          <pre id="overlay-diag"></pre>
+        </details>
+      </div>
+    </div>
+  </main>
+
+  <!-- Emergency lockdown notice for the owner's trusted phone -->
+  <main id="screen-lockdown" class="screen" hidden>
+    <div class="center-card alert">
+      <span class="shield" aria-hidden="true"></span>
+      <h1>JConnect Emergency Lockdown</h1>
+      <p id="lockdown-text">Suspicious activity was detected. Remote access has been temporarily disabled.</p>
+      <dl class="facts">
+        <dt>Why</dt><dd id="lockdown-why">—</dd>
+        <dt>Computer</dt><dd id="lockdown-state">—</dd>
+        <dt>Remote access</dt><dd id="lockdown-access">Disabled</dd>
+      </dl>
+      <div class="row">
+        <button id="lockdown-keep" class="primary" type="button">Keep Locked</button>
+        <button id="lockdown-restore" class="secondary" type="button">Restore Remote Access</button>
+      </div>
+      <button id="lockdown-close" class="link" type="button">Back</button>
+    </div>
+  </main>
+
+  <dialog id="rename-dialog">
+    <form method="dialog">
+      <h2>Name this device</h2>
+      <p class="muted">Computers will ask “Allow <span id="rename-preview">this device</span> to use this computer?”</p>
+      <input id="rename-input" maxlength="64" autocomplete="off">
+      <div class="row">
+        <button value="cancel" class="secondary">Cancel</button>
+        <button value="ok" class="primary">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="computer-dialog">
+    <form method="dialog">
+      <h2 id="computer-dialog-name">Computer</h2>
+      <div class="stack">
+        <button value="rename" class="secondary">Rename</button>
+        <button value="remove" class="danger">Remove</button>
+        <button value="cancel" class="link">Close</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="vendor/nacl-fast.min.js"></script>
+  <script src="identity.js"></script>
+  <script src="input.js"></script>
+  <script src="connection.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
