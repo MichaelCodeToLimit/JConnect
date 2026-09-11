@@ -19,7 +19,8 @@ defaults:
 jobs:
   dmg:
     name: Build and check the DMGs
-    runs-on: macos-15
+    # Icon Composer icons only compile on macOS 26 or later.
+    runs-on: macos-26
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
@@ -80,6 +81,7 @@ jobs:
             ls -l dist/*.dmg 2> /dev/null || echo "no DMGs were built"
             shasum -a 256 dist/*.dmg 2> /dev/null || true
           } > ci-logs/summary.txt
+          cp dist/icon-preview.png ci-logs/ 2> /dev/null || true
           cd ci-logs
           git init -q -b ci/mac
           git add -A
