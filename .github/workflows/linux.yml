@@ -61,13 +61,13 @@ jobs:
           node --test test/secure-channel.test.js test/jvpn.test.js test/account.test.js
           src/web/test/connection.test.js server/cloud/test/cloud.test.js server/cloud/test/store.test.js 2>&1 | tee ci-logs/2-tests.log
 
-      # Debian 11 has an older glibc than current distributions, so a helper built there runs on all of them.
-      - name: Build the input helper on Debian 11
+      # Ubuntu 20.04 has an older glibc (2.31) than current distributions, so a helper built there also runs on older ones.
+      - name: Build the input helper on Ubuntu 20.04
         run: |
-          docker run --rm -v "$PWD:/src" -w /src -e HOST_ID="$(id -u):$(id -g)" node:22-bullseye bash -c '
+          docker run --rm -v "$PWD:/src" -w /src -e HOST_ID="$(id -u):$(id -g)" -e DEBIAN_FRONTEND=noninteractive ubuntu:20.04 bash -c '
             set -e
             apt-get update -qq
-            apt-get install -y -qq libx11-dev libxtst-dev > /dev/null
+            apt-get install -y -qq --no-install-recommends gcc libc6-dev libx11-dev libxtst-dev nodejs > /dev/null
             node scripts/build-linux-input.js
             chown -R "$HOST_ID" build
           ' 2>&1 | tee ci-logs/3-helper.log

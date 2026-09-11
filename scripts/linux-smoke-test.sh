@@ -127,7 +127,14 @@ fi
 grep '^\[input-check\]' "$out/input-check.log" || tail -30 "$out/input-check.log"
 
 echo "== screen sharing"
-npx electron --no-sandbox . --profile=smoke-host --port=47911 --hidden > "$out/stream-host.log" 2>&1 &
+# The host gets a display of its own, so the viewer receives the host's window instead of a picture of itself.
+Xvfb :98 -screen 0 1920x1080x24 -nolisten tcp > "$out/xvfb-host.log" 2>&1 &
+xvfb_host=$!
+for _ in $(seq 1 40); do
+  xdpyinfo -display :98 > /dev/null 2>&1 && break
+  sleep 0.25
+done
+DISPLAY=:98 npx electron --no-sandbox . --profile=smoke-host --port=47911 > "$out/stream-host.log" 2>&1 &
 code=""
 for _ in $(seq 1 60); do
   code="$(grep -o -m1 'pairing code [0-9]*' "$out/stream-host.log" | grep -o '[0-9]*$')"
@@ -137,14 +144,23 @@ done
 if [ -z "$code" ]; then
   fail "the JConnect host didn't start"
 else
+  sleep 3
   JCONNECT_SELFTEST_OUT="$PWD/$out/stream.png" JCONNECT_SELFTEST_EXIT=1 timeout 180 \
     npx electron --no-sandbox . --profile=smoke-viewer --port=47912 "--selftest=ws://127.0.0.1:47911/ws|$code" > "$out/stream-viewer.log" 2>&1
   grep '\[selftest\]' "$out/stream-viewer.log" | cut -c1-240 | grep -v '^\[selftest\] stats' | head -10
   grep '\[selftest\] stats' "$out/stream-viewer.log" | tail -1 | cut -c1-400
-  grep -q '\[selftest\] screenshot' "$out/stream-viewer.log" || fail "the viewer didn't receive the host's screen"
+  if grep -q '\[selftest\] screenshot' "$out/stream-viewer.log"; then
+    # A working capture shows the host's JConnect window. A broken one comes through black.
+    brightness="$(convert "$out/stream.png" -colorspace Gray -format '%[fx:mean]' info: 2> /dev/null || echo 0)"
+    echo "average brightness of the received screen: $brightness"
+    awk -v b="$brightness" 'BEGIN { exit !(b > 0.03) }' || fail "the viewer received a black screen"
+  else
+    fail "the viewer didn't receive the host's screen"
+  fi
 fi
 pkill -f -- '--port=4791[12]' 2> /dev/null || true
 grep -v 'pairing code' "$out/stream-host.log" | sed 's/^/  host: /' | head -20
 
-kill "$xvfb" 2> /dev/null || true
+kill "$xvfb" "$xvfb_host" 2> /dev/null || true
+if [ "$restrict_original" != none ]; then restrict_userns "$restrict_original"; fi
 exit $status
