@@ -1,0 +1,76 @@
+name: macOS build
+
+on:
+  push:
+    branches: [app]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: macos-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  dmg:
+    name: Build and check the DMGs
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: |
+          mkdir -p ci-logs
+          { sw_vers; xcrun swiftc --version; } 2>&1 | tee ci-logs/0-runner.log
+          npm ci 2>&1 | tee ci-logs/1-install.log
+
+      - name: Run tests
+        run: >-
+          node --test test/secure-channel.test.js test/jvpn.test.js test/account.test.js
+          src/web/test/connection.test.js server/cloud/test/cloud.test.js 2>&1 | tee ci-logs/2-tests.log
+
+      - name: Build the DMGs
+        run: npm run dist:mac 2>&1 | tee ci-logs/3-build.log
+
+      - name: Check the DMGs
+        run: bash scripts/mac-smoke-test.sh ci-logs 2>&1 | tee ci-logs/4-check.log
+
+      - name: Upload the DMGs
+        uses: actions/upload-artifact@v4
+        with:
+          name: JConnect-macOS
+          path: dist/*.dmg
+          compression-level: 0
+          if-no-files-found: error
+
+      # Logs go to a branch too, so they can be read with plain git.
+      - name: Publish logs to the ci-results branch
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATUS: ${{ job.status }}
+        run: |
+          mkdir -p ci-logs
+          {
+            echo "status: $STATUS"
+            echo "commit: $GITHUB_SHA"
+            echo "run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            ls -l dist/*.dmg 2> /dev/null || echo "no DMGs were built"
+            shasum -a 256 dist/*.dmg 2> /dev/null || true
+          } > ci-logs/summary.txt
+          cd ci-logs
+          git init -q -b ci-results
+          git add -A
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "macOS build $GITHUB_RUN_NUMBER: $STATUS"
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" ci-results

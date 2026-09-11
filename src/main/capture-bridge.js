@@ -1,6 +1,6 @@
 const path = require('path');
 const { EventEmitter } = require('events');
-const { BrowserWindow, ipcMain, desktopCapturer, screen } = require('electron');
+const { BrowserWindow, ipcMain, desktopCapturer, screen, systemPreferences } = require('electron');
 
 // Screen capture and WebRTC run in a hidden renderer; this bridges it to the host agent.
 class CaptureBridge extends EventEmitter {
@@ -71,6 +71,10 @@ class CaptureBridge extends EventEmitter {
   }
 
   async start(sid, { displayId, quality, iceServers = [] }) {
+    if (process.platform === 'darwin' && systemPreferences.getMediaAccessStatus('screen') === 'denied') {
+      this.emit('permission-needed', 'screen');
+      throw new Error('Screen Recording is turned off for JConnect in System Settings.');
+    }
     await this._ensureWindow();
     const source = await this._source(displayId);
     if (!source) throw new Error('No screen is available to share.');

@@ -8,6 +8,9 @@
   const FATAL = new Set(['untrusted', 'revoked', 'identity', 'travel', 'disabled', 'locked', 'cancelled', 'ended-by-owner', 'gone', 'security', 'capture', 'outdated', 'protocol', ...NETWORK_PROBLEMS]);
   const RETRYABLE = new Set(['cancelled', 'ended-by-owner', 'disabled', 'locked', 'travel', 'capture', ...NETWORK_PROBLEMS]);
   const QUALITY_LABELS = [['auto', 'Automatic'], ['sharp', 'Sharp'], ['balanced', 'Balanced'], ['saver', 'Data saver']];
+  // Browsers on a Mac never report a key's release while ⌘ is held, so those keys are sent as a quick press.
+  const MAC_KEYBOARD = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || '');
+  const MODIFIER_CODES = new Set(['ShiftLeft', 'ShiftRight', 'ControlLeft', 'ControlRight', 'AltLeft', 'AltRight', 'MetaLeft', 'MetaRight', 'CapsLock', 'Fn']);
 
   const storage = {
     get(key) { try { return localStorage.getItem(key); } catch { return null; } },
@@ -736,6 +739,10 @@
       if (!e.code || e.isComposing) return;
       e.preventDefault();
       e.stopPropagation();
+      if (MAC_KEYBOARD && e.metaKey && !MODIFIER_CODES.has(e.code)) {
+        if (down) this.tapKey(e.code);
+        return;
+      }
       if (down) this.pressedKeys.add(e.code);
       else this.pressedKeys.delete(e.code);
       this.sendInput({ t: 'k', c: e.code, d: down ? 1 : 0 });
@@ -893,7 +900,7 @@
       if (this.touchMode) items.push({ label: 'Keyboard', run: () => this.openKeyboard() });
       if (this.zoom.scale > 1) items.push({ label: 'Reset zoom', run: () => this.setZoom(1, 0, 0) });
       items.push({ label: 'Full screen', run: () => this.toggleFullscreen() });
-      if (!this.touchMode) items.push({ label: 'Ctrl+Alt+Home shows these controls', disabled: true, small: true });
+      if (!this.touchMode) items.push({ label: `${MAC_KEYBOARD ? 'Control+Option+Home' : 'Ctrl+Alt+Home'} shows these controls`, disabled: true, small: true });
       items.push({ separator: true });
       items.push({ label: 'Disconnect', danger: true, run: () => this.exit() });
       this.openMenu(button, items);

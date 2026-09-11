@@ -10,6 +10,15 @@ Run `dist\JConnect-Setup-<version>.exe`. It installs for the current user withou
 
 The build isn't code-signed, so Windows SmartScreen may say "Windows protected your PC". Choose **More info → Run anyway**. The first time JConnect starts, Windows Firewall asks whether to allow it on your network. Allow it on private networks so your other devices can reach this computer.
 
+## Install on macOS
+
+Open `JConnect-<version>-arm64.dmg` on a Mac with Apple silicon, or `JConnect-<version>-x64.dmg` on an Intel Mac, and drag JConnect into Applications. JConnect needs macOS 12 or later.
+
+The build isn't signed with an Apple Developer ID or notarized, so the first time you open it macOS says it can't verify JConnect. Open **System Settings → Privacy & Security**, scroll down and choose **Open Anyway**. On macOS 14 and earlier you can also Control-click JConnect in Applications and choose **Open**. Then allow what JConnect asks for:
+
+- **Local Network**, so your other devices can find and reach this Mac.
+- **Screen Recording** and **Accessibility**, so paired devices can see and control this Mac. JConnect lists both under **Settings → Mac permissions**. You don't need them to use other computers from this Mac.
+
 ## Using it
 
 1. Install JConnect on both computers.
@@ -19,7 +28,7 @@ The build isn't code-signed, so Windows SmartScreen may say "Windows protected y
 
 **From a phone, tablet or TV:** on the computer, open **Settings → Use this computer from a phone** and scan the QR code. The phone opens JConnect in its browser, with nothing to install.
 
-Closing the window keeps the computer available; JConnect stays in the system tray.
+Closing the window keeps the computer available; JConnect stays in the system tray (the menu bar on macOS).
 
 ## Security
 
@@ -28,7 +37,7 @@ Every connection uses JConnect protocol v2, whichever network carries it (LAN, J
 - **Encrypted end to end.** Each connection runs an ephemeral X25519 key exchange. Messages, remote-control input, SSH and Remote Desktop data are then sealed with XSalsa20-Poly1305. Frames are numbered, so altered, replayed or reordered data closes the connection. Screen and sound travel over WebRTC, which is DTLS-SRTP encrypted, and its keys are signed inside the channel.
 - **Both sides prove who they are.** Every device has an Ed25519 identity key, and its ID is derived from that key. The computer signs each connection's transcript, and the other device checks it against the key it paired with. The connecting device signs the same transcript, so a stolen or replayed message can't be reused.
 - **Secrets never cross the network.** Pairing codes and passwords are turned into scrypt proofs bound to that one connection. The code isn't sent, and an eavesdropper can't replay the proof. "Ask for permission" pairing shows a matching verification code on both screens.
-- **Stored safely.** Device keys, API keys, account tokens and SSH keys are encrypted with the operating system's key store (DPAPI on Windows).
+- **Stored safely.** Device keys, API keys, account tokens and SSH keys are encrypted with the operating system's key store (DPAPI on Windows, the Keychain on macOS).
 - **Least exposure.** Discovery announces only a name and public key, and you can turn that off. Windows get only the permissions they need. The packaged app has Electron fuses set: no Node mode, no inspector, and asar integrity checked.
 - **Travel Mode and Emergency Lockdown** still apply to every path, JVPN included.
 
@@ -64,7 +73,7 @@ Open **Add Computer → Import from a network**, or click a network chip on the 
 | WireGuard | Connects a tunnel file you add | Peers listed in the tunnel file |
 | Windows VPN | Dials connections from Windows Settings | — |
 
-When JConnect imports machines, it checks what each one offers (JConnect, SSH, Remote Desktop) and adds your choices to **My Computers**. **Connect using…** on any computer picks the network JConnect should use. When you press Connect, JConnect starts that VPN, asking Windows for permission only when the VPN needs it, then connects. JConnect never changes a VPN's own settings.
+When JConnect imports machines, it checks what each one offers (JConnect, SSH, Remote Desktop) and adds your choices to **My Computers**. **Connect using…** on any computer picks the network JConnect should use. When you press Connect, JConnect starts that VPN, asking for administrator permission only when the VPN needs it, then connects. JConnect never changes a VPN's own settings.
 
 ## SSH
 
@@ -92,8 +101,11 @@ npm install
 npm start                    # run JConnect
 npm run start:b              # a second copy with its own identity, for testing on one PC
 npm run dist:win             # build dist/JConnect-Setup-*.exe and the portable exe
+npm run dist:mac             # on a Mac: build dist/JConnect-*-arm64.dmg and dist/JConnect-*-x64.dmg
 node --test test/*.test.js src/web/test/connection.test.js server/relay/test/relay.test.js server/cloud/test/cloud.test.js
 ```
+
+DMGs can only be built on a Mac, because they need Apple's tools. `.github/workflows/mac.yml` builds and checks both DMGs on a GitHub-hosted Mac whenever the `app` branch is pushed. Download them from the run's **Artifacts**.
 
 Project layout:
 
@@ -110,11 +122,13 @@ Project layout:
 - `src/web`: the browser client for phones, tablets and TVs
 - `server/cloud`: JConnect Cloud (accounts, sync, relay, TURN)
 - `server/relay`: the standalone relay
+- `native`: the macOS input helper, written in Swift
 
 ## Known limits
 
 - Windows can't be controlled on the secure desktop (UAC prompts, Ctrl+Alt+Del, the lock screen). Apps running as administrator ignore input from JConnect unless JConnect also runs as administrator.
 - SSH to a JConnect computer needs an SSH server running on it (for example Windows OpenSSH Server).
 - The phone web page is served over plain http on your local network. The connection itself is still end-to-end encrypted, but use the desktop app on networks you don't trust.
-- Remote control on macOS and Linux hosts needs `npm install @nut-tree-fork/nut-js` before building. macOS also asks for Screen Recording and Accessibility permission.
+- Remote control on Linux hosts needs `npm install @nut-tree-fork/nut-js` before building.
+- A Mac can't be controlled at its lock screen or login window, and its sound isn't shared yet. ⌘Tab, ⌘Space and other system shortcuts stay on the Mac you're using.
 - Camera sharing is described in the product vision as a future feature and isn't built yet.

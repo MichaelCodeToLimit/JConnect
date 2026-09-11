@@ -3,7 +3,7 @@ const crypto = require('crypto');
 const { exec } = require('child_process');
 const {
   app, BrowserWindow, Tray, Menu, ipcMain, dialog, nativeImage, nativeTheme, powerMonitor, Notification, shell,
-  session: electronSession,
+  desktopCapturer, systemPreferences, session: electronSession,
 } = require('electron');
 
 function parseArgs(argv) {
@@ -70,7 +70,7 @@ async function boot() {
   const { createRouter } = require('./routes');
   const { SshManager } = require('./ssh');
 
-  if (process.platform !== 'darwin') Menu.setApplicationMenu(null);
+  applyMenu();
   hardenSessions();
 
   store = new Store();
@@ -78,6 +78,12 @@ async function boot() {
   input = new InputController();
   input.init();
   capture = new CaptureBridge();
+  let screenHintAt = 0;
+  capture.on('permission-needed', () => {
+    if (Date.now() - screenHintAt < 10 * 60000) return;
+    screenHintAt = Date.now();
+    notify('Allow Screen Recording for JConnect', 'Your devices can’t see this Mac until JConnect is turned on in System Settings → Privacy & Security → Screen Recording.');
+  });
   host = new HostAgent({ store, security, input, capture });
   host.askOwner = askOwner;
   await host.listen(Number(args.port) || DEFAULT_AGENT_PORT);
@@ -158,7 +164,7 @@ async function boot() {
   account.start();
   relayLink.start();
 
-  if (!args.hidden) showMain();
+  if (!args.hidden && !openedAtLogin()) showMain();
   if (args.connect) openSession(args.connect);
   statusLoop();
   refreshNetworks();
@@ -186,6 +192,8 @@ app.on('will-quit', () => {
 });
 app.on('window-all-closed', () => { /* JConnect stays ready in the background */ });
 app.on('activate', () => showMain());
+app.on('browser-window-focus', () => applyMenu());
+app.on('browser-window-blur', () => applyMenu());
 app.on('web-contents-created', (_event, contents) => {
   contents.setWindowOpenHandler(() => ({ action: 'deny' }));
   contents.on('will-navigate', (e, url) => { if (!url.startsWith('file://')) e.preventDefault(); });
@@ -250,6 +258,8 @@ function showMain() {
   mainWin.loadFile(path.join(RENDERER, 'app', 'index.html'));
   mainWin.once('ready-to-show', () => mainWin.show());
   mainWin.on('show', () => { kickStatus(); refreshNetworks(); });
+  // Mac permissions may have changed in System Settings while JConnect was in the background.
+  mainWin.on('focus', () => { if (process.platform === 'darwin') scheduleUpdate(); });
   mainWin.on('close', (e) => {
     if (quitting) return;
     e.preventDefault();
@@ -444,13 +454,14 @@ function snapshot() {
     cloudServer: store.data.cloudServer || '',
     jvpn: relayLink.status(),
     networks,
+    permissions: process.platform === 'darwin' ? macPermissions() : null,
     advanced: {
       id: store.id,
       port: host.port,
       protocol: 'JConnect v2 · X25519 + XSalsa20-Poly1305 · Ed25519 identities',
       addresses: localInterfaces().map((i) => ({ address: i.address, name: i.name, tailscale: i.tailscale })),
       tailscale: discovery.tailscale,
-      input: input.available ? 'available' : input.unavailableReason,
+      input: input.reason || 'available',
       resources: resources.snapshot(),
       userData: app.getPath('userData'),
     },
@@ -623,6 +634,20 @@ function registerIpc() {
     const allowed = new Set([...networks.map((n) => n.website).filter(Boolean)]);
     if (!allowed.has(url)) throw new Error('Not allowed');
     return shell.openExternal(url);
+  });
+  handle('jc:mac-permission', async (_e, kind) => {
+    if (process.platform !== 'darwin' || !['screen', 'accessibility'].includes(kind)) throw new Error('Not allowed');
+    const asked = store.data.macPermissionAsked || {};
+    if (!asked[kind]) {
+      // The first time, macOS shows its own prompt. After that, open the matching page in System Settings.
+      store.update((d) => { d.macPermissionAsked = { ...asked, [kind]: true }; });
+      if (kind === 'screen') await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 1, height: 1 } }).catch(() => []);
+      else systemPreferences.isTrustedAccessibilityClient(true);
+    } else {
+      await shell.openExternal(`x-apple.systempreferences:com.apple.preference.security?${kind === 'screen' ? 'Privacy_ScreenCapture' : 'Privacy_Accessibility'}`);
+    }
+    scheduleUpdate();
+    return macPermissions();
   });
   handle('jc:shortcut', async (_e, id) => {
     const computer = store.getComputer(id);
@@ -987,8 +1012,70 @@ function applyLoginItem() {
   app.setLoginItemSettings({ openAtLogin: !!store.settings.startAtLogin, args: ['--hidden'] });
 }
 
+// macOS ignores login item arguments, so ask it whether this launch came from logging in.
+function openedAtLogin() {
+  return process.platform === 'darwin' && app.isPackaged && !!app.getLoginItemSettings().wasOpenedAtLogin;
+}
+
+function macPermissions() {
+  return {
+    screen: systemPreferences.getMediaAccessStatus('screen'),
+    accessibility: systemPreferences.isTrustedAccessibilityClient(false),
+  };
+}
+
+// macOS keeps a menu bar. While a remote session has focus its menus have no keyboard shortcuts,
+// so ⌘Q, ⌘W, ⌘C and the rest go to the remote computer instead.
+let menuMode = null;
+function applyMenu() {
+  if (process.platform !== 'darwin') {
+    Menu.setApplicationMenu(null);
+    return;
+  }
+  const focused = BrowserWindow.getFocusedWindow();
+  const mode = focused && focused.jconnectComputerId !== undefined ? 'session' : 'app';
+  if (mode === menuMode) return;
+  menuMode = mode;
+  const key = (accelerator) => (mode === 'app' ? accelerator : undefined);
+  const withFocused = (fn) => () => {
+    const win = BrowserWindow.getFocusedWindow();
+    if (win) fn(win);
+  };
+  const openSettingsWindow = () => {
+    const win = showMain();
+    const open = () => win.webContents.send('jc:navigate', 'this');
+    if (win.webContents.isLoading()) win.webContents.once('did-finish-load', () => setTimeout(open, 300));
+    else open();
+  };
+  Menu.setApplicationMenu(Menu.buildFromTemplate([
+    {
+      label: app.name,
+      submenu: [
+        { label: `About ${app.name}`, click: () => app.showAboutPanel() },
+        { type: 'separator' },
+        { label: 'Settings…', accelerator: key('Command+,'), click: openSettingsWindow },
+        { type: 'separator' },
+        { label: `Hide ${app.name}`, accelerator: key('Command+H'), click: () => app.hide() },
+        { type: 'separator' },
+        { label: `Quit ${app.name}`, accelerator: key('Command+Q'), click: () => { quitting = true; app.quit(); } },
+      ],
+    },
+    mode === 'app' && { role: 'editMenu' },
+    {
+      label: 'Window',
+      submenu: [
+        { label: 'Minimize', accelerator: key('Command+M'), click: withFocused((win) => win.minimize()) },
+        { label: 'Close', accelerator: key('Command+W'), click: withFocused((win) => win.close()) },
+        { type: 'separator' },
+        { label: 'Open JConnect', click: () => showMain() },
+      ],
+    },
+  ].filter(Boolean)));
+}
+
 function createTray() {
-  const image = nativeImage.createFromPath(path.join(ASSETS, 'tray.png'));
+  // macOS tints the black "Template" image to suit light and dark menu bars.
+  const image = nativeImage.createFromPath(path.join(ASSETS, process.platform === 'darwin' ? 'trayTemplate.png' : 'tray.png'));
   tray = new Tray(image.isEmpty() ? nativeImage.createEmpty() : image);
   tray.on('click', () => showMain());
   updateTray();

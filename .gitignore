@@ -1,4 +1,5 @@
 node_modules/
 dist/
+build/native/
 server/cloud/data/
 server/cloud/node_modules/

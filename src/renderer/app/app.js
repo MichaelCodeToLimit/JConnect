@@ -207,6 +207,10 @@
         h('div', { class: 'banner-icon' }, '✈'),
         h('div', { class: 'banner-main' }, h('strong', {}, 'Travel Mode is on'), h('div', {}, state.settings.travelOwnerOnly ? 'Only your own devices can connect to this computer.' : 'New devices cannot pair with this computer.')),
         h('button', { class: 'btn small', type: 'button', onclick: () => openSettings('travel') }, 'Change')),
+      state.settings.remoteAccess && macPermissionsMissing() && h('div', { class: 'banner' },
+        h('div', { class: 'banner-icon' }, '🔐'),
+        h('div', { class: 'banner-main' }, h('strong', {}, 'Allow JConnect on this Mac'), h('div', {}, 'macOS needs your permission before your devices can see and control this Mac.')),
+        h('button', { class: 'btn small', type: 'button', onclick: () => openSettings('mac') }, 'Allow')),
       networkStrip(),
       h('section', { class: 'section' },
         h('h2', { class: 'section-title' }, 'My Computers'),
@@ -897,6 +901,15 @@
 
   const group = (id, title, children) => h('section', { class: 'group-block', id: `set-${id}` }, h('h3', {}, title), children);
 
+  function permissionRow(title, sub, granted, kind) {
+    return h('div', { class: 'sync-row' },
+      h('span', { class: `dot ${granted ? 'ok' : 'warn'}` }),
+      h('span', { class: 'row-main' }, h('span', { class: 'row-title' }, title), h('span', { class: 'row-sub' }, granted ? 'Allowed' : sub)),
+      !granted && h('button', { class: 'btn small', type: 'button', onclick: () => call('jc:mac-permission', kind) }, 'Allow…'));
+  }
+
+  const macPermissionsMissing = () => !!state.permissions && (state.permissions.screen !== 'granted' || !state.permissions.accessibility);
+
   function advancedView() {
     const a = state.advanced;
     const rows = [
@@ -963,6 +976,11 @@
             state.pairingAllowed && h('button', { class: 'btn small', type: 'button', onclick: () => call('jc:rotate-code') }, 'New code')),
           toggle('Start with this computer', 'JConnect stays ready in the background.', s.startAtLogin, setBool('startAtLogin')),
         ]),
+        state.permissions && group('mac', 'Mac permissions', [
+          permissionRow('Screen Recording', 'Needed so your devices can see this Mac.', state.permissions.screen === 'granted', 'screen'),
+          permissionRow('Accessibility', 'Needed so your devices can use the mouse and keyboard.', state.permissions.accessibility, 'accessibility'),
+          h('p', { class: 'hint tight' }, 'Turn JConnect on in System Settings → Privacy & Security. macOS may ask you to reopen JConnect afterwards.'),
+        ]),
         group('account', 'Account', [
           h('div', { class: 'sync-row' },
             h('span', { class: `dot ${state.account.signedIn ? 'ok' : 'off'}` }),
@@ -982,7 +1000,7 @@
         group('services', 'Share through JVPN', [
           toggle('SSH', 'Let your paired devices open SSH on this computer through JVPN.', s.shareSsh, setBool('shareSsh')),
           s.shareSsh && h('div', { class: 'inline-form' }, h('span', { class: 'field-label' }, 'SSH port on this computer'), sshPort),
-          toggle('Remote Desktop', 'Let your paired devices use Windows Remote Desktop through JVPN.', s.shareRdp, setBool('shareRdp')),
+          jc.platform !== 'darwin' && toggle('Remote Desktop', 'Let your paired devices use Windows Remote Desktop through JVPN.', s.shareRdp, setBool('shareRdp')),
           state.streams.length > 0 && h('p', { class: 'hint tight' }, `In use: ${state.streams.map((x) => `${x.name} (${x.service})`).join(', ')}`),
         ]),
         s.remoteAccess && state.pairingAllowed && s.allowBrowserClients && group('phone', 'Use this computer from a phone', [

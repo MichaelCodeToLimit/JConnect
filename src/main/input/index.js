@@ -12,17 +12,27 @@ class InputController {
 
   init() {
     try {
-      this.backend = process.platform === 'win32' ? require('./windows').create() : require('./nut').create();
+      if (process.platform === 'win32') this.backend = require('./windows').create();
+      else if (process.platform === 'darwin') this.backend = require('./mac').create();
+      else this.backend = require('./nut').create();
     } catch (err) {
       this.backend = null;
-      this.unavailableReason = process.platform === 'win32'
-        ? err.message
-        : 'Remote control needs the optional @nut-tree-fork/nut-js package on this computer.';
+      this.unavailableReason = process.platform === 'linux'
+        ? 'Remote control needs the optional @nut-tree-fork/nut-js package on this computer.'
+        : err.message;
       console.warn('[jconnect] input unavailable:', err.message);
     }
   }
 
-  get available() { return !!this.backend; }
+  get available() {
+    return !!this.backend && (!this.backend.permitted || this.backend.permitted());
+  }
+
+  // Why remote control can't be used right now, or null when it can.
+  get reason() {
+    if (!this.backend) return this.unavailableReason;
+    return this.available ? null : 'Allow JConnect under Accessibility in System Settings to control this Mac remotely.';
+  }
 
   _state(sid) {
     if (!this.pressed.has(sid)) this.pressed.set(sid, { keys: new Set(), buttons: new Set() });

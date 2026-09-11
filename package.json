@@ -11,8 +11,10 @@
     "start": "electron .",
     "start:b": "electron . --profile=b --port=47811",
     "icons": "node scripts/make-icons.js",
-    "dist": "node scripts/make-icons.js && electron-builder",
-    "dist:win": "node scripts/make-icons.js && electron-builder --win --x64"
+    "mac-helper": "node scripts/build-mac-input.js",
+    "dist": "node scripts/make-icons.js && node scripts/build-mac-input.js && electron-builder",
+    "dist:win": "node scripts/make-icons.js && electron-builder --win --x64",
+    "dist:mac": "node scripts/make-icons.js && node scripts/build-mac-input.js && electron-builder --mac"
   },
   "dependencies": {
     "@xterm/addon-fit": "^0.11.0",
@@ -34,7 +36,8 @@
       "src/**/*",
       "!src/web/test{,/**/*}",
       "assets/**/*",
-      "package.json"
+      "package.json",
+      "!**/node_modules/cpu-features{,/**/*}"
     ],
     "directories": {
       "output": "dist"
@@ -79,9 +82,39 @@
       "artifactName": "JConnect-${version}-Portable.exe"
     },
     "mac": {
-      "target": "dmg",
-      "icon": "assets/icon.png",
-      "category": "public.app-category.productivity"
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon-mac.png",
+      "category": "public.app-category.productivity",
+      "minimumSystemVersion": "12.0",
+      "darkModeSupport": true,
+      "identity": "-",
+      "hardenedRuntime": true,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "notarize": false,
+      "extraFiles": [
+        {
+          "from": "build/native/jconnect-input",
+          "to": "MacOS/jconnect-input"
+        }
+      ],
+      "extendInfo": {
+        "NSAppleEventsUsageDescription": "JConnect uses System Events to shut down this Mac when the Travel Mode emergency shutdown is on.",
+        "NSLocalNetworkUsageDescription": "JConnect finds your other computers on this network and lets your paired devices connect to this Mac."
+      }
+    },
+    "dmg": {
+      "artifactName": "JConnect-${version}-${arch}.dmg",
+      "title": "JConnect ${version}",
+      "writeUpdateInfo": false
     },
     "linux": {
       "target": [

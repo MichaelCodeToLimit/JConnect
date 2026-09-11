@@ -42,7 +42,9 @@ function encodePng(size, rgba) {
   ]);
 }
 
-function render(size, { tile = true } = {}) {
+// Sizes are in 512-unit design space. zoom scales the rings around the centre (below 1 leaves room
+// around them, above 1 fills small icons); margin and radius shape the tile; shadow adds a soft drop shadow.
+function render(size, { tile = true, template = false, zoom = 1, margin = 16, radius = 112, shadow = false } = {}) {
   const px = Buffer.alloc(size * size * 4);
   const s = size / 512;
   const coverage = (fn, x, y) => {
@@ -50,15 +52,17 @@ function render(size, { tile = true } = {}) {
     for (let sy = 0; sy < 4; sy++) for (let sx = 0; sx < 4; sx++) if (fn(x + (sx + 0.5) / 4, y + (sy + 0.5) / 4)) hits++;
     return hits / 16;
   };
-  const roundedSquare = (x, y) => {
-    const r = 112 * s;
-    const m = 16 * s;
+  const tileDistance = (x, y) => {
+    const r = radius * s;
+    const m = margin * s;
     const qx = Math.max(Math.abs(x - size / 2) - (size / 2 - m - r), 0);
     const qy = Math.max(Math.abs(y - size / 2) - (size / 2 - m - r), 0);
-    return Math.hypot(qx, qy) <= r;
+    return Math.hypot(qx, qy) - r;
   };
+  const roundedSquare = (x, y) => tileDistance(x, y) <= 0;
+  const toMark = (v) => size / 2 + (v - size / 2) / zoom;
   const ring = (cx, cy) => (x, y) => {
-    const d = Math.hypot(x - cx * s, y - cy * s);
+    const d = Math.hypot(toMark(x) - cx * s, toMark(y) - cy * s);
     return d >= 62 * s && d <= 104 * s;
   };
   const left = ring(196, 256);
@@ -72,13 +76,16 @@ function render(size, { tile = true } = {}) {
       const bg = tile ? coverage(roundedSquare, x, y) : 0;
       const fg = coverage(mark, x, y);
       const [br, bgc, bb] = [47 + (22 - 47) * t, 107 + (80 - 107) * t, 255 + (224 - 255) * t];
-      const [fr, fgc, fb] = tile ? [255, 255, 255] : [47, 107, 255];
+      const [fr, fgc, fb] = tile ? [255, 255, 255] : template ? [0, 0, 0] : [47, 107, 255];
       const a = fg + bg * (1 - fg);
-      if (a === 0) continue;
-      px[i] = Math.round((fr * fg + br * bg * (1 - fg)) / a);
-      px[i + 1] = Math.round((fgc * fg + bgc * bg * (1 - fg)) / a);
-      px[i + 2] = Math.round((fb * fg + bb * bg * (1 - fg)) / a);
-      px[i + 3] = Math.round(a * 255);
+      const fade = shadow && a < 1 ? 1 - Math.min(1, Math.max(0, tileDistance(x + 0.5, y + 0.5 - 10 * s) / (24 * s))) : 0;
+      const sh = 0.32 * fade * fade;
+      const alpha = a + sh * (1 - a);
+      if (alpha === 0) continue;
+      px[i] = Math.round((fr * fg + br * bg * (1 - fg)) / alpha);
+      px[i + 1] = Math.round((fgc * fg + bgc * bg * (1 - fg)) / alpha);
+      px[i + 2] = Math.round((fb * fg + bb * bg * (1 - fg)) / alpha);
+      px[i + 3] = Math.round(alpha * 255);
     }
   }
   return encodePng(size, px);
@@ -89,4 +96,9 @@ fs.mkdirSync(out, { recursive: true });
 fs.writeFileSync(path.join(out, 'icon.png'), render(512));
 fs.writeFileSync(path.join(out, 'tray.png'), render(32));
 fs.writeFileSync(path.join(out, 'tray@2x.png'), render(64));
+// macOS: the app icon sits on Apple's icon grid with a shadow, and the menu bar icon is a black template
+// image that macOS tints to match light and dark menu bars.
+fs.writeFileSync(path.join(out, 'icon-mac.png'), render(1024, { margin: 50, radius: 92, zoom: 0.86, shadow: true }));
+fs.writeFileSync(path.join(out, 'trayTemplate.png'), render(18, { tile: false, template: true, zoom: 1.45 }));
+fs.writeFileSync(path.join(out, 'trayTemplate@2x.png'), render(36, { tile: false, template: true, zoom: 1.45 }));
 console.log('icons written to', out);
