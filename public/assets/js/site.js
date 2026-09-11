@@ -310,6 +310,51 @@
     }).observe(el);
   }
 
+  // ---- download page: point each visitor at their own platform ----
+  const platformCards = $$('[data-platform]');
+  if (platformCards.length) {
+    const ua = navigator.userAgent;
+    const detect = () => {
+      if (/AppleTV|tvOS/i.test(ua)) return 'apple-tv';
+      if (/SmartTV|SMART-TV|Tizen|Web0S|webOS|BRAVIA|Android TV|GoogleTV|CrKey|AFT[A-Z]/i.test(ua)) return 'tv';
+      if (/iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) return 'ios';
+      if (/Android/i.test(ua)) return 'android';
+      if (/Windows/i.test(ua)) return 'windows';
+      if (/Macintosh|Mac OS X/.test(ua)) return 'mac';
+      if (/Linux (aarch64|armv7l|armv8)/i.test(ua)) return 'raspberry-pi';
+      if (/Linux|X11/i.test(ua)) return 'linux';
+      return null;
+    };
+    // [button label, where it goes, note under it] for everyone who can't use the Windows installer
+    const RECOMMEND = {
+      mac: ['JConnect for Mac is coming soon', '#mac', 'Apple silicon and Intel Macs. Windows is available now.'],
+      linux: ['JConnect for Linux is coming soon', '#linux', 'An AppImage and a .deb for 64-bit PCs. Windows is available now.'],
+      'raspberry-pi': ['Raspberry Pi is coming soon', '#raspberry-pi', '64-bit Raspberry Pi OS. Windows is available now.'],
+      android: ['Open JConnect in your browser', '#how', 'Nothing to install on Android. Set up JConnect on your computer first.'],
+      ios: ['Open JConnect in Safari', '#how', 'Nothing to install on iPhone or iPad. Set up JConnect on your computer first.'],
+      tv: ['Open JConnect in the TV’s browser', '#how', 'Type the address your JConnect computer shows.'],
+      'apple-tv': ['Apple TV is coming soon', '#apple-tv', 'Apple TV has no web browser, so it needs its own app.'],
+    };
+    const current = detect();
+    const card = platformCards.find((el) => el.dataset.platform === current);
+    if (card) {
+      card.classList.add('is-current');
+      const badge = document.createElement('span');
+      badge.className = 'you';
+      badge.textContent = 'Your device';
+      card.querySelector('h3').before(badge);
+      $$(`.dl-devices a[href="#${card.id}"]`).forEach((a) => a.classList.add('is-current'));
+    }
+    const button = document.querySelector('[data-recommend-button]');
+    const note = document.querySelector('[data-recommend-note]');
+    const pick = RECOMMEND[current];
+    if (button && note && pick) {
+      button.removeAttribute('download');
+      delete button.dataset.download;
+      [button.textContent, button.href, note.textContent] = [pick[0], pick[1], pick[2]];
+    }
+  }
+
   // ---- download ----
   for (const link of $$('[data-download]')) {
     link.addEventListener('click', () => {
@@ -324,9 +369,8 @@
     });
   }
 
-  const hash = document.querySelector('[data-sha256]');
-  if (hash) {
-    fetch('download/JConnect-Setup.exe.sha256', { cache: 'no-store' })
+  for (const hash of $$('[data-sha256]')) {
+    fetch(hash.dataset.sha256Src || 'download/JConnect-Setup.exe.sha256', { cache: 'no-store' })
       .then((res) => (res.ok ? res.text() : ''))
       .then((text) => {
         const sum = (text.match(/[0-9a-f]{64}/i) || [])[0];

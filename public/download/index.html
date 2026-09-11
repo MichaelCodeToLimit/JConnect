@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Download JConnect</title>
+  <meta name="description" content="Download JConnect for Windows, or open it in the browser on Android, iPhone, iPad and TVs. Mac, Linux, Raspberry Pi and Apple TV are coming soon.">
+  <meta name="theme-color" content="#000000">
+  <link rel="icon" type="image/png" href="../assets/img/icon.png">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Download JConnect">
+  <meta property="og:description" content="JConnect for Windows, plus phones, tablets and TVs in the browser.">
+  <meta property="og:image" content="../assets/img/og.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/site.css">
+</head>
+<body>
+  <div class="noise" aria-hidden="true"></div>
+
+  <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-windows" viewBox="0 0 28 28"><rect x="4" y="4" width="9" height="9" rx="1.5"/><rect x="15" y="4" width="9" height="9" rx="1.5"/><rect x="4" y="15" width="9" height="9" rx="1.5"/><rect x="15" y="15" width="9" height="9" rx="1.5"/></symbol>
+      <symbol id="i-mac" viewBox="0 0 28 28"><rect x="5" y="6" width="18" height="12.5" rx="2"/><path d="M2.5 22h23"/></symbol>
+      <symbol id="i-linux" viewBox="0 0 28 28"><rect x="3" y="5" width="22" height="18" rx="2.5"/><path d="M8 11l4 3-4 3M14.5 18H20"/></symbol>
+      <symbol id="i-pi" viewBox="0 0 28 28"><rect x="4" y="7" width="20" height="16" rx="2"/><rect x="10" y="12" width="7" height="6" rx="1"/><path d="M8 4v3M12 4v3M16 4v3M20 4v3"/></symbol>
+      <symbol id="i-android" viewBox="0 0 28 28"><rect x="8" y="3" width="12" height="22" rx="2.5"/><path d="M12.5 21.5h3"/></symbol>
+      <symbol id="i-ios" viewBox="0 0 28 28"><rect x="3" y="4" width="14" height="20" rx="2.5"/><rect x="15" y="11" width="10" height="14" rx="2" fill="#0b0d12"/></symbol>
+      <symbol id="i-tv" viewBox="0 0 28 28"><rect x="3" y="5" width="22" height="14.5" rx="2"/><path d="M10 24h8M14 19.5V24"/></symbol>
+      <symbol id="i-apple-tv" viewBox="0 0 28 28"><rect x="3" y="13" width="15" height="8" rx="2"/><rect x="21" y="6" width="4" height="16" rx="2"/><path d="M23 9.5v1"/></symbol>
+    </defs>
+  </svg>
+
+  <header class="nav" id="nav">
+    <div class="container nav-inner">
+      <a class="brand" href="../" aria-label="JConnect home">
+        <img src="../assets/img/icon.png" alt="" width="26" height="26">
+        <span>JConnect</span>
+      </a>
+      <nav class="nav-links" id="nav-links" aria-label="Primary">
+        <a href="../#features">Features</a>
+        <a href="../#jvpn">JVPN</a>
+        <a href="../#security">Security</a>
+        <a href="../#networks">Networks</a>
+        <a href="../#ssh">SSH</a>
+      </nav>
+      <div class="nav-cta">
+        <a class="btn btn-ghost btn-sm hide-sm" href="../#security">How it works</a>
+        <a class="btn btn-light btn-sm" href="#platforms">Download</a>
+        <button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="nav-links"><span></span><span></span></button>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero dl-hero">
+      <div class="hero-media" aria-hidden="true">
+        <canvas class="hero-canvas" id="hero-canvas"></canvas>
+        <div class="hero-glow"></div>
+        <div class="grid-lines"></div>
+        <div class="beam beam-1"></div>
+        <div class="beam beam-2"></div>
+      </div>
+
+      <div class="container hero-inner">
+        <a class="pill reveal" href="#windows">
+          <span class="pill-tag">Beta</span>
+          <span>JConnect 0.1.0 for Windows is here</span>
+          <span class="arrow" aria-hidden="true">→</span>
+        </a>
+        <h1 class="hero-title reveal" style="--d: 80ms">Download<br><span class="gradient-text">JConnect.</span></h1>
+        <p class="hero-sub reveal" style="--d: 160ms">
+          Install it on the computers you want to reach. Phones, tablets and TVs don’t need an app: JConnect opens right in their browser.
+        </p>
+        <div class="hero-actions reveal" style="--d: 240ms">
+          <a class="btn btn-light" href="JConnect-Setup.exe" download data-download data-recommend-button>Download for Windows</a>
+          <a class="btn btn-ghost" href="#platforms">All platforms <span class="arrow" aria-hidden="true">↓</span></a>
+        </div>
+        <p class="hero-note reveal" style="--d: 320ms" data-recommend-note>Version 0.1.0 beta · Windows 10 and 11 · 91 MB</p>
+
+        <nav class="dl-devices reveal" style="--d: 400ms" aria-label="Platforms">
+          <a href="#windows" style="--i: 0"><svg class="icon"><use href="#i-windows"/></svg><span>Windows</span></a>
+          <a href="#mac" style="--i: 1"><svg class="icon"><use href="#i-mac"/></svg><span>Mac</span></a>
+          <a href="#linux" style="--i: 2"><svg class="icon"><use href="#i-linux"/></svg><span>Linux</span></a>
+          <a href="#raspberry-pi" style="--i: 3"><svg class="icon"><use href="#i-pi"/></svg><span>Raspberry Pi</span></a>
+          <a href="#android" style="--i: 4"><svg class="icon"><use href="#i-android"/></svg><span>Android</span></a>
+          <a href="#ios" style="--i: 5"><svg class="icon"><use href="#i-ios"/></svg><span>iPhone &amp; iPad</span></a>
+          <a href="#tv" style="--i: 6"><svg class="icon"><use href="#i-tv"/></svg><span>TV</span></a>
+          <a href="#apple-tv" style="--i: 7"><svg class="icon"><use href="#i-apple-tv"/></svg><span>Apple TV</span></a>
+        </nav>
+      </div>
+    </section>
+
+    <!-- Computers -->
+    <section class="section dl-section" id="platforms">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Computers</span>
+          <h2>Install it on the computers<br><span class="gradient-text">you want to reach.</span></h2>
+          <p>The desktop app shares a computer and connects you to your others.</p>
+        </div>
+
+        <div class="platforms">
+          <article class="platform available card spot reveal" id="windows" data-platform="windows">
+            <div class="platform-top">
+              <span class="platform-icon"><svg class="icon"><use href="#i-windows"/></svg></span>
+              <span class="status on"><i class="dot ok"></i>Available · Beta</span>
+            </div>
+            <h3>Windows</h3>
+            <p>Windows 10 and 11, 64-bit. Installs for your account in seconds, without admin rights.</p>
+            <div class="platform-actions">
+              <a class="btn btn-light btn-sm" href="JConnect-Setup.exe" download data-download>Download .exe</a>
+              <span class="platform-meta">v0.1.0 · 91 MB</span>
+            </div>
+            <span class="download-hash" data-sha256 data-sha256-src="JConnect-Setup.exe.sha256" hidden>SHA-256 <code></code></span>
+            <p class="platform-note" data-download-note>Not code-signed yet. If SmartScreen warns you, choose <b>More info → Run anyway</b>.</p>
+          </article>
+
+          <article class="platform card spot reveal" style="--d: 80ms" id="mac" data-platform="mac">
+            <div class="platform-top">
+              <span class="platform-icon"><svg class="icon"><use href="#i-mac"/></svg></span>
+              <span class="status"><i class="dot warn"></i>Coming soon</span>
+            </div>
+            <h3>Mac</h3>
+            <p>Apple silicon and Intel Macs on macOS 12 or later. The first builds are being tested now.</p>
+            <div class="platform-actions"><span class="btn btn-ghost btn-sm" aria-disabled="true">Coming soon</span></div>
+          </article>
+
+          <article class="platform card spot reveal" style="--d: 160ms" id="linux" data-platform="linux">
+            <div class="platform-top">
+              <span class="platform-icon"><svg class="icon"><use href="#i-linux"/></svg></span>
+              <span class="status"><i class="dot warn"></i>Coming soon</span>
+            </div>
+            <h3>Linux</h3>
+            <p>An AppImage and a .deb package for 64-bit PCs.</p>
+            <div class="platform-actions"><span class="btn btn-ghost btn-sm" aria-disabled="true">Coming soon</span></div>
+          </article>
+
+          <article class="platform card spot reveal" style="--d: 240ms" id="raspberry-pi" data-platform="raspberry-pi">
+            <div class="platform-top">
+              <span class="platform-icon"><svg class="icon"><use href="#i-pi"/></svg></span>
+              <span class="status"><i class="dot warn"></i>Coming soon</span>
+            </div>
+            <h3>Raspberry Pi</h3>
+            <p>Raspberry Pi 4 and 5 on 64-bit Raspberry Pi OS, as an always-on computer on your network.</p>
+            <div class="platform-actions"><span class="btn btn-ghost btn-sm" aria-disabled="true">Coming soon</span></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Phones, tablets and TVs -->
+    <section class="section dl-section" id="browser">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Phones, tablets and TVs</span>
+          <h2>Nothing to install.<br><span class="gradient-text">Just open it.</span></h2>
+          <p>Your JConnect computer serves the app to the browser. The device only needs to be on the same network, or the same private network such as Tailscale. Every connection is still end-to-end encrypted.</p>
+        </div>
+
+        <div class="platforms">
+          <article class="platform card spot reveal" id="android" data-platform="android">
+            <div class="platform-top">
+              <span class="platform-icon"><svg class="icon"><use href="#i-android"/></svg></span>
+              <span class="status web"><i class="dot ok"></i>In the browser</span>
+            </div>
+            <h3>Android</h3>
+            <p>Android phones and tablets, in Chrome or any modern browser.</p>
+            <div class="platform-actions"><a class="btn btn-ghost btn-sm" href="#how">How to open it <span class="arrow" aria-hidden="true">↓</span></a></div>
+          </article>
+
+          <article class="platform card spot reveal" style="--d: 80ms" id="ios" data-platform="ios">
+            <div class="platform-top">
+              <span class="platform-icon"><svg class="icon"><use href="#i-ios"/></svg></span>
+              <span class="status web"><i class="dot ok"></i>In the browser</span>
+            </div>
+            <h3>iPhone &amp; iPad</h3>
+            <p>iPhone and iPad, in Safari.</p>
+            <div class="platform-actions"><a class="btn btn-ghost btn-sm" href="#how">How to open it <span class="arrow" aria-hidden="true">↓</span></a></div>
+          </article>
+
+          <article class="platform card spot reveal" style="--d: 160ms" id="tv" data-platform="tv">
+            <div class="platform-top">
+              <span class="platform-icon"><svg class="icon"><use href="#i-tv"/></svg></span>
+              <span class="status web"><i class="dot ok"></i>In the browser</span>
+            </div>
+            <h3>TV</h3>
+            <p>Google TV, Android TV and other TVs with a modern web browser.</p>
+            <div class="platform-actions"><a class="btn btn-ghost btn-sm" href="#how">How to open it <span class="arrow" aria-hidden="true">↓</span></a></div>
+          </article>
+
+          <article class="platform card spot reveal" style="--d: 240ms" id="apple-tv" data-platform="apple-tv">
+            <div class="platform-top">
+              <span class="platform-icon"><svg class="icon"><use href="#i-apple-tv"/></svg></span>
+              <span class="status"><i class="dot warn"></i>Coming soon</span>
+            </div>
+            <h3>Apple TV</h3>
+            <p>Apple TV has no web browser, so it needs its own app.</p>
+            <div class="platform-actions"><span class="btn btn-ghost btn-sm" aria-disabled="true">Coming soon</span></div>
+          </article>
+        </div>
+
+        <div class="dl-how" id="how">
+          <h3 class="dl-how-title reveal">Open JConnect on a phone, tablet or TV</h3>
+          <div class="dl-steps">
+            <article class="dl-step card spot reveal" style="--d: 0ms">
+              <span class="step-num">01</span>
+              <h4>Set up a computer</h4>
+              <p>Install JConnect on the computer you want to use, and keep <b>Remote access</b> on.</p>
+            </article>
+            <article class="dl-step card spot reveal" style="--d: 100ms">
+              <span class="step-num">02</span>
+              <h4>Show the code</h4>
+              <p>In JConnect, open <b>Settings → Use this computer from a phone</b>. It shows a QR code and the address.</p>
+            </article>
+            <article class="dl-step card spot reveal" style="--d: 200ms">
+              <span class="step-num">03</span>
+              <h4>Open it and pair</h4>
+              <p>Scan the code with your camera, or type the address on a tablet or TV. Then tap <b>Pair</b>.</p>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta dl-cta">
+      <div class="cta-media" aria-hidden="true">
+        <img data-src="../media/cta.jpg" alt="">
+        <div class="cta-glow"></div>
+        <div class="grid-lines"></div>
+      </div>
+      <div class="container cta-inner">
+        <img class="cta-icon reveal" src="../assets/img/icon.png" alt="" width="72" height="72">
+        <h2 class="reveal" style="--d: 80ms">Install once.<br><span class="gradient-text">Connect from your other screens.</span></h2>
+        <p class="reveal" style="--d: 160ms">Start with the computers you want to reach. Your phone, tablet and TV connect to them.</p>
+        <div class="hero-actions reveal" style="--d: 240ms">
+          <a class="btn btn-light" href="JConnect-Setup.exe" download data-download>Download for Windows</a>
+          <a class="btn btn-ghost" href="../#security">How it stays private <span class="arrow" aria-hidden="true">→</span></a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <a class="brand" href="../"><img src="../assets/img/icon.png" alt="" width="22" height="22"><span>JConnect</span></a>
+        <p>Open. Connect. Work.</p>
+      </div>
+      <div class="footer-cols">
+        <div><h5>Product</h5><a href="../#features">Features</a><a href="../#jvpn">JVPN</a><a href="../#networks">Networks</a><a href="../#ssh">SSH</a></div>
+        <div><h5>Security</h5><a href="../#security">Protocol v2</a><a href="../#security">Pairing</a><a href="../#jvpn">Relay</a></div>
+        <div><h5>Get started</h5><a href="#platforms">Download</a><a href="#how">Phones and TVs</a></div>
+      </div>
+    </div>
+    <div class="container footer-base">
+      <span>© 2026 JConnect</span>
+      <span class="footer-status"><i class="dot ok pulse"></i> All systems ready</span>
+    </div>
+  </footer>
+
+  <script src="../assets/js/site.js" defer></script>
+</body>
+</html>
