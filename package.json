@@ -7,14 +7,17 @@
   "license": "UNLICENSED",
   "private": true,
   "author": "Michael Davies",
+  "homepage": "https://jconnect-1dsx.onrender.com",
   "scripts": {
     "start": "electron .",
     "start:b": "electron . --profile=b --port=47811",
     "icons": "node scripts/make-icons.js",
     "mac-helper": "node scripts/build-mac-input.js",
-    "dist": "node scripts/make-icons.js && node scripts/build-mac-input.js && electron-builder",
+    "linux-helper": "node scripts/build-linux-input.js",
+    "dist": "node scripts/make-icons.js && node scripts/build-mac-input.js && node scripts/build-linux-input.js && electron-builder",
     "dist:win": "node scripts/make-icons.js && electron-builder --win --x64",
-    "dist:mac": "node scripts/dist-mac.js"
+    "dist:mac": "node scripts/dist-mac.js",
+    "dist:linux": "node scripts/make-icons.js && node scripts/build-linux-input.js && electron-builder --linux"
   },
   "dependencies": {
     "@xterm/addon-fit": "^0.11.0",
@@ -44,6 +47,9 @@
     },
     "publish": null,
     "npmRebuild": false,
+    "toolsets": {
+      "appimage": "1.0.3"
+    },
     "electronFuses": {
       "runAsNode": false,
       "enableCookieEncryption": true,
@@ -118,11 +124,35 @@
     },
     "linux": {
       "target": [
-        "AppImage",
-        "deb"
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
       ],
       "icon": "assets/icon.png",
-      "category": "Network"
+      "category": "Network",
+      "synopsis": "Use your own computers from anywhere",
+      "maintainer": "Michael Davies <205437504+MichaelCodeToLimit@users.noreply.github.com>",
+      "extraFiles": [
+        {
+          "from": "build/native/jconnect-input",
+          "to": "jconnect-input"
+        }
+      ]
+    },
+    "appImage": {
+      "artifactName": "JConnect-${version}-${arch}.AppImage"
+    },
+    "deb": {
+      "artifactName": "JConnect-${version}-${arch}.deb"
     }
   }
 }

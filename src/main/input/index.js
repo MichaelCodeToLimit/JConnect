@@ -14,12 +14,11 @@ class InputController {
     try {
       if (process.platform === 'win32') this.backend = require('./windows').create();
       else if (process.platform === 'darwin') this.backend = require('./mac').create();
-      else this.backend = require('./nut').create();
+      else if (process.platform === 'linux') this.backend = require('./linux').create();
+      else throw new Error(`Remote control isn't available on ${process.platform}.`);
     } catch (err) {
       this.backend = null;
-      this.unavailableReason = process.platform === 'linux'
-        ? 'Remote control needs the optional @nut-tree-fork/nut-js package on this computer.'
-        : err.message;
+      this.unavailableReason = err.message;
       console.warn('[jconnect] input unavailable:', err.message);
     }
   }
@@ -31,7 +30,8 @@ class InputController {
   // Why remote control can't be used right now, or null when it can.
   get reason() {
     if (!this.backend) return this.unavailableReason;
-    return this.available ? null : 'Allow JConnect under Accessibility in System Settings to control this Mac remotely.';
+    if (this.available) return null;
+    return this.backend.reason ? this.backend.reason() : 'Allow JConnect under Accessibility in System Settings to control this Mac remotely.';
   }
 
   _state(sid) {
@@ -42,8 +42,11 @@ class InputController {
   _point(displayId, nx, ny) {
     const display = screen.getAllDisplays().find((d) => String(d.id) === String(displayId)) || screen.getPrimaryDisplay();
     const b = display.bounds;
-    const dip = { x: Math.round(b.x + clamp01(nx) * (b.width - 1)), y: Math.round(b.y + clamp01(ny) * (b.height - 1)) };
-    return process.platform === 'win32' ? screen.dipToScreenPoint(dip) : dip;
+    const dip = { x: b.x + clamp01(nx) * (b.width - 1), y: b.y + clamp01(ny) * (b.height - 1) };
+    if (process.platform === 'win32') return screen.dipToScreenPoint({ x: Math.round(dip.x), y: Math.round(dip.y) });
+    // Electron measures displays in DIPs, and X11 places the pointer in physical pixels.
+    const scale = process.platform === 'linux' ? display.scaleFactor || 1 : 1;
+    return { x: Math.round(dip.x * scale), y: Math.round(dip.y * scale) };
   }
 
   handle(sid, msg, displayId) {

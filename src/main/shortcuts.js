@@ -46,7 +46,8 @@ function createShortcut(computer) {
 
   if (process.platform === 'linux') {
     const file = path.join(desktop, `${safeName}.desktop`);
-    const exec = [process.execPath, ...args].map((a) => `"${a.replace(/(["`$\\])/g, '\\$1')}"`).join(' ');
+    // An AppImage runs from a temporary folder, so the shortcut starts the AppImage file itself.
+    const exec = [process.env.APPIMAGE || process.execPath, ...args].map((a) => `"${a.replace(/(["`$\\])/g, '\\$1')}"`).join(' ');
     fs.writeFileSync(file, `[Desktop Entry]\nType=Application\nName=${safeName}\nComment=Connect to ${safeName}\nExec=${exec}\nTerminal=false\nCategories=Network;\n`);
     fs.chmodSync(file, 0o755);
     return Promise.resolve(file);

@@ -1008,8 +1008,28 @@ function notify(title, body) {
 
 function applyLoginItem() {
   // Named profiles are for trying things out side by side; never register those at login.
-  if (!app.isPackaged || process.platform === 'linux' || args.profile) return;
-  app.setLoginItemSettings({ openAtLogin: !!store.settings.startAtLogin, args: ['--hidden'] });
+  if (!app.isPackaged || args.profile) return;
+  if (process.platform === 'linux') setLinuxAutostart(!!store.settings.startAtLogin);
+  else app.setLoginItemSettings({ openAtLogin: !!store.settings.startAtLogin, args: ['--hidden'] });
+}
+
+// Linux desktops start the apps listed in ~/.config/autostart when someone signs in.
+function setLinuxAutostart(enabled) {
+  const fs = require('fs');
+  const dir = path.join(process.env.XDG_CONFIG_HOME || path.join(app.getPath('home'), '.config'), 'autostart');
+  const file = path.join(dir, 'jconnect.desktop');
+  try {
+    if (!enabled) {
+      fs.rmSync(file, { force: true });
+      return;
+    }
+    // An AppImage runs from a temporary folder, so start the AppImage file itself.
+    const exe = (process.env.APPIMAGE || process.execPath).replace(/(["`$\\])/g, '\\$1');
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(file, `[Desktop Entry]\nType=Application\nName=JConnect\nExec="${exe}" --hidden\nIcon=jconnect\nTerminal=false\nX-GNOME-Autostart-enabled=true\n`);
+  } catch (err) {
+    console.warn('[jconnect] start at login:', err.message);
+  }
 }
 
 // macOS ignores login item arguments, so ask it whether this launch came from logging in.

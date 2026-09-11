@@ -21,24 +21,6 @@ for (let i = 0; i < 10; i++) {
 }
 for (let i = 1; i <= 24; i++) VK[`F${i}`] = [0x6f + i];
 
-// KeyboardEvent.code -> nut.js Key enum name (macOS / Linux hosts)
-const NUT_KEYS = {
-  Escape: 'Escape', Backspace: 'Backspace', Tab: 'Tab', Enter: 'Enter', Space: 'Space', CapsLock: 'CapsLock',
-  ShiftLeft: 'LeftShift', ShiftRight: 'RightShift', ControlLeft: 'LeftControl', ControlRight: 'RightControl',
-  AltLeft: 'LeftAlt', AltRight: 'RightAlt', MetaLeft: 'LeftSuper', MetaRight: 'RightSuper',
-  PageUp: 'PageUp', PageDown: 'PageDown', End: 'End', Home: 'Home', Insert: 'Insert', Delete: 'Delete',
-  ArrowLeft: 'Left', ArrowUp: 'Up', ArrowRight: 'Right', ArrowDown: 'Down',
-  Semicolon: 'Semicolon', Equal: 'Equal', Comma: 'Comma', Minus: 'Minus', Period: 'Period', Slash: 'Slash',
-  Backquote: 'Grave', BracketLeft: 'LeftBracket', Backslash: 'Backslash', BracketRight: 'RightBracket', Quote: 'Quote',
-  NumpadEnter: 'Enter',
-};
-for (let i = 0; i < 26; i++) NUT_KEYS[`Key${String.fromCharCode(65 + i)}`] = String.fromCharCode(65 + i);
-for (let i = 0; i < 10; i++) {
-  NUT_KEYS[`Digit${i}`] = `Num${i}`;
-  NUT_KEYS[`Numpad${i}`] = `NumPad${i}`;
-}
-for (let i = 1; i <= 24; i++) NUT_KEYS[`F${i}`] = `F${i}`;
-
 // KeyboardEvent.code -> macOS virtual key code (kVK_*), for macOS hosts
 const MAC_KEYS = {
   KeyA: 0x00, KeyS: 0x01, KeyD: 0x02, KeyF: 0x03, KeyH: 0x04, KeyG: 0x05, KeyZ: 0x06, KeyX: 0x07, KeyC: 0x08, KeyV: 0x09,
@@ -59,4 +41,26 @@ const MAC_KEYS = {
   ArrowLeft: 0x7b, ArrowRight: 0x7c, ArrowDown: 0x7d, ArrowUp: 0x7e,
 };
 
-module.exports = { VK, NUT_KEYS, MAC_KEYS };
+// KeyboardEvent.code -> Linux evdev key code (KEY_* in linux/input-event-codes.h), for Linux hosts
+const LINUX_KEYS = {
+  Escape: 1, Minus: 12, Equal: 13, Backspace: 14, Tab: 15, BracketLeft: 26, BracketRight: 27, Enter: 28,
+  ControlLeft: 29, Semicolon: 39, Quote: 40, Backquote: 41, ShiftLeft: 42, Backslash: 43,
+  Comma: 51, Period: 52, Slash: 53, ShiftRight: 54, NumpadMultiply: 55, AltLeft: 56, Space: 57, CapsLock: 58,
+  NumLock: 69, ScrollLock: 70, Numpad7: 71, Numpad8: 72, Numpad9: 73, NumpadSubtract: 74,
+  Numpad4: 75, Numpad5: 76, Numpad6: 77, NumpadAdd: 78, Numpad1: 79, Numpad2: 80, Numpad3: 81, Numpad0: 82,
+  NumpadDecimal: 83, IntlBackslash: 86, F11: 87, F12: 88, IntlRo: 89, Convert: 92, KanaMode: 93, NonConvert: 94,
+  NumpadEnter: 96, ControlRight: 97, NumpadDivide: 98, PrintScreen: 99, AltRight: 100,
+  Home: 102, ArrowUp: 103, PageUp: 104, ArrowLeft: 105, ArrowRight: 106, End: 107, ArrowDown: 108, PageDown: 109,
+  Insert: 110, Delete: 111, AudioVolumeMute: 113, AudioVolumeDown: 114, AudioVolumeUp: 115, NumpadEqual: 117,
+  Pause: 119, NumpadComma: 121, Lang1: 122, Lang2: 123, IntlYen: 124, MetaLeft: 125, MetaRight: 126, ContextMenu: 127,
+  MediaTrackNext: 163, MediaPlayPause: 164, MediaTrackPrevious: 165, MediaStop: 166,
+};
+[...'QWERTYUIOP'].forEach((k, i) => { LINUX_KEYS[`Key${k}`] = 16 + i; });
+[...'ASDFGHJKL'].forEach((k, i) => { LINUX_KEYS[`Key${k}`] = 30 + i; });
+[...'ZXCVBNM'].forEach((k, i) => { LINUX_KEYS[`Key${k}`] = 44 + i; });
+for (let i = 1; i <= 9; i++) LINUX_KEYS[`Digit${i}`] = 1 + i;
+LINUX_KEYS.Digit0 = 11;
+for (let i = 1; i <= 10; i++) LINUX_KEYS[`F${i}`] = 58 + i;
+for (let i = 13; i <= 24; i++) LINUX_KEYS[`F${i}`] = 170 + i;
+
+module.exports = { VK, MAC_KEYS, LINUX_KEYS };

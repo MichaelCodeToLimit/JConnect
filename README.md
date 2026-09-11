@@ -27,6 +27,15 @@ Tap **Add Computer**, then either scan the code JConnect shows on your computer 
 
 The Android app connects to your computers. It doesn't share the phone's own screen.
 
+## Install on Linux
+
+JConnect runs on 64-bit Intel and AMD PCs.
+
+- **Ubuntu, Debian, Linux Mint and other Debian-based systems:** run `sudo apt install ./JConnect-<version>-amd64.deb`, then open JConnect from your apps.
+- **Other distributions:** run `chmod +x JConnect-<version>-x86_64.AppImage`, then open the AppImage.
+
+Paired devices can see and control a Linux computer in an X11 session, such as Linux Mint, Xfce, or **Ubuntu on Xorg** on Ubuntu 24.04. Wayland sessions aren't supported yet: paired devices can't control the computer, and screen sharing hasn't been tested. JConnect starts when you sign in, through `~/.config/autostart`, unless you turn that off in Settings.
+
 ## Using it
 
 1. Install JConnect on both computers.
@@ -112,11 +121,14 @@ npm start                    # run JConnect
 npm run start:b              # a second copy with its own identity, for testing on one PC
 npm run dist:win             # build dist/JConnect-Setup-*.exe and the portable exe
 npm run dist:mac             # on a Mac: build dist/JConnect-*-arm64.dmg and dist/JConnect-*-x64.dmg
+npm run dist:linux           # on Linux: build dist/JConnect-*-x86_64.AppImage and dist/JConnect-*-amd64.deb
 cd mobile && npm install && npm run sync && cd android && ./gradlew assembleDebug   # Android APK (needs JDK 17–21)
 node --test test/*.test.js src/web/test/connection.test.js server/relay/test/relay.test.js server/cloud/test/cloud.test.js
 ```
 
 DMGs can only be built on a Mac, because they need Apple's tools. `.github/workflows/mac.yml` builds and checks both DMGs on a GitHub-hosted Mac whenever the `app` branch is pushed. Download them from the run's **Artifacts**.
+
+The Linux packages include an input helper written in C, which needs a compiler and the X11 and XTest headers (`sudo apt install build-essential libx11-dev libxtst-dev`). `.github/workflows/linux.yml` builds both packages whenever the `app` or `linux` branch is pushed. It builds the helper on Debian 11 so it also runs on older distributions, then installs and checks the packages on Ubuntu under Xvfb, including remote control (`scripts/linux-input-check.js`) and screen sharing. On `app`, a build that passes is published as the release named in the workflow.
 
 The Mac app icon is an Icon Composer document, `build/JConnect.icon`, so macOS 26 and later show it in Liquid Glass. Open it in [Icon Composer](https://developer.apple.com/icon-composer/) to change it. Compiling it needs Xcode 26 or later running on macOS 26 or later. Anywhere else, `npm run dist:mac` uses the flat `assets/icon-mac.png` instead.
 
@@ -135,7 +147,7 @@ Project layout:
 - `src/web`: the browser client for phones, tablets and TVs
 - `server/cloud`: JConnect Cloud (accounts, sync, relay, TURN)
 - `server/relay`: the standalone relay
-- `native`: the macOS input helper, written in Swift
+- `native`: the input helpers for macOS (Swift) and Linux (C)
 - `mobile`: the Android app. It's a Capacitor wrapper around the browser client in `src/web`, adding QR scanning, adding computers by address, and the back button.
 
 ## Known limits
@@ -143,6 +155,6 @@ Project layout:
 - Windows can't be controlled on the secure desktop (UAC prompts, Ctrl+Alt+Del, the lock screen). Apps running as administrator ignore input from JConnect unless JConnect also runs as administrator.
 - SSH to a JConnect computer needs an SSH server running on it (for example Windows OpenSSH Server).
 - The phone web page is served over plain http on your local network. The connection itself is still end-to-end encrypted, but use the desktop app on networks you don't trust.
-- Remote control on Linux hosts needs `npm install @nut-tree-fork/nut-js` before building.
+- Linux computers can be controlled only in X11 sessions. On Wayland, paired devices can't control them yet, and screen sharing hasn't been tested there.
 - A Mac can't be controlled at its lock screen or login window, and its sound isn't shared yet. ⌘Tab, ⌘Space and other system shortcuts stay on the Mac you're using.
 - Camera sharing is described in the product vision as a future feature and isn't built yet.

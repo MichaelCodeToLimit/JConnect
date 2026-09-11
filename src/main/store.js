@@ -51,11 +51,25 @@ function osLabel() {
       return build >= 22000 ? 'Windows 11' : 'Windows 10';
     }
     case 'darwin': return 'macOS';
-    case 'linux': return 'Linux';
+    case 'linux': return linuxLabel();
     case 'freebsd':
     case 'openbsd':
     case 'netbsd': return 'BSD';
     default: return process.platform;
+  }
+}
+
+// The distribution and its version from /etc/os-release, such as "Ubuntu 24.04" or "Fedora Linux 42".
+function linuxLabel() {
+  try {
+    const release = {};
+    for (const line of fs.readFileSync('/etc/os-release', 'utf8').split('\n')) {
+      const m = /^([A-Z_]+)=(.*)$/.exec(line.trim());
+      if (m) release[m[1]] = m[2].replace(/^(["'])(.*)\1$/, '$2');
+    }
+    return [release.NAME, release.VERSION_ID].filter(Boolean).join(' ').slice(0, 40) || 'Linux';
+  } catch {
+    return 'Linux';
   }
 }
 

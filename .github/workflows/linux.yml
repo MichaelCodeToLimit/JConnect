@@ -1,0 +1,169 @@
+name: Linux build
+
+# Builds the AppImage and .deb and checks them on Ubuntu. On the app branch, a build that passes is published as a
+# GitHub pre-release once TAG has release notes under .github/releases. To publish another build, change TAG and TITLE,
+# add its notes and push. The linux branch is for trying changes without starting the macOS build.
+on:
+  push:
+    branches: [app, linux]
+    paths:
+      - src/**
+      - native/**
+      - assets/**
+      - build/**
+      - scripts/**
+      - package.json
+      - package-lock.json
+      - .github/workflows/linux.yml
+      - .github/releases/linux-*
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: linux-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TAG: linux-v0.1.0-beta.1
+  TITLE: JConnect 0.1.0 Beta 1 for Linux
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    name: Build and check the Linux packages
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install the tools for the checks
+        run: |
+          mkdir -p ci-logs
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb x11-utils imagemagick > /dev/null
+          { lsb_release -ds; uname -r; node -v; } 2>&1 | tee ci-logs/0-runner.log
+
+      - name: Install dependencies
+        run: npm ci 2>&1 | tee ci-logs/1-install.log
+
+      - name: Run tests
+        run: >-
+          node --test test/secure-channel.test.js test/jvpn.test.js test/account.test.js
+          src/web/test/connection.test.js server/cloud/test/cloud.test.js server/cloud/test/store.test.js 2>&1 | tee ci-logs/2-tests.log
+
+      # Debian 11 has an older glibc than current distributions, so a helper built there runs on all of them.
+      - name: Build the input helper on Debian 11
+        run: |
+          docker run --rm -v "$PWD:/src" -w /src -e HOST_ID="$(id -u):$(id -g)" node:22-bullseye bash -c '
+            set -e
+            apt-get update -qq
+            apt-get install -y -qq libx11-dev libxtst-dev > /dev/null
+            node scripts/build-linux-input.js
+            chown -R "$HOST_ID" build
+          ' 2>&1 | tee ci-logs/3-helper.log
+
+      - name: Build the AppImage and .deb
+        run: |
+          node scripts/make-icons.js
+          npx electron-builder --linux 2>&1 | tee ci-logs/4-build.log
+
+      # Upload first, so the packages are kept even if a check below fails.
+      - name: Upload the packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: JConnect-Linux
+          path: |
+            dist/*.AppImage
+            dist/*.deb
+          compression-level: 0
+          if-no-files-found: error
+
+      - name: Check the packages
+        timeout-minutes: 20
+        run: bash scripts/linux-smoke-test.sh ci-logs 2>&1 | tee ci-logs/5-check.log
+
+      # Logs go to a branch too, so they can be read with plain git.
+      - name: Publish logs to the ci/linux branch
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATUS: ${{ job.status }}
+        run: |
+          mkdir -p ci-logs
+          {
+            echo "status: $STATUS"
+            echo "branch: $GITHUB_REF_NAME"
+            echo "commit: $GITHUB_SHA"
+            echo "run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            ls -l dist/*.AppImage dist/*.deb 2> /dev/null || echo "no packages were built"
+            sha256sum dist/*.AppImage dist/*.deb 2> /dev/null || true
+          } > ci-logs/summary.txt
+          cd ci-logs
+          git init -q -b ci/linux
+          git add -A
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "Linux build $GITHUB_RUN_NUMBER on $GITHUB_REF_NAME: $STATUS"
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" ci/linux
+
+  release:
+    name: Publish the Linux beta
+    needs: build
+    if: github.ref == 'refs/heads/app'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: JConnect-Linux
+          path: dist
+
+      - name: Create the pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          mkdir -p ci-logs release
+          notes=".github/releases/$TAG.md"
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            echo "$TAG is already published." | tee ci-logs/1-release.log
+          elif [ ! -f "$notes" ]; then
+            echo "$notes doesn't exist, so nothing was published." | tee ci-logs/1-release.log
+          else
+            version="${TAG#linux-v}"
+            cp dist/*.AppImage "release/JConnect-$version-x86_64.AppImage"
+            cp dist/*.deb "release/JConnect-$version-amd64.deb"
+            (cd release && sha256sum JConnect-* > SHA256SUMS.txt && cat SHA256SUMS.txt) 2>&1 | tee ci-logs/1-release.log
+            gh release create "$TAG" release/* --target "$GITHUB_SHA" --prerelease --title "$TITLE" \
+              --notes-file "$notes" 2>&1 | tee -a ci-logs/1-release.log
+          fi
+          (gh release view "$TAG" --json tagName,name,isPrerelease,url,assets \
+            --jq '{tag: .tagName, name, prerelease: .isPrerelease, url, assets: [.assets[] | {name, size}]}' || true) 2>&1 | tee ci-logs/2-release-view.log
+
+      - name: Publish logs to the ci/linux-release branch
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATUS: ${{ job.status }}
+        run: |
+          mkdir -p ci-logs
+          {
+            echo "status: $STATUS"
+            echo "commit: $GITHUB_SHA"
+            echo "run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          } > ci-logs/summary.txt
+          cd ci-logs
+          git init -q -b ci/linux-release
+          git add -A
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "Linux release $TAG: $STATUS"
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" ci/linux-release
