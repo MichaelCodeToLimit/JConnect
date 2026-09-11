@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JConnect — Just Connect</title>
+  <meta name="description" content="Remote access that feels like using your own computer. End-to-end encrypted, with JVPN built in. Open. Connect. Work.">
+  <meta name="theme-color" content="#000000">
+  <link rel="icon" type="image/png" href="assets/img/icon.png">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="JConnect — Just Connect">
+  <meta property="og:description" content="Remote access that feels like using your own computer. End-to-end encrypted, with JVPN built in.">
+  <meta property="og:image" content="assets/img/og.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/site.css">
+</head>
+<body>
+  <div class="noise" aria-hidden="true"></div>
+
+  <header class="nav" id="nav">
+    <div class="container nav-inner">
+      <a class="brand" href="#top" aria-label="JConnect home">
+        <img src="assets/img/icon.png" alt="" width="26" height="26">
+        <span>JConnect</span>
+      </a>
+      <nav class="nav-links" id="nav-links" aria-label="Primary">
+        <a href="#features">Features</a>
+        <a href="#jvpn">JVPN</a>
+        <a href="#security">Security</a>
+        <a href="#networks">Networks</a>
+        <a href="#ssh">SSH</a>
+      </nav>
+      <div class="nav-cta">
+        <a class="btn btn-ghost btn-sm hide-sm" href="#security">How it works</a>
+        <a class="btn btn-light btn-sm" href="#download">Download</a>
+        <button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="nav-links"><span></span><span></span></button>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+    <!-- Hero -->
+    <section class="hero">
+      <div class="hero-media" aria-hidden="true">
+        <video class="bg-video hero-video" data-src="media/hero.mp4" muted loop playsinline preload="none"></video>
+        <canvas class="hero-canvas" id="hero-canvas"></canvas>
+        <div class="hero-glow"></div>
+        <div class="grid-lines"></div>
+        <div class="beam beam-1"></div>
+        <div class="beam beam-2"></div>
+      </div>
+
+      <div class="container hero-inner">
+        <a class="pill reveal" href="#jvpn">
+          <span class="pill-tag">New</span>
+          <span>JVPN — your own encrypted network, built in</span>
+          <span class="arrow" aria-hidden="true">→</span>
+        </a>
+        <h1 class="hero-title reveal" style="--d: 80ms">
+          Remote access<br><span class="gradient-text">that just connects.</span>
+        </h1>
+        <p class="hero-sub reveal" style="--d: 160ms">
+          Open. Connect. Work. JConnect makes any of your computers feel like the one in front of you — end-to-end encrypted, with no IP addresses, ports or VPN settings to learn.
+        </p>
+        <div class="hero-actions reveal" style="--d: 240ms">
+          <a class="btn btn-light" href="#download" data-download-label>Download for Windows</a>
+          <a class="btn btn-ghost" href="#security">How it stays private <span class="arrow" aria-hidden="true">→</span></a>
+        </div>
+        <p class="hero-note reveal" style="--d: 320ms">Windows · macOS · Linux · Phones, tablets and TVs in the browser</p>
+      </div>
+
+      <div class="container hero-stage reveal" style="--d: 380ms">
+        <div class="stage tilt" data-tilt>
+          <div class="stage-glow" aria-hidden="true"></div>
+
+          <div class="session-window" aria-hidden="true">
+            <div class="session-bar">
+              <span class="session-back">← Home PC</span>
+              <span>Display</span>
+              <span>Devices</span>
+              <span>⋯</span>
+              <span class="session-lock">🔒 End-to-end encrypted</span>
+            </div>
+            <div class="session-desktop">
+              <img class="session-wallpaper" data-src="media/desktop.jpg" alt="">
+              <div class="desk-window desk-code">
+                <div class="desk-title"><i></i><i></i><i></i><span>deploy.sh — Home PC</span></div>
+                <pre><code><span class="c-muted">$</span> jconnect status
+<span class="c-blue">●</span> Home PC       <span class="c-green">connected</span>  lan · 1ms
+<span class="c-blue">●</span> Office PC     <span class="c-green">connected</span>  jvpn · 24ms
+<span class="c-blue">●</span> Raspberry Pi  <span class="c-green">ssh</span>        tailscale
+<span class="c-muted">$</span> <span class="caret"></span></code></pre>
+              </div>
+              <div class="desk-taskbar"><span></span><span></span><span></span><span></span><span></span></div>
+            </div>
+          </div>
+
+          <div class="app-window" aria-hidden="true">
+            <div class="app-head">
+              <div class="app-brand"><img src="assets/img/icon.png" alt="" width="18" height="18"> JConnect</div>
+              <div class="app-icons"><span class="avatar">M</span><span>⚙</span></div>
+            </div>
+            <div class="chips">
+              <span class="chip"><i class="dot ok"></i>JVPN <em>Connected</em></span>
+              <span class="chip"><i class="dot ok"></i>Tailscale <em>Connected</em></span>
+            </div>
+            <div class="app-label">My Computers</div>
+            <div class="app-card">
+              <i class="dot ok pulse"></i>
+              <div><b>Home PC</b><small>Windows 11</small></div>
+              <span class="app-btn">Connect</span>
+            </div>
+            <div class="app-card">
+              <i class="dot ok"></i>
+              <div><b>Office PC</b><small>Available through JVPN</small></div>
+              <span class="app-btn">Connect</span>
+            </div>
+            <div class="app-card">
+              <i class="dot warn"></i>
+              <div><b>Dad’s PC</b><small>Sleeping — Connect wakes it</small></div>
+              <span class="app-btn">Connect</span>
+            </div>
+            <div class="app-foot">
+              <i class="dot ok"></i>
+              <div><b>This computer · Laptop</b><small>Ready to connect · Encrypted</small></div>
+              <span class="code-flip" data-code-flip>482-193</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Platforms and networks marquee -->
+    <section class="marquee-section" aria-label="Works with">
+      <p class="marquee-label">Works across your devices and the networks you already use</p>
+      <div class="marquee">
+        <div class="marquee-track">
+          <span>Windows</span><span>macOS</span><span>Linux</span><span>Android</span><span>iOS &amp; iPadOS</span><span>Google TV</span><span>Tailscale</span><span>Twingate</span><span>ZeroTier</span><span>WireGuard</span><span>Windows VPN</span><span>Remote Desktop</span><span>OpenSSH</span>
+          <span aria-hidden="true">Windows</span><span aria-hidden="true">macOS</span><span aria-hidden="true">Linux</span><span aria-hidden="true">Android</span><span aria-hidden="true">iOS &amp; iPadOS</span><span aria-hidden="true">Google TV</span><span aria-hidden="true">Tailscale</span><span aria-hidden="true">Twingate</span><span aria-hidden="true">ZeroTier</span><span aria-hidden="true">WireGuard</span><span aria-hidden="true">Windows VPN</span><span aria-hidden="true">Remote Desktop</span><span aria-hidden="true">OpenSSH</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Open, Connect, Work -->
+    <section class="section" id="features">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="eyebrow"><i class="eyebrow-dot"></i>How it works</span>
+          <h2>Open. Connect. <span class="gradient-text">Work.</span></h2>
+          <p>No huge setup wizard, no networking tutorial, no account required. Pair once and every computer stays one click away.</p>
+        </div>
+
+        <div class="steps">
+          <article class="step card spot reveal" style="--d: 0ms">
+            <div class="step-num">01</div>
+            <h3>Open</h3>
+            <p>JConnect finds your computers on the network by themselves. Friendly names, not IP addresses.</p>
+            <div class="step-visual discover" aria-hidden="true">
+              <div class="radar"><i></i><i></i><i></i></div>
+              <span class="found f1">Home PC</span>
+              <span class="found f2">MacBook</span>
+              <span class="found f3">Living Room TV</span>
+            </div>
+          </article>
+          <article class="step card spot reveal" style="--d: 120ms">
+            <div class="step-num">02</div>
+            <h3>Connect</h3>
+            <p>Pair with a 6-digit code or a QR scan. The code never leaves your device — it’s proven, not sent.</p>
+            <div class="step-visual pairing" aria-hidden="true">
+              <div class="pair-code" data-code-flip>482-193</div>
+              <div class="pair-line"><span></span></div>
+              <div class="pair-ok">✓ Paired</div>
+            </div>
+          </article>
+          <article class="step card spot reveal" style="--d: 240ms">
+            <div class="step-num">03</div>
+            <h3>Work</h3>
+            <p>The remote computer becomes the screen. Controls stay hidden until you reach for the top edge.</p>
+            <div class="step-visual work" aria-hidden="true">
+              <div class="mini-screen">
+                <div class="mini-bar">← Home PC · Display · Devices · ⋯</div>
+                <div class="mini-cursor"></div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Feature grid -->
+    <section class="section section-tight">
+      <div class="container">
+        <div class="bento">
+          <article class="bento-card card spot reveal b-wide">
+            <div class="bento-copy">
+              <span class="eyebrow small">Feels local</span>
+              <h3>Your computer, not a remote-support tool.</h3>
+              <p>Full-screen, sharp text, sound, multiple displays and switching between computers — without banners, countdowns or session limits.</p>
+            </div>
+            <div class="bento-visual quality" aria-hidden="true">
+              <div class="meter"><span>1080p</span><div class="meter-bar"><i style="--w: 96%"></i></div></div>
+              <div class="meter"><span>Latency</span><div class="meter-bar"><i style="--w: 12%"></i></div><em>1 ms on LAN</em></div>
+              <div class="meter"><span>Sessions</span><div class="meter-bar"><i style="--w: 100%"></i></div><em>No time limits</em></div>
+            </div>
+          </article>
+          <article class="bento-card card spot reveal" style="--d: 80ms">
+            <span class="eyebrow small">Automatic recovery</span>
+            <h3>Wi-Fi dropped? Keep working.</h3>
+            <p>JConnect quietly tries every available path and picks up where you left off.</p>
+            <div class="recover" aria-hidden="true">
+              <span class="r-step">Connection interrupted</span>
+              <span class="r-step">Checking LAN</span>
+              <span class="r-step">Trying JVPN</span>
+              <span class="r-step ok">Connected</span>
+            </div>
+          </article>
+          <article class="bento-card card spot reveal" style="--d: 160ms">
+            <span class="eyebrow small">Travel Mode</span>
+            <h3>Leave it. JConnect takes care of it.</h3>
+            <p>Only your own devices get in, pairing turns off, and suspicious activity triggers Emergency Lockdown.</p>
+            <div class="travel" aria-hidden="true"><span class="plane">✈</span><span class="shield">🔒</span></div>
+          </article>
+          <article class="bento-card card spot reveal b-wide" style="--d: 240ms">
+            <div class="bento-copy">
+              <span class="eyebrow small">Family and phones</span>
+              <h3>Borrow a trusted computer from your phone.</h3>
+              <p>Scan the code on a family member’s PC, they tap Allow, and you’re in — right from the phone’s browser. Nothing to install.</p>
+            </div>
+            <div class="bento-visual phone" aria-hidden="true">
+              <div class="phone-frame">
+                <div class="phone-notch"></div>
+                <div class="phone-screen">
+                  <div class="qr"><i></i><i></i><i></i><i></i></div>
+                  <b>Family PC</b>
+                  <small>Allow this phone to use this computer?</small>
+                  <span class="phone-btn">Allow</span>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- JVPN -->
+    <section class="section jvpn" id="jvpn">
+      <div class="jvpn-media" aria-hidden="true">
+        <video class="bg-video" data-src="media/jvpn.mp4" muted loop playsinline preload="none"></video>
+        <div class="jvpn-fade"></div>
+      </div>
+      <div class="container jvpn-inner">
+        <div class="section-head left reveal">
+          <span class="eyebrow"><i class="eyebrow-dot"></i>JVPN</span>
+          <h2>Your own network.<br><span class="gradient-text">No VPN required.</span></h2>
+          <p>At home, devices talk directly. Away from home, they meet through the JConnect relay — which only ever carries encrypted bytes it can’t read, change or impersonate.</p>
+          <ul class="checks">
+            <li>Direct on your local network, relay only when needed</li>
+            <li>Only devices on your account can see or dial each other</li>
+            <li>Carries remote desktop, SSH and Remote Desktop</li>
+            <li>One-minute dial tickets instead of long-lived tokens</li>
+          </ul>
+        </div>
+        <div class="network reveal" style="--d: 120ms" aria-hidden="true">
+          <svg viewBox="0 0 520 420" class="network-svg">
+            <defs>
+              <radialGradient id="nodeGlow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#5b8cff" stop-opacity=".9"/>
+                <stop offset="100%" stop-color="#2f6bff" stop-opacity="0"/>
+              </radialGradient>
+              <linearGradient id="linkGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#2f6bff" stop-opacity=".15"/>
+                <stop offset="50%" stop-color="#5b8cff" stop-opacity=".7"/>
+                <stop offset="100%" stop-color="#2f6bff" stop-opacity=".15"/>
+              </linearGradient>
+            </defs>
+            <path id="l1" class="link" d="M110 110 C 190 150, 220 190, 260 210"/>
+            <path id="l2" class="link" d="M410 100 C 350 150, 300 180, 260 210"/>
+            <path id="l3" class="link" d="M100 320 C 170 290, 220 250, 260 210"/>
+            <path id="l4" class="link" d="M420 320 C 350 290, 300 250, 260 210"/>
+            <path id="l5" class="link dashed" d="M110 110 C 200 60, 320 60, 410 100"/>
+            <circle r="4" class="packet"><animateMotion dur="2.6s" repeatCount="indefinite"><mpath href="#l1"/></animateMotion></circle>
+            <circle r="4" class="packet"><animateMotion dur="3.1s" repeatCount="indefinite" keyPoints="1;0" keyTimes="0;1" calcMode="linear"><mpath href="#l2"/></animateMotion></circle>
+            <circle r="4" class="packet"><animateMotion dur="2.2s" repeatCount="indefinite"><mpath href="#l3"/></animateMotion></circle>
+            <circle r="4" class="packet"><animateMotion dur="3.4s" repeatCount="indefinite" keyPoints="1;0" keyTimes="0;1" calcMode="linear"><mpath href="#l4"/></animateMotion></circle>
+            <circle r="3" class="packet dim"><animateMotion dur="4s" repeatCount="indefinite"><mpath href="#l5"/></animateMotion></circle>
+            <g class="node relay" transform="translate(260 210)">
+              <circle r="46" fill="url(#nodeGlow)" class="node-halo"/>
+              <circle r="24" class="node-core"/>
+              <text y="5" text-anchor="middle">relay</text>
+            </g>
+            <g class="node" transform="translate(110 110)"><circle r="30" fill="url(#nodeGlow)" class="node-halo"/><circle r="14" class="node-core"/><text y="44" text-anchor="middle">Laptop</text></g>
+            <g class="node" transform="translate(410 100)"><circle r="30" fill="url(#nodeGlow)" class="node-halo"/><circle r="14" class="node-core"/><text y="44" text-anchor="middle">Home PC</text></g>
+            <g class="node" transform="translate(100 320)"><circle r="30" fill="url(#nodeGlow)" class="node-halo"/><circle r="14" class="node-core"/><text y="44" text-anchor="middle">Phone</text></g>
+            <g class="node" transform="translate(420 320)"><circle r="30" fill="url(#nodeGlow)" class="node-halo"/><circle r="14" class="node-core"/><text y="44" text-anchor="middle">Office PC</text></g>
+          </svg>
+          <div class="network-badge"><span class="dot ok pulse"></span> 4 devices · end-to-end encrypted</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Security -->
+    <section class="section" id="security">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Security</span>
+          <h2>Simple on top.<br><span class="gradient-text">Serious underneath.</span></h2>
+          <p>Every connection is end-to-end encrypted and both sides prove who they are — whichever network carries it.</p>
+        </div>
+
+        <div class="security">
+          <div class="code-panel card reveal" data-tabs>
+            <div class="code-tabs" role="tablist">
+              <button class="code-tab active" role="tab" aria-selected="true" data-tab="handshake">Handshake</button>
+              <button class="code-tab" role="tab" aria-selected="false" data-tab="pairing">Pairing</button>
+              <button class="code-tab" role="tab" aria-selected="false" data-tab="frames">Frames</button>
+              <span class="code-file">protocol v2</span>
+            </div>
+            <pre class="code-body active" data-panel="handshake" data-type><code><span class="c-muted">// 1. Fresh keys for every connection</span>
+<span class="c-key">client</span> → <span class="c-str">client-hello</span>  { eph: <span class="c-num">X25519</span>, nonce }
+<span class="c-key">host</span>   → <span class="c-str">server-hello</span>  { id, key: <span class="c-num">Ed25519</span>, eph, sig }
+
+<span class="c-muted">// 2. The computer signs this exact conversation</span>
+th  = <span class="c-fn">SHA-512</span>(eph ‖ nonce ‖ eph ‖ nonce ‖ key)
+sig = <span class="c-fn">Ed25519.sign</span>(<span class="c-str">"jconnect-v2-server:"</span> + th)
+
+<span class="c-muted">// 3. Separate keys each way, bound to th</span>
+keys = <span class="c-fn">X25519</span>(ephemeral) → <span class="c-fn">SHA-512</span> → c2s, s2c  <span class="c-green">✓ encrypted</span></code></pre>
+            <pre class="code-body" data-panel="pairing" data-type><code><span class="c-muted">// The code is proven, never sent</span>
+proof = <span class="c-fn">scrypt</span>(<span class="c-str">"482193"</span>, salt = <span class="c-fn">hash</span>(th), N=<span class="c-num">32768</span>)
+
+<span class="c-key">phone</span> → <span class="c-str">pair</span> { proof }
+<span class="c-key">host</span>  → checks proof for <span class="c-em">this</span> channel only  <span class="c-green">✓ paired</span>
+
+<span class="c-muted">// "Ask for permission" shows the same code on both screens</span>
+<span class="c-key">both</span>  → <span class="c-str">Make sure JConnect shows 482 193</span></code></pre>
+            <pre class="code-body" data-panel="frames" data-type><code><span class="c-muted">// Every message after the hello</span>
+frame = counter(<span class="c-num">8</span>) ‖ <span class="c-fn">XSalsa20-Poly1305</span>(kind ‖ payload)
+
+counter  <span class="c-num">41</span>  <span class="c-green">✓ accepted</span>
+counter  <span class="c-num">41</span>  <span class="c-red">✗ replayed — channel closed</span>
+tampered     <span class="c-red">✗ authentication failed — channel closed</span></code></pre>
+          </div>
+
+          <div class="security-grid">
+            <article class="mini card spot reveal" style="--d: 60ms"><div class="mini-icon">⇄</div><h4>Encrypted end to end</h4><p>X25519 key exchange and XSalsa20-Poly1305 on every path.</p></article>
+            <article class="mini card spot reveal" style="--d: 120ms"><div class="mini-icon">✓</div><h4>Proven identities</h4><p>Ed25519 device keys. A changed computer is caught before anything is trusted.</p></article>
+            <article class="mini card spot reveal" style="--d: 180ms"><div class="mini-icon">✱</div><h4>No secrets on the wire</h4><p>Pairing codes and passwords become scrypt proofs bound to one connection.</p></article>
+            <article class="mini card spot reveal" style="--d: 240ms"><div class="mini-icon">⛨</div><h4>Emergency Lockdown</h4><p>Suspicious activity locks remote access and alerts your phone.</p></article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Networks -->
+    <section class="section" id="networks">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Networks</span>
+          <h2>Bring the network<br><span class="gradient-text">you already have.</span></h2>
+          <p>Connect Tailscale, Twingate, ZeroTier, WireGuard or a Windows VPN and import the machines they know. Press Connect and JConnect starts the right one for you.</p>
+        </div>
+        <div class="networks-grid">
+          <article class="net card spot reveal" style="--d: 0ms"><span class="net-logo n-jvpn">J</span><div><h4>JVPN</h4><p>Built in</p></div><span class="net-state on">Connected</span></article>
+          <article class="net card spot reveal" style="--d: 60ms"><span class="net-logo n-ts">⁘</span><div><h4>Tailscale</h4><p>Import your tailnet</p></div><span class="net-state on">Connected</span></article>
+          <article class="net card spot reveal" style="--d: 120ms"><span class="net-logo n-tg">T</span><div><h4>Twingate</h4><p>Import Resources</p></div><span class="net-state">Starts on Connect</span></article>
+          <article class="net card spot reveal" style="--d: 180ms"><span class="net-logo n-zt">Z</span><div><h4>ZeroTier</h4><p>Import members</p></div><span class="net-state">Starts on Connect</span></article>
+          <article class="net card spot reveal" style="--d: 240ms"><span class="net-logo n-wg">W</span><div><h4>WireGuard</h4><p>Import tunnel peers</p></div><span class="net-state">Starts on Connect</span></article>
+          <article class="net card spot reveal" style="--d: 300ms"><span class="net-logo n-win">⊞</span><div><h4>Windows VPN</h4><p>Your saved connections</p></div><span class="net-state">Starts on Connect</span></article>
+        </div>
+      </div>
+    </section>
+
+    <!-- SSH -->
+    <section class="section" id="ssh">
+      <div class="container split">
+        <div class="section-head left reveal">
+          <span class="eyebrow"><i class="eyebrow-dot"></i>SSH</span>
+          <h2>A terminal,<br><span class="gradient-text">wherever it lives.</span></h2>
+          <p>Open SSH to any host, to machines on your VPN, or to your JConnect computers through JVPN. Host keys are remembered the first time, and a changed key stops the connection.</p>
+          <ul class="checks">
+            <li>Sign in with your agent, your JConnect key or a password</li>
+            <li>Import every host from ~/.ssh/config</li>
+            <li>Encrypted inside JVPN, even across the internet</li>
+          </ul>
+        </div>
+        <div class="terminal card reveal" style="--d: 120ms">
+          <div class="terminal-bar"><i></i><i></i><i></i><span>Raspberry Pi — JConnect</span><em>🔒 Encrypted</em></div>
+          <pre class="terminal-body" data-terminal><code></code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- Account -->
+    <section class="section section-tight">
+      <div class="container">
+        <div class="sync card spot reveal">
+          <div class="sync-media" aria-hidden="true">
+            <img data-src="media/sync.jpg" alt="">
+          </div>
+          <div class="sync-copy">
+            <span class="eyebrow"><i class="eyebrow-dot"></i>Optional account</span>
+            <h2>Sync everything.<br><span class="gradient-text">Share nothing.</span></h2>
+            <p>Sign in to sync your computers and SSH hosts between devices. Your password never leaves the device, and everything is encrypted before it’s uploaded — the server only stores ciphertext.</p>
+            <div class="stats">
+              <div><b data-count="0">0</b><span>readable bytes on the server</span></div>
+              <div><b data-count="32768">32,768</b><span>scrypt cost factor</span></div>
+              <div><b>2FA</b><span>authenticator codes</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta" id="download">
+      <div class="cta-media" aria-hidden="true">
+        <img data-src="media/cta.jpg" alt="">
+        <div class="cta-glow"></div>
+        <div class="grid-lines"></div>
+      </div>
+      <div class="container cta-inner">
+        <img class="cta-icon reveal" src="assets/img/icon.png" alt="" width="72" height="72">
+        <h2 class="reveal" style="--d: 80ms">Just Connect.<br><span class="gradient-text">And that’s it.</span></h2>
+        <p class="reveal" style="--d: 160ms">Download JConnect for Windows. It installs for your user in seconds — no admin rights, no setup wizard.</p>
+        <div class="hero-actions reveal" style="--d: 240ms">
+          <a class="btn btn-light" href="#download" data-download-link>Download for Windows</a>
+          <a class="btn btn-ghost" href="#security">Read the security design <span class="arrow" aria-hidden="true">→</span></a>
+        </div>
+        <p class="hero-note reveal" style="--d: 300ms">Windows 10 and 11 · macOS and Linux builds coming soon</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <a class="brand" href="#top"><img src="assets/img/icon.png" alt="" width="22" height="22"><span>JConnect</span></a>
+        <p>Open. Connect. Work.</p>
+      </div>
+      <div class="footer-cols">
+        <div><h5>Product</h5><a href="#features">Features</a><a href="#jvpn">JVPN</a><a href="#networks">Networks</a><a href="#ssh">SSH</a></div>
+        <div><h5>Security</h5><a href="#security">Protocol v2</a><a href="#security">Pairing</a><a href="#jvpn">Relay</a></div>
+        <div><h5>Get started</h5><a href="#download">Download</a><a href="#features">How it works</a></div>
+      </div>
+    </div>
+    <div class="container footer-base">
+      <span>© 2026 JConnect</span>
+      <span class="footer-status"><i class="dot ok pulse"></i> All systems ready</span>
+    </div>
+  </footer>
+
+  <script src="assets/js/site.js" defer></script>
+</body>
+</html>
