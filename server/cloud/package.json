@@ -6,7 +6,10 @@
   "main": "cloud.js",
   "scripts": {
     "start": "node cloud.js",
-    "test": "node --test test/cloud.test.js"
+    "test": "node --test test/cloud.test.js test/store.test.js"
+  },
+  "engines": {
+    "node": ">=22.13"
   },
   "dependencies": {
     "tweetnacl": "^1.0.3",

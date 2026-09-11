@@ -100,7 +100,9 @@ npm start          # listens on port 47900
 
 - **TLS:** set `TLS_CERT` and `TLS_KEY`, or put it behind a reverse proxy. JConnect only accepts `http://` cloud addresses on private networks.
 - **TURN:** set `TURN_PUBLIC_HOST` (and optionally `TURN_PORT`) to relay remote-desktop media when two networks block direct connections.
-- **Data:** stored in `server/cloud/data/cloud.json`.
+- **Data:** stored in an SQLite database at `server/cloud/data/cloud.db`. Set `JCONNECT_CLOUD_DB` to keep it elsewhere. It needs Node.js 22.13 or later.
+  - Accounts from an older `cloud.json` are imported the first time it starts, and the file is kept as `cloud.json.imported`.
+  - `server/cloud/supabase/migrations` has the same tables for Postgres (Supabase).
 
 ## Development
 

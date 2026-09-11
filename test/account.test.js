@@ -77,9 +77,10 @@ test('two devices on one account sync computers and SSH hosts, including removal
   await b.sync();
   assert.deepStrictEqual(desktop.data.computers, [], 'removal reached the other device');
 
-  const user = Object.values(cloud.db.data.users)[0];
-  assert.ok(user.vault.blob, 'the server holds a vault');
-  const stored = JSON.stringify(user);
+  const rows = cloud.db.dump();
+  assert.strictEqual(rows.accounts.length, 1);
+  assert.ok(rows.accounts[0].vault_blob, 'the server holds a vault');
+  const stored = JSON.stringify(rows);
   for (const secret of ['Home PC', 'Dad', 'Raspberry Pi', '10.0.0.5', credentials.password]) {
     assert.ok(!stored.includes(secret), `server storage must not contain "${secret}"`);
   }
