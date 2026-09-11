@@ -115,7 +115,7 @@
           <p>JConnect makes any of your computers feel like the one in front of you. Install it, pair once, and press <b>Connect</b>. There are no IP addresses, ports or VPN settings to learn, and you don’t need an account.</p>
           <ul>
             <li><b>Computers</b> run the JConnect app. It shares that computer with your paired devices and connects you to your other computers.</li>
-            <li><b>Phones, tablets and TVs</b> don’t need an app. Your JConnect computer serves the app to their web browser.</li>
+            <li><b>Phones, tablets and TVs</b> can use JConnect in their web browser, served by your JConnect computer. Android also has its own app.</li>
             <li><b>Every connection is end-to-end encrypted</b>, whichever network carries it: your local network, JVPN, Tailscale or another VPN.</li>
           </ul>
         </section>
@@ -133,6 +133,13 @@
             <span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9.5 17h-19z"/><path d="M12 10v4M12 17h.01"/></svg></span>
             <p>The beta isn’t code-signed yet, so SmartScreen may say “Windows protected your PC”. Choose <b>More info → Run anyway</b>.</p>
           </div>
+          <h3>Android</h3>
+          <ol class="doc-steps">
+            <li><a href="../download/#android">Download the Android app</a> on a phone or tablet running Android 8.0 or later.</li>
+            <li>Open <code>JConnect-Android.apk</code>. The first time, Android asks you to allow installing apps from your browser or file manager.</li>
+            <li>Open JConnect, tap <b>Add Computer</b>, then scan the code your computer shows under <b>Settings → Use this computer from a phone</b>, or type the computer’s address.</li>
+          </ol>
+          <p>The Android app connects to your computers. It doesn’t share the phone’s own screen.</p>
           <h3>Mac, Linux and Raspberry Pi</h3>
           <p>These apps are coming soon. The Mac app will support Apple silicon and Intel Macs on macOS 12 or later. Until then you can reach your Windows computers from a Mac, Linux PC or Raspberry Pi through its browser, the same way as from a phone.</p>
           <h3>Closing the window</h3>
@@ -198,7 +205,7 @@
         <section class="doc" id="phones" data-doc>
           <span class="eyebrow"><i class="eyebrow-dot"></i>Get started</span>
           <h2>Phones, tablets and TVs</h2>
-          <p>Android, iPhone, iPad and TVs with a modern browser use JConnect without installing anything.</p>
+          <p>Android, iPhone, iPad and TVs with a modern browser can use JConnect without installing anything. On Android you can also <a href="#install">install the app</a>, which scans the code for you.</p>
           <ol class="doc-steps">
             <li>On the computer you want to use, make sure <b>Remote access</b> and <b>Allow phones and browsers</b> are on in Settings.</li>
             <li>Open <b>Settings → Use this computer from a phone</b>. JConnect shows a QR code and an address.</li>
@@ -436,7 +443,7 @@ npm start          # listens on port 47900</code></pre></div>
           <span class="eyebrow"><i class="eyebrow-dot"></i>Reference</span>
           <h2>Known limits</h2>
           <ul>
-            <li>The Windows app is an early beta. There are no automatic updates yet, so download new versions from the <a href="../download/">download page</a>.</li>
+            <li>The Windows and Android apps are early betas. There are no automatic updates yet, so download new versions from the <a href="../download/">download page</a>.</li>
             <li>Windows can’t be controlled on the secure desktop: UAC prompts, Ctrl+Alt+Del and the lock screen.</li>
             <li>SSH to a JConnect computer needs an SSH server running on it.</li>
             <li>Accounts, sync and JVPN away from home need a JConnect Cloud server that you run yourself.</li>

@@ -416,12 +416,12 @@
       if (/Linux|X11/i.test(ua)) return 'linux';
       return null;
     };
-    // [button label, where it goes, note under it] for everyone who can't use the Windows installer
+    // [button label, where it goes, note under it, whether it downloads] for visitors not on Windows
     const RECOMMEND = {
       mac: ['JConnect for Mac is coming soon', '#mac', 'Apple silicon and Intel Macs. Windows is available now.'],
       linux: ['JConnect for Linux is coming soon', '#linux', 'An AppImage and a .deb for 64-bit PCs. Windows is available now.'],
       'raspberry-pi': ['Raspberry Pi is coming soon', '#raspberry-pi', '64-bit Raspberry Pi OS. Windows is available now.'],
-      android: ['Open JConnect in your browser', '#how', 'Nothing to install on Android. Set up JConnect on your computer first.'],
+      android: ['Download for Android', 'JConnect-Android.apk', 'Version 0.1.0 beta · Android 8.0 or later · 34 MB', true],
       ios: ['Open JConnect in Safari', '#how', 'Nothing to install on iPhone or iPad. Set up JConnect on your computer first.'],
       tv: ['Open JConnect in the TV’s browser', '#how', 'Type the address your JConnect computer shows.'],
       'apple-tv': ['Apple TV is coming soon', '#apple-tv', 'Apple TV has no web browser, so it needs its own app.'],
@@ -440,9 +440,12 @@
     const note = document.querySelector('[data-recommend-note]');
     const pick = RECOMMEND[current];
     if (button && note && pick) {
-      button.removeAttribute('download');
-      delete button.dataset.download;
-      [button.textContent, button.href, note.textContent] = [pick[0], pick[1], pick[2]];
+      const [label, href, text, downloads] = pick;
+      if (!downloads) {
+        button.removeAttribute('download');
+        delete button.dataset.download;
+      }
+      [button.textContent, button.href, note.textContent] = [label, href, text];
     }
   }
 

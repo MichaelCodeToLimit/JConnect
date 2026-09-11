@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Download JConnect</title>
-  <meta name="description" content="Download JConnect for Windows, or open it in the browser on Android, iPhone, iPad and TVs. Mac, Linux, Raspberry Pi and Apple TV are coming soon.">
+  <meta name="description" content="Download JConnect for Windows and Android, or open it in the browser on iPhone, iPad and TVs. Mac, Linux, Raspberry Pi and Apple TV are coming soon.">
   <meta name="theme-color" content="#000000">
   <link rel="icon" type="image/png" href="../assets/img/icon.png">
   <meta property="og:type" content="website">
@@ -66,14 +66,14 @@
       </div>
 
       <div class="container hero-inner">
-        <a class="pill reveal" href="#windows">
+        <a class="pill reveal" href="#platforms">
           <span class="pill-tag">Beta</span>
-          <span>JConnect 0.1.0 for Windows is here</span>
+          <span>JConnect 0.1.0 for Windows and Android is here</span>
           <span class="arrow" aria-hidden="true">→</span>
         </a>
         <h1 class="hero-title reveal" style="--d: 80ms">Download<br><span class="gradient-text">JConnect.</span></h1>
         <p class="hero-sub reveal" style="--d: 160ms">
-          Install it on the computers you want to reach. Phones, tablets and TVs don’t need an app: JConnect opens right in their browser.
+          Install it on the computers you want to reach. On Android, get the app, or open JConnect right in the browser on any phone, tablet or TV.
         </p>
         <div class="hero-actions reveal" style="--d: 240ms">
           <a class="btn btn-light" href="JConnect-Setup.exe" download data-download data-recommend-button>Download for Windows</a>
@@ -162,14 +162,19 @@
         </div>
 
         <div class="platforms">
-          <article class="platform card spot reveal" id="android" data-platform="android">
+          <article class="platform available card spot reveal" id="android" data-platform="android">
             <div class="platform-top">
               <span class="platform-icon"><svg class="icon"><use href="#i-android"/></svg></span>
-              <span class="status web"><i class="dot ok"></i>In the browser</span>
+              <span class="status on"><i class="dot ok"></i>Available · Beta</span>
             </div>
             <h3>Android</h3>
-            <p>Android phones and tablets, in Chrome or any modern browser.</p>
-            <div class="platform-actions"><a class="btn btn-ghost btn-sm" href="#how">How to open it <span class="arrow" aria-hidden="true">↓</span></a></div>
+            <p>The JConnect app for phones and tablets on Android 8.0 or later. You can also use JConnect in Chrome without installing anything.</p>
+            <div class="platform-actions">
+              <a class="btn btn-light btn-sm" href="JConnect-Android.apk" download data-download>Download .apk</a>
+              <span class="platform-meta">v0.1.0 · 34 MB</span>
+            </div>
+            <span class="download-hash" data-sha256 data-sha256-src="JConnect-Android.apk.sha256" hidden>SHA-256 <code></code></span>
+            <p class="platform-note">The first time, Android asks you to allow installing apps from your browser. <a href="#how">Or open JConnect in the browser</a>.</p>
           </article>
 
           <article class="platform card spot reveal" style="--d: 80ms" id="ios" data-platform="ios">

@@ -1,0 +1,77 @@
+name: Android beta release
+
+# Publishes the Android app that the website serves as a GitHub pre-release.
+# To publish another build: replace public/download/JConnect-Android.apk and its .sha256, update the values
+# under env, add its notes under .github/releases and push.
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/release-android.yml
+      - .github/releases/**
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  TAG: android-v0.1.0-beta.1
+  TITLE: JConnect 0.1.0 Beta 1 for Android
+  ASSET: JConnect-0.1.0-beta.1.apk
+  # The app commit the APK was built from, and the APK's SHA-256.
+  TARGET: 37481a6960183c47d437ba341bf3fd3d52d98a63
+  SHA256: 3bc947e817e86c2554506e8750486ff6d86f0c93e2ab5868bb9c9bfd7ed44708
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  release:
+    name: Publish the Android beta
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Take the APK the website serves
+        run: |
+          mkdir -p ci-logs release
+          cp public/download/JConnect-Android.apk "release/$ASSET"
+          ls -l "release/$ASSET" | tee ci-logs/1-apk.log
+          echo "$SHA256  release/$ASSET" | sha256sum --check 2>&1 | tee -a ci-logs/1-apk.log
+          (cd release && sha256sum "$ASSET" > SHA256SUMS.txt)
+
+      - name: Create the pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            echo "$TAG is already published." | tee ci-logs/2-release.log
+          else
+            gh release create "$TAG" "release/$ASSET" release/SHA256SUMS.txt \
+              --target "$TARGET" --prerelease --title "$TITLE" \
+              --notes-file ".github/releases/$TAG.md" 2>&1 | tee ci-logs/2-release.log
+          fi
+          gh release view "$TAG" --json tagName,name,isPrerelease,url,assets \
+            --jq '{tag: .tagName, name, prerelease: .isPrerelease, url, assets: [.assets[] | {name, size}]}' 2>&1 | tee ci-logs/3-release-view.log
+
+      # Logs go to a branch too, so they can be read with plain git.
+      - name: Publish logs to the ci/android-release branch
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATUS: ${{ job.status }}
+        run: |
+          mkdir -p ci-logs
+          {
+            echo "status: $STATUS"
+            echo "commit: $GITHUB_SHA"
+            echo "run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          } > ci-logs/summary.txt
+          cd ci-logs
+          git init -q -b ci/android-release
+          git add -A
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "Android release $TAG: $STATUS"
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" ci/android-release
