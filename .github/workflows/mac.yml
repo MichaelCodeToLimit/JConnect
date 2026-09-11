@@ -55,7 +55,7 @@ jobs:
           if-no-files-found: error
 
       # Logs go to a branch too, so they can be read with plain git.
-      - name: Publish logs to the ci-results branch
+      - name: Publish logs to the ci/mac branch
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
@@ -70,7 +70,7 @@ jobs:
             shasum -a 256 dist/*.dmg 2> /dev/null || true
           } > ci-logs/summary.txt
           cd ci-logs
-          git init -q -b ci-results
+          git init -q -b ci/mac
           git add -A
           git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "macOS build $GITHUB_RUN_NUMBER: $STATUS"
-          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" ci-results
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" ci/mac
