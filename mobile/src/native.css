@@ -1,0 +1,20 @@
+/* JConnect for Android: styles for what the app adds to the web client. */
+
+#add-dialog .native-hint { margin: 6px 0 16px; }
+#add-dialog .native-field { display: grid; gap: 6px; margin-top: 6px; text-align: left; }
+#add-dialog .native-field input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+}
+#add-dialog .native-field input:focus { border-color: var(--accent); outline: none; }
+#add-dialog .error { margin: 14px 0 0; }
+
+/* The Android status and navigation bars overlap the page edge to edge. */
+.native-app .bar { padding-top: max(8px, env(safe-area-inset-top)); }
+.native-app .pull-tab { top: env(safe-area-inset-top); }

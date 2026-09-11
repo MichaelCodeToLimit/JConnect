@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The JConnect rings, centred in the adaptive icon's 66dp safe zone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M27.83,54a15.19,15.19 0,1 0,30.38 0a15.19,15.19 0,1 0,-30.38 0"
+        android:strokeWidth="7.7"
+        android:strokeColor="#FFFFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M49.79,54a15.19,15.19 0,1 0,30.38 0a15.19,15.19 0,1 0,-30.38 0"
+        android:strokeWidth="7.7"
+        android:strokeColor="#FFFFFFFF" />
+</vector>

@@ -141,6 +141,11 @@
   });
 
   $('use-another').addEventListener('click', () => {
+    // The Android app adds computers itself, by scanning the computer's code or taking its address.
+    if (window.JCNative) {
+      window.JCNative.addComputer(beginPairing);
+      return;
+    }
     // The page is normally opened by scanning the QR code on the computer, which already carries
     // everything needed. If someone opened JConnect directly on the computer's address, offer that one.
     const here = conn.hostFromLocation(location);

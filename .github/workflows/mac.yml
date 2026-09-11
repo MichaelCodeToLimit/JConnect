@@ -55,9 +55,7 @@ jobs:
       - name: Build the DMGs
         run: npm run dist:mac 2>&1 | tee ci-logs/3-build.log
 
-      - name: Check the DMGs
-        run: bash scripts/mac-smoke-test.sh ci-logs 2>&1 | tee ci-logs/4-check.log
-
+      # Upload first, so the DMGs are kept even if a check below fails.
       - name: Upload the DMGs
         uses: actions/upload-artifact@v4
         with:
@@ -65,6 +63,10 @@ jobs:
           path: dist/*.dmg
           compression-level: 0
           if-no-files-found: error
+
+      - name: Check the DMGs
+        timeout-minutes: 15
+        run: bash scripts/mac-smoke-test.sh ci-logs 2>&1 | tee ci-logs/4-check.log
 
       # Logs go to a branch too, so they can be read with plain git.
       - name: Publish logs to the ci/mac branch

@@ -19,6 +19,14 @@ The build isn't signed with an Apple Developer ID or notarized, so the first tim
 - **Local Network**, so your other devices can find and reach this Mac.
 - **Screen Recording** and **Accessibility**, so paired devices can see and control this Mac. JConnect lists both under **Settings → Mac permissions**. You don't need them to use other computers from this Mac.
 
+## Install on Android
+
+Install `JConnect-<version>.apk` on a phone or tablet running Android 8.0 or later. Android asks you to allow installing apps from your browser or file manager the first time.
+
+Tap **Add Computer**, then either scan the code JConnect shows on your computer under **Settings → Use this computer from a phone**, or type the computer's address. The phone needs to be on the same network as the computer, or on the same private network such as Tailscale.
+
+The Android app connects to your computers. It doesn't share the phone's own screen.
+
 ## Using it
 
 1. Install JConnect on both computers.
@@ -102,6 +110,7 @@ npm start                    # run JConnect
 npm run start:b              # a second copy with its own identity, for testing on one PC
 npm run dist:win             # build dist/JConnect-Setup-*.exe and the portable exe
 npm run dist:mac             # on a Mac: build dist/JConnect-*-arm64.dmg and dist/JConnect-*-x64.dmg
+cd mobile && npm install && npm run sync && cd android && ./gradlew assembleDebug   # Android APK (needs JDK 17–21)
 node --test test/*.test.js src/web/test/connection.test.js server/relay/test/relay.test.js server/cloud/test/cloud.test.js
 ```
 
@@ -125,6 +134,7 @@ Project layout:
 - `server/cloud`: JConnect Cloud (accounts, sync, relay, TURN)
 - `server/relay`: the standalone relay
 - `native`: the macOS input helper, written in Swift
+- `mobile`: the Android app. It's a Capacitor wrapper around the browser client in `src/web`, adding QR scanning, adding computers by address, and the back button.
 
 ## Known limits
 

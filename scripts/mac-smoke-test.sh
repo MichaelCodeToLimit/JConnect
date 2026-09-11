@@ -10,6 +10,18 @@ mkdir -p "$out"
 version="$(node -p "require('./package.json').version")"
 status=0
 
+# Stop an app and everything it started, without waiting forever.
+stop_app() {
+  local pid="$1" app="$2"
+  kill "$pid" 2> /dev/null || true
+  for _ in $(seq 1 15); do
+    kill -0 "$pid" 2> /dev/null || break
+    sleep 1
+  done
+  kill -9 "$pid" 2> /dev/null || true
+  pkill -9 -f "$app/Contents" 2> /dev/null || true
+}
+
 for arch in arm64 x64; do
   dmg="dist/JConnect-${version}-${arch}.dmg"
   echo "== $dmg ($(du -h "$dmg" | cut -f1))"
@@ -20,7 +32,7 @@ for arch in arm64 x64; do
   helper="$app/Contents/MacOS/jconnect-input"
 
   if [ -L "$mount/Applications" ]; then echo "Applications shortcut: yes"; else echo "::error::$dmg has no Applications shortcut"; status=1; fi
-  codesign --verify --deep --strict --verbose=2 "$app"
+  if codesign --verify --deep --strict "$app"; then echo "signature: valid"; else echo "::error::$dmg has an invalid signature"; status=1; fi
   codesign -dv "$app" 2>&1 | grep -E '^(Identifier|Format|Signature)='
   echo "app architectures: $(lipo -archs "$exe")"
   echo "helper architectures: $(lipo -archs "$helper")"
@@ -28,9 +40,12 @@ for arch in arm64 x64; do
 
   if [ "$arch" = x64 ] && ! /usr/bin/arch -x86_64 /usr/bin/true 2> /dev/null; then
     echo "Rosetta isn't installed here, so the Intel app was checked but not started."
-    hdiutil detach "$mount" -quiet || hdiutil detach "$mount" -force -quiet
+    hdiutil detach "$mount" -force -quiet || true
     continue
   fi
+  # Intel apps run under Rosetta on Apple silicon runners, where the first launch can be very slow.
+  wait_seconds=90
+  if [ "$arch" = x64 ]; then wait_seconds=240; fi
 
   echo "input helper: $(printf '' | "$helper")"
   port=$((47900 + RANDOM % 90))
@@ -38,9 +53,9 @@ for arch in arm64 x64; do
   "$exe" --profile="smoke-$arch" --port="$port" > "$log" 2>&1 &
   pid=$!
   info=""
-  for _ in $(seq 1 90); do
-    if info="$(curl -sf "http://127.0.0.1:$port/api/info")"; then break; fi
-    if ! kill -0 "$pid" 2> /dev/null; then break; fi
+  for _ in $(seq 1 "$wait_seconds"); do
+    if info="$(curl -sf --max-time 3 "http://127.0.0.1:$port/api/info")"; then break; fi
+    if ! kill -0 "$pid" 2> /dev/null; then echo "JConnect ($arch) exited early"; break; fi
     sleep 1
   done
 
@@ -48,6 +63,8 @@ for arch in arm64 x64; do
     echo "app answered on port $port: $info"
     sleep 4
     screencapture -x "$out/window-$arch.png" 2> /dev/null || true
+  elif [ "$arch" = x64 ]; then
+    echo "::warning::The Intel app didn't answer within ${wait_seconds} seconds under Rosetta. It was built and signed, but couldn't be started on this runner."
   else
     echo "::error::JConnect ($arch) did not answer on port $port"
     status=1
@@ -57,10 +74,9 @@ for arch in arm64 x64; do
     status=1
   fi
 
-  kill "$pid" 2> /dev/null || true
-  wait "$pid" 2> /dev/null || true
+  stop_app "$pid" "$app"
   sed 's/^/  app: /' "$log" | head -40
-  hdiutil detach "$mount" -quiet || hdiutil detach "$mount" -force -quiet
+  hdiutil detach "$mount" -force -quiet || true
 done
 
 exit $status

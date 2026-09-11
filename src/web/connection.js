@@ -172,6 +172,8 @@
 
   // ---------- public API ----------
   function hostFromLocation(loc) {
+    // In the Android app the page comes from the app itself, not from a computer.
+    if (window.JCNative && loc === window.location) return null;
     if (!/^https?:$/.test(loc.protocol) || !loc.hostname) return null;
     const port = Number(loc.port) || (loc.protocol === 'https:' ? 443 : 80);
     return { host: loc.hostname, port };
