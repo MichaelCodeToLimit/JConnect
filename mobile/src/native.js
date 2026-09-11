@@ -63,9 +63,13 @@
           <button type="button" id="add-scan" class="primary">Scan the code</button>
           <label class="native-field">
             <span class="muted">Or type the computer’s address</span>
-            <input id="add-address" type="text" inputmode="url" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="192.168.1.20" enterkeyhint="go">
+            <input id="add-address" type="text" inputmode="url" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="192.168.1.20" enterkeyhint="next">
           </label>
-          <button type="button" id="add-by-address" class="secondary">Use this address</button>
+          <label class="native-field">
+            <span class="muted">Pairing code, from the bottom of the JConnect window (optional)</span>
+            <input id="add-code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="7" placeholder="000-000" enterkeyhint="go">
+          </label>
+          <button type="button" id="add-by-address" class="secondary">Pair with this computer</button>
           <button type="button" id="add-cancel" class="link">Cancel</button>
         </div>
         <p id="add-error" class="error" role="alert" hidden></p>
@@ -78,6 +82,7 @@
     const d = addDialog();
     const error = $('add-error');
     const address = $('add-address');
+    const code = $('add-code');
     const showError = (text) => {
       error.textContent = text;
       error.hidden = false;
@@ -85,6 +90,7 @@
     };
     error.hidden = true;
     address.value = '';
+    code.value = '';
 
     $('add-scan').onclick = async () => {
       d.close();
@@ -95,14 +101,22 @@
       if (!target) return showError('That isn’t a JConnect code. Scan the code shown in JConnect on the computer.');
       return beginPairing(target);
     };
+    // With a code, Allow pairs straight away. Without one, someone at the computer is asked to allow this phone.
     const useAddress = () => {
       const target = parseAddress(address.value);
       if (!target) return showError('Type the computer’s address, for example 192.168.1.20.');
+      const digits = code.value.replace(/\D/g, '');
+      if (digits && digits.length !== 6) return showError('The pairing code has 6 digits.');
       d.close();
-      return beginPairing({ ...target, code: '', id: '', publicKey: '' });
+      return beginPairing({ ...target, code: digits, id: '', publicKey: '' });
     };
     $('add-by-address').onclick = useAddress;
-    address.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); useAddress(); } };
+    address.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); code.focus(); } };
+    code.oninput = () => {
+      const digits = code.value.replace(/\D/g, '').slice(0, 6);
+      code.value = digits.length > 3 ? `${digits.slice(0, 3)}-${digits.slice(3)}` : digits;
+    };
+    code.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); useAddress(); } };
     $('add-cancel').onclick = () => d.close();
     d.showModal();
   }

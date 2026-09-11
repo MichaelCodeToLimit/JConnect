@@ -184,6 +184,8 @@
         return;
       }
       pairView('pair-ask');
+      // A code from the QR is used automatically. Without one, the code can still be typed in.
+      $('pair-use-code').hidden = !!target.code;
     } catch (err) {
       pairView('pair-ask');
       $('pair-ask').hidden = true;
@@ -195,26 +197,47 @@
   $('pair-code-cancel').addEventListener('click', goHome);
   $('pair-wait-cancel').addEventListener('click', () => { if (pairing && pairing.abort) pairing.abort(); goHome(); });
 
+  async function nameThisDevice() {
+    if (identity.named) return;
+    const name = await ask('Name this device', identity.name);
+    if (name) identity.rename(name);
+  }
+
   $('pair-allow').addEventListener('click', async () => {
     if (!pairing) return;
-    if (!identity.named) {
-      const name = await ask('Name this device', identity.name);
-      if (name) identity.rename(name);
-    }
+    await nameThisDevice();
     // With a code from the QR, the computer already knows someone is standing at it.
     // Without one, the computer asks "Allow <this device> to use this computer?".
     runPair(pairing.target.code || null);
+  });
+
+  $('pair-use-code').addEventListener('click', () => {
+    pairView('pair-code-entry');
+    $('pair-code').value = '';
+    $('pair-code').focus();
   });
 
   $('pair-code').addEventListener('input', (e) => {
     const digits = e.target.value.replace(/\D/g, '').slice(0, 6);
     e.target.value = digits.length > 3 ? `${digits.slice(0, 3)}-${digits.slice(3)}` : digits;
   });
-  $('pair-code-ok').addEventListener('click', () => runPair($('pair-code').value));
+  $('pair-code').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('pair-code-ok').click(); });
+  $('pair-code-ok').addEventListener('click', async () => {
+    if (!pairing) return;
+    const digits = $('pair-code').value.replace(/\D/g, '');
+    if (digits.length !== 6) {
+      pairError(`Enter the 6-digit code shown on ${pairing.info.name}.`);
+      return;
+    }
+    await nameThisDevice();
+    runPair(digits);
+  });
 
   async function runPair(code) {
     pairView('pair-wait');
-    $('pair-wait-text').textContent = `Waiting for ${pairing.info.name} to allow ${identity.name}…`;
+    $('pair-wait-text').textContent = code
+      ? `Pairing with ${pairing.info.name}…`
+      : `Waiting for ${pairing.info.name} to allow ${identity.name}…`;
     const controller = new AbortController();
     pairing.abort = () => controller.abort();
     try {
