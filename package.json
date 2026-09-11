@@ -14,7 +14,7 @@
     "mac-helper": "node scripts/build-mac-input.js",
     "dist": "node scripts/make-icons.js && node scripts/build-mac-input.js && electron-builder",
     "dist:win": "node scripts/make-icons.js && electron-builder --win --x64",
-    "dist:mac": "node scripts/make-icons.js && node scripts/build-mac-input.js && electron-builder --mac"
+    "dist:mac": "node scripts/dist-mac.js"
   },
   "dependencies": {
     "@xterm/addon-fit": "^0.11.0",
@@ -91,7 +91,7 @@
           ]
         }
       ],
-      "icon": "assets/icon-mac.png",
+      "icon": "build/JConnect.icon",
       "category": "public.app-category.productivity",
       "minimumSystemVersion": "12.0",
       "darkModeSupport": true,

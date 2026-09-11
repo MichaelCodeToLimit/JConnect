@@ -24,4 +24,6 @@ const slices = ['arm64', 'x86_64'].map((arch) => {
 const binary = path.join(out, 'jconnect-input');
 execFileSync('xcrun', ['lipo', '-create', '-output', binary, ...slices], { stdio: 'inherit' });
 for (const file of slices) fs.rmSync(file);
+// codesign refuses to sign JConnect while unsigned code sits next to it, so sign the helper right away.
+execFileSync('codesign', ['--sign', '-', '--force', '--options', 'runtime', binary], { stdio: 'inherit' });
 console.log('mac input helper written to', binary);

@@ -107,6 +107,8 @@ node --test test/*.test.js src/web/test/connection.test.js server/relay/test/rel
 
 DMGs can only be built on a Mac, because they need Apple's tools. `.github/workflows/mac.yml` builds and checks both DMGs on a GitHub-hosted Mac whenever the `app` branch is pushed. Download them from the run's **Artifacts**.
 
+The Mac app icon is an Icon Composer document, `build/JConnect.icon`, so macOS 26 and later show it in Liquid Glass. Open it in [Icon Composer](https://developer.apple.com/icon-composer/) to change it. Compiling it needs Xcode 26 or later. With an older Xcode, `npm run dist:mac` uses the flat `assets/icon-mac.png` instead.
+
 Project layout:
 
 - `src/main`: Electron main process
