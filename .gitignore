@@ -1,5 +1,7 @@
 node_modules/
 dist/
 build/native/
+# The website is its own repository (branch main, deployed by Render).
+jconnect-website/
 server/cloud/data/
 server/cloud/node_modules/
