@@ -508,6 +508,12 @@ button { font: inherit; color: inherit; }
 .cta-inner { position: relative; display: flex; flex-direction: column; align-items: center; }
 .cta-icon { border-radius: 18px; box-shadow: 0 0 80px -10px rgba(47, 107, 255, 0.9); animation: float 6s ease-in-out infinite; }
 .cta p { max-width: 520px; margin: 20px auto 0; color: var(--muted); font-size: 18px; }
+[hidden] { display: none !important; }
+.download-meta { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 22px; color: var(--dim); font-size: 13px; }
+.download-hash { display: inline-flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 100%; }
+.download-hash code { padding: 2px 8px; border: 1px solid var(--line); border-radius: 6px; background: rgba(255, 255, 255, 0.03); color: #aeb4c0; font: 11.5px/1.6 var(--mono); overflow-wrap: anywhere; }
+.cta .download-note { max-width: 520px; margin: 4px auto 0; color: var(--dim); font-size: 13px; }
+.download-note b { color: var(--muted); font-weight: 600; }
 
 /* footer */
 

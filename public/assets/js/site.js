@@ -310,11 +310,36 @@
     }).observe(el);
   }
 
-  // ---- download button ----
-  const DOWNLOAD_URL = document.documentElement.dataset.download || '';
-  const isWindows = /Windows/i.test(navigator.userAgent);
-  for (const link of $$('[data-download-link], [data-download-label]')) {
-    if (!isWindows) link.textContent = 'Download for Windows';
-    if (DOWNLOAD_URL && link.hasAttribute('data-download-link')) link.href = DOWNLOAD_URL;
+  // ---- download ----
+  for (const link of $$('[data-download]')) {
+    link.addEventListener('click', () => {
+      const label = link.textContent;
+      if (link.dataset.busy) return;
+      link.dataset.busy = '1';
+      link.textContent = 'Downloading…';
+      setTimeout(() => {
+        link.textContent = label;
+        delete link.dataset.busy;
+      }, 3500);
+    });
+  }
+
+  const hash = document.querySelector('[data-sha256]');
+  if (hash) {
+    fetch('download/JConnect-Setup.exe.sha256', { cache: 'no-store' })
+      .then((res) => (res.ok ? res.text() : ''))
+      .then((text) => {
+        const sum = (text.match(/[0-9a-f]{64}/i) || [])[0];
+        if (!sum) return;
+        hash.querySelector('code').textContent = sum;
+        hash.hidden = false;
+      })
+      .catch(() => {});
+  }
+
+  if (!/Windows/i.test(navigator.userAgent)) {
+    for (const note of $$('[data-download-note]')) {
+      note.textContent = 'This installer is for Windows 10 and 11. Open this page on your Windows PC to install JConnect.';
+    }
   }
 })();
