@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JConnect Docs</title>
+  <meta name="description" content="How to install, pair, connect and secure JConnect: JVPN, VPNs, SSH, Remote Desktop, Travel Mode, accounts, settings, ports and troubleshooting.">
+  <meta name="theme-color" content="#000000">
+  <link rel="icon" type="image/png" href="../assets/img/icon.png">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="JConnect Docs">
+  <meta property="og:description" content="Install, pair, connect and secure JConnect.">
+  <meta property="og:image" content="../assets/img/og.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/site.css">
+</head>
+<body>
+  <div class="noise" aria-hidden="true"></div>
+
+  <header class="nav" id="nav">
+    <div class="container nav-inner">
+      <a class="brand" href="../" aria-label="JConnect home">
+        <img src="../assets/img/icon.png" alt="" width="26" height="26">
+        <span>JConnect</span>
+      </a>
+      <nav class="nav-links" id="nav-links" aria-label="Primary">
+        <a href="../#features">Features</a>
+        <a href="../#jvpn">JVPN</a>
+        <a href="../#security">Security</a>
+        <a href="../#networks">Networks</a>
+        <a href="../#ssh">SSH</a>
+        <a href="./" aria-current="page">Docs</a>
+      </nav>
+      <div class="nav-cta">
+        <a class="btn btn-ghost btn-sm hide-sm" href="#troubleshooting">Troubleshooting</a>
+        <a class="btn btn-light btn-sm" href="../download/">Download</a>
+        <button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="nav-links"><span></span><span></span></button>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="docs-hero">
+      <div class="hero-media" aria-hidden="true">
+        <div class="hero-glow"></div>
+        <div class="grid-lines"></div>
+        <div class="beam beam-1"></div>
+      </div>
+      <div class="container docs-hero-inner">
+        <span class="eyebrow reveal"><i class="eyebrow-dot"></i>Documentation</span>
+        <h1 class="reveal" style="--d: 60ms">JConnect <span class="gradient-text">docs</span></h1>
+        <p class="reveal" style="--d: 120ms">Everything you need to install JConnect, pair your devices, connect from anywhere and keep it all private.</p>
+        <label class="docs-search reveal" style="--d: 180ms">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          <input id="docs-search" type="search" placeholder="Search the docs" aria-label="Search the docs" autocomplete="off">
+          <span class="kbd" aria-hidden="true">/</span>
+        </label>
+        <div class="docs-quick">
+          <a class="card spot reveal" style="--d: 220ms" href="#install"><span class="eyebrow small">Start here</span><h4>Install and pair</h4><p>Get JConnect on your computers and pair them once.</p></a>
+          <a class="card spot reveal" style="--d: 280ms" href="#connect"><span class="eyebrow small">Every day</span><h4>Connect and work</h4><p>Controls, displays, quality and shortcuts.</p></a>
+          <a class="card spot reveal" style="--d: 340ms" href="#phones"><span class="eyebrow small">No app</span><h4>Phones, tablets and TVs</h4><p>Use a computer from any browser.</p></a>
+          <a class="card spot reveal" style="--d: 400ms" href="#security"><span class="eyebrow small">Private</span><h4>Security</h4><p>How every connection is protected.</p></a>
+        </div>
+      </div>
+    </section>
+
+    <div class="container docs-layout">
+      <aside class="docs-sidebar">
+        <button class="docs-menu" type="button" aria-expanded="false" aria-controls="docs-nav">Browse the docs <span aria-hidden="true">▾</span></button>
+        <nav class="docs-nav" id="docs-nav" aria-label="Documentation">
+          <div class="docs-group">
+            <h6>Get started</h6>
+            <a href="#overview">Overview</a>
+            <a href="#install">Install</a>
+            <a href="#pair">Pair a computer</a>
+            <a href="#connect">Connect and work</a>
+            <a href="#phones">Phones, tablets and TVs</a>
+          </div>
+          <div class="docs-group">
+            <h6>Networks</h6>
+            <a href="#jvpn">JVPN</a>
+            <a href="#vpns">Networks and VPNs</a>
+            <a href="#ssh">SSH</a>
+            <a href="#rdp">Remote Desktop</a>
+          </div>
+          <div class="docs-group">
+            <h6>Security</h6>
+            <a href="#security">How it’s secured</a>
+            <a href="#devices">Trusted devices</a>
+            <a href="#travel">Travel Mode and Lockdown</a>
+          </div>
+          <div class="docs-group">
+            <h6>Account</h6>
+            <a href="#account">Account and sync</a>
+            <a href="#cloud">Host JConnect Cloud</a>
+          </div>
+          <div class="docs-group">
+            <h6>Reference</h6>
+            <a href="#settings">Settings</a>
+            <a href="#ports">Network ports</a>
+            <a href="#troubleshooting">Troubleshooting</a>
+            <a href="#limits">Known limits</a>
+          </div>
+        </nav>
+      </aside>
+
+      <article class="docs-content">
+        <!-- Get started -->
+        <section class="doc" id="overview" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Get started</span>
+          <h2>Overview</h2>
+          <p>JConnect makes any of your computers feel like the one in front of you. Install it, pair once, and press <b>Connect</b>. There are no IP addresses, ports or VPN settings to learn, and you don’t need an account.</p>
+          <ul>
+            <li><b>Computers</b> run the JConnect app. It shares that computer with your paired devices and connects you to your other computers.</li>
+            <li><b>Phones, tablets and TVs</b> don’t need an app. Your JConnect computer serves the app to their web browser.</li>
+            <li><b>Every connection is end-to-end encrypted</b>, whichever network carries it: your local network, JVPN, Tailscale or another VPN.</li>
+          </ul>
+        </section>
+
+        <section class="doc" id="install" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Get started</span>
+          <h2>Install JConnect</h2>
+          <h3>Windows</h3>
+          <ol class="doc-steps">
+            <li><a href="../download/">Download the installer</a> for Windows 10 or 11, 64-bit.</li>
+            <li>Open <code>JConnect-Setup.exe</code>. It installs for your account without admin rights, adds Start menu and desktop shortcuts, and starts JConnect.</li>
+            <li>The first time JConnect starts, Windows Firewall asks whether to allow it. Allow it on <b>private networks</b> so your other devices can reach this computer.</li>
+          </ol>
+          <div class="callout warn">
+            <span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9.5 17h-19z"/><path d="M12 10v4M12 17h.01"/></svg></span>
+            <p>The beta isn’t code-signed yet, so SmartScreen may say “Windows protected your PC”. Choose <b>More info → Run anyway</b>.</p>
+          </div>
+          <h3>Mac, Linux and Raspberry Pi</h3>
+          <p>These apps are coming soon. The Mac app will support Apple silicon and Intel Macs on macOS 12 or later. Until then you can reach your Windows computers from a Mac, Linux PC or Raspberry Pi through its browser, the same way as from a phone.</p>
+          <h3>Closing the window</h3>
+          <p>Closing the JConnect window keeps the computer available. JConnect stays in the system tray, and <b>Start with this computer</b> in Settings starts it in the background when you sign in.</p>
+        </section>
+
+        <section class="doc" id="pair" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Get started</span>
+          <h2>Pair a computer</h2>
+          <p>You pair each device with a computer once. After that, the computer recognizes the device by its key and you just press Connect.</p>
+          <ol class="doc-steps">
+            <li>Install JConnect on both computers.</li>
+            <li>On the computer you’re using, open <b>Add Computer</b>. JConnect computers on your network show up there by themselves.</li>
+            <li>Choose the computer, then enter the pairing code shown at the bottom of the JConnect window on that computer and press <b>Pair</b>.</li>
+            <li>Press <b>Connect</b>. You won’t need to pair again.</li>
+          </ol>
+          <h3>Ask for permission instead</h3>
+          <p>If you can’t see the code, press <b>Ask for permission</b>. Someone at the other computer gets a prompt. Both screens show the same short verification code: they check it matches, then press <b>Allow</b>. Ticking <b>This is one of my own devices</b> marks the device as yours.</p>
+          <div class="callout">
+            <span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></span>
+            <p>The pairing code never leaves your device. JConnect proves it knows the code over the encrypted connection, so an eavesdropper can’t learn or reuse it.</p>
+          </div>
+          <h3>Computers that don’t show up</h3>
+          <p>Under <b>Add Computer → Other ways to connect</b>, type the computer’s name or address and press <b>Find</b>. You can also <a href="#vpns">import computers from Tailscale and other networks</a>.</p>
+        </section>
+
+        <section class="doc" id="connect" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Get started</span>
+          <h2>Connect and work</h2>
+          <p>Press <b>Connect</b> on a computer in <b>My Computers</b>. The remote computer fills the window, with sound from Windows computers.</p>
+          <h3>Controls</h3>
+          <p>Move the pointer to the top edge, or press <span class="kbd">Ctrl</span> <span class="kbd">Alt</span> <span class="kbd">Home</span> (<span class="kbd">Control</span> <span class="kbd">Option</span> <span class="kbd">Home</span> on a Mac), to show the controls:</p>
+          <ul>
+            <li><b>← Home</b> goes back to your computer list.</li>
+            <li><b>Display</b> switches between the remote computer’s screens.</li>
+            <li><b>Devices</b> switches to another of your computers.</li>
+            <li><b>⋯</b> sets the quality, full screen and zoom, or disconnects.</li>
+          </ul>
+          <h3>Quality</h3>
+          <div class="doc-table-wrap">
+            <table class="doc-table">
+              <thead><tr><th>Setting</th><th>What you get</th></tr></thead>
+              <tbody>
+                <tr><td><b>Automatic</b></td><td>Sharp on your local network, Balanced everywhere else.</td></tr>
+                <tr><td><b>Sharp</b></td><td>Full resolution at 30 frames per second, up to 10 Mbps.</td></tr>
+                <tr><td><b>Balanced</b></td><td>Up to 1920 pixels wide at 30 frames per second, up to 5 Mbps.</td></tr>
+                <tr><td><b>Data saver</b></td><td>Up to 1280 pixels wide at 15 frames per second, up to 1.5 Mbps.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>The computer you connect to also lowers the quality by itself when it’s working hard or running hot, and raises it again when it cools down.</p>
+          <h3>If the connection drops</h3>
+          <p>JConnect reconnects by itself, trying every path it knows. If a paired computer is asleep and supports Wake-on-LAN, pressing Connect wakes it. You can also right-click it and choose <b>Wake</b>.</p>
+          <h3>Organize your computers</h3>
+          <p>Right-click a computer for more options:</p>
+          <ul>
+            <li><b>Rename…</b> changes its name, and <b>Whose computer is it?</b> groups computers under a person’s name.</li>
+            <li><b>Connect using…</b> picks the network JConnect uses for it.</li>
+            <li><b>Create Shortcut</b> puts a shortcut on your desktop that connects with a double-click.</li>
+          </ul>
+        </section>
+
+        <section class="doc" id="phones" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Get started</span>
+          <h2>Phones, tablets and TVs</h2>
+          <p>Android, iPhone, iPad and TVs with a modern browser use JConnect without installing anything.</p>
+          <ol class="doc-steps">
+            <li>On the computer you want to use, make sure <b>Remote access</b> and <b>Allow phones and browsers</b> are on in Settings.</li>
+            <li>Open <b>Settings → Use this computer from a phone</b>. JConnect shows a QR code and an address.</li>
+            <li>Scan the code with the phone’s camera, or type the address into a tablet or TV browser. Then tap <b>Pair</b>.</li>
+          </ol>
+          <p>The phone needs to be on the same network as the computer, or on the same private network such as Tailscale. On touch screens, tap to click and pinch to zoom, and open <b>⋯ → Keyboard</b> to type.</p>
+          <div class="callout">
+            <span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></span>
+            <p>The phone page itself loads over plain http on your local network, but the connection to the computer is still end-to-end encrypted. On networks you don’t trust, use the desktop app.</p>
+          </div>
+        </section>
+
+        <!-- Networks -->
+        <section class="doc" id="jvpn" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Networks</span>
+          <h2>JVPN</h2>
+          <p>JVPN is JConnect’s own network. It’s on by default, so you don’t need another VPN.</p>
+          <ul>
+            <li><b>At home</b>, devices connect directly over the local network.</li>
+            <li><b>Away from home</b>, sign in to your <a href="#account">JConnect account</a> on both devices. Each computer keeps an outgoing, signed connection to the JConnect Cloud relay, and your other devices reach it through that relay.</li>
+            <li><b>The relay only passes encrypted bytes.</b> It can’t read, change or impersonate anything. Only devices on your account can see or dial each other, and every dial uses a one-minute ticket.</li>
+          </ul>
+          <p>JVPN carries remote desktop, SSH and Remote Desktop (RDP) to your JConnect computers. Choose what each computer shares under <b>Settings → Share through JVPN</b>. JVPN is built into JConnect and doesn’t install a system-wide network adapter.</p>
+        </section>
+
+        <section class="doc" id="vpns" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Networks</span>
+          <h2>Networks and VPNs</h2>
+          <p>Open <b>Add Computer → Import from a network</b>, or click a network on the home screen.</p>
+          <div class="doc-table-wrap">
+            <table class="doc-table">
+              <thead><tr><th>Network</th><th>Status and start</th><th>Import</th></tr></thead>
+              <tbody>
+                <tr><td><b>JVPN</b></td><td>Built in</td><td>Devices signed in to your account</td></tr>
+                <tr><td><b>Tailscale</b></td><td>Starts the service and brings Tailscale up. Sign-in opens your browser.</td><td>Every machine on your tailnet</td></tr>
+                <tr><td><b>Twingate</b></td><td>Starts the client</td><td>Resources, with a read-only API key</td></tr>
+                <tr><td><b>ZeroTier</b></td><td>Starts the service and joins your networks</td><td>Members, with a Central API token</td></tr>
+                <tr><td><b>WireGuard</b></td><td>Connects a tunnel file you add</td><td>Peers listed in the tunnel file</td></tr>
+                <tr><td><b>Windows VPN</b></td><td>Dials connections saved in Windows Settings</td><td>—</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>When JConnect imports machines, it checks what each one offers (JConnect, SSH or Remote Desktop) and adds the ones you choose to <b>My Computers</b>.</p>
+          <p>When you press Connect, JConnect starts the network that computer uses and asks for administrator permission only when the VPN needs it. It never changes a VPN’s own settings. Set a computer’s network with <b>Connect using…</b>, and the default for computers that aren’t nearby with <b>Settings → JVPN → When a computer isn’t nearby, use</b>.</p>
+        </section>
+
+        <section class="doc" id="ssh" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Networks</span>
+          <h2>SSH</h2>
+          <ul>
+            <li><b>Add SSH host</b>, or import every named host from <code>~/.ssh/config</code>.</li>
+            <li><b>Open SSH terminal</b> on a JConnect computer reaches its SSH server through JVPN. Turn on <b>Settings → Share through JVPN → SSH</b> on that computer, and set its SSH port if it isn’t 22.</li>
+            <li>Sign-in tries your SSH agent, then this device’s own JConnect SSH key, then asks for a password. <b>Copy my SSH key</b> copies the public key so you can add it to a server.</li>
+            <li>A host’s key is remembered the first time you connect. If it changes later, JConnect stops and tells you.</li>
+          </ul>
+          <p>SSH to a JConnect computer needs an SSH server running on it, for example OpenSSH Server on Windows.</p>
+        </section>
+
+        <section class="doc" id="rdp" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Networks</span>
+          <h2>Remote Desktop</h2>
+          <ul>
+            <li><b>Add Computer → Import Remote Desktop file</b> adds an existing <code>.rdp</code> connection.</li>
+            <li><b>Open with Remote Desktop</b> opens a computer in Windows Remote Desktop. On a Mac, JConnect opens the <code>.rdp</code> file with your Remote Desktop app. On Linux it uses FreeRDP or Remmina.</li>
+            <li>To reach a Windows computer’s Remote Desktop from outside your network, turn on <b>Settings → Share through JVPN → Remote Desktop</b> on that computer.</li>
+          </ul>
+        </section>
+
+        <!-- Security -->
+        <section class="doc" id="security" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Security</span>
+          <h2>How it’s secured</h2>
+          <p>Every connection uses JConnect protocol v2, whichever network carries it.</p>
+          <ul>
+            <li><b>Encrypted end to end.</b> Each connection runs a fresh X25519 key exchange. Messages, remote-control input, SSH and Remote Desktop data are sealed with XSalsa20-Poly1305. Frames are numbered, so altered, replayed or reordered data closes the connection. Screen and sound travel over WebRTC, which is DTLS-SRTP encrypted, and its keys are signed inside the channel.</li>
+            <li><b>Both sides prove who they are.</b> Every device has an Ed25519 identity key, and its ID comes from that key. The computer signs each connection’s transcript, and the other device checks it against the key it paired with. The connecting device signs the same transcript, so a stolen or replayed message can’t be reused.</li>
+            <li><b>Secrets never cross the network.</b> Pairing codes and passwords become scrypt proofs bound to one connection.</li>
+            <li><b>Stored safely.</b> Device keys, API keys, account tokens and SSH keys are encrypted with the operating system’s key store.</li>
+            <li><b>Least exposure.</b> Discovery announces only a name and public key, and you can turn it off. The app’s windows only get the permissions they need, and the Windows app is hardened with Electron fuses.</li>
+          </ul>
+        </section>
+
+        <section class="doc" id="devices" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Security</span>
+          <h2>Trusted devices</h2>
+          <p>Settings lists every <b>device that can use this computer</b>. For each one you can:</p>
+          <ul>
+            <li>Choose <b>Full control</b> or <b>View only</b>.</li>
+            <li>Mark it as <b>Mine</b>, which matters for Travel Mode.</li>
+            <li><b>Remove</b> it, which revokes its access right away.</li>
+          </ul>
+          <p><b>Connected now</b> shows active sessions, each with a <b>Disconnect</b> button. <b>Recent activity</b> under Security logs pairing, connections and anything suspicious.</p>
+          <h3>Extra protection</h3>
+          <ul>
+            <li><b>Require password</b> adds a password to every connection. Paired devices are already protected without it.</li>
+            <li><b>Trust my account’s devices</b> lets devices signed in to your JConnect account connect without pairing. It’s off by default.</li>
+            <li><b>Hide from nearby devices</b> stops announcing this computer on the local network. Paired devices can still connect.</li>
+            <li><b>Allow phones and browsers</b> serves the JConnect web page for phones, tablets and TVs on your network.</li>
+          </ul>
+        </section>
+
+        <section class="doc" id="travel" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Security</span>
+          <h2>Travel Mode and Emergency Lockdown</h2>
+          <h3>Travel Mode</h3>
+          <p>Turn on Travel Mode when you leave a computer unattended. New pairing turns off, streaming is capped at Balanced (Data saver on battery), and JConnect is stricter about suspicious activity. <b>Only my own devices</b> lets only devices marked as yours connect.</p>
+          <h3>Emergency Lockdown</h3>
+          <p>JConnect rates suspicious activity within a 10-minute window:</p>
+          <div class="doc-table-wrap">
+            <table class="doc-table">
+              <thead><tr><th>Level</th><th>What happens</th><th>For example</th></tr></thead>
+              <tbody>
+                <tr><td><b>Low</b></td><td>The attempt is blocked and logged.</td><td>An unknown device tries to connect.</td></tr>
+                <tr><td><b>Medium</b></td><td>Pairing pauses for 15 minutes and you get a notification.</td><td>3 wrong pairing codes or 5 wrong passwords from one device, or a connection that fails a security check.</td></tr>
+                <tr><td><b>High</b></td><td>Every session ends and remote access turns off until you restore it.</td><td>A device pretends to be one you trust, 10 wrong codes or passwords in total, or one device failing security checks 3 times.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>In Travel Mode these limits are halved, and repeated attempts by unknown devices count as medium. To end a lockdown, review <b>Recent activity</b> and press <b>Restore Remote Access</b> in Settings.</p>
+          <h3>Emergency shutdown</h3>
+          <p>If you turn on <b>Emergency shutdown</b>, a high-level event in Travel Mode also shuts the computer down safely after a 60-second warning.</p>
+        </section>
+
+        <!-- Account -->
+        <section class="doc" id="account" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Account</span>
+          <h2>Account and sync</h2>
+          <p>An account is optional. Click the person icon at the top of JConnect to sign in or create one on your <a href="#cloud">JConnect Cloud</a> server.</p>
+          <ul>
+            <li>Your password stays on the device. It becomes two keys: one the server checks, and one that encrypts your data before upload.</li>
+            <li>Computers, SSH hosts and your list of devices sync between your devices, and the server only stores them as ciphertext.</li>
+            <li>Two-step sign-in with an authenticator app is available under <b>Account</b>.</li>
+            <li>Signing in makes your computers reachable through <a href="#jvpn">JVPN</a> away from home.</li>
+          </ul>
+        </section>
+
+        <section class="doc" id="cloud" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Account</span>
+          <h2>Host JConnect Cloud</h2>
+          <p>JConnect Cloud handles accounts, sync, the JVPN relay and optional TURN. There’s no hosted service yet, so you run your own. The server is part of the JConnect source code and needs Node.js.</p>
+          <div class="doc-code"><pre><code>cd server/cloud
+npm install
+npm start          # listens on port 47900</code></pre></div>
+          <h3>Options</h3>
+          <div class="doc-table-wrap">
+            <table class="doc-table">
+              <thead><tr><th>Variable</th><th>What it does</th></tr></thead>
+              <tbody>
+                <tr><td><code>TLS_CERT</code>, <code>TLS_KEY</code></td><td>Serve https with this certificate and key. You can also put the server behind a reverse proxy.</td></tr>
+                <tr><td><code>TURN_PUBLIC_HOST</code></td><td>Turns on TURN to relay remote-desktop media when two networks block direct connections.</td></tr>
+                <tr><td><code>TURN_PORT</code></td><td>The TURN port. The default is 3478.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="doc-code"><pre><code>TLS_CERT=/etc/jconnect/cert.pem TLS_KEY=/etc/jconnect/key.pem TURN_PUBLIC_HOST=cloud.example.com npm start</code></pre></div>
+          <p>Data is stored in <code>server/cloud/data/cloud.json</code>. JConnect only accepts <code>http://</code> cloud addresses on private networks. Everywhere else, use https.</p>
+        </section>
+
+        <!-- Reference -->
+        <section class="doc" id="settings" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Reference</span>
+          <h2>Settings</h2>
+          <p>Open Settings with the gear icon at the top of JConnect.</p>
+          <div class="doc-table-wrap">
+            <table class="doc-table">
+              <thead><tr><th>Setting</th><th>What it does</th></tr></thead>
+              <tbody>
+                <tr class="group"><th colspan="2">This computer</th></tr>
+                <tr><td><b>Name</b></td><td>The name your other devices see.</td></tr>
+                <tr><td><b>Remote access</b></td><td>Lets paired devices use this computer. While it’s on, the pairing code is shown here, and <b>New code</b> makes a fresh one.</td></tr>
+                <tr><td><b>Start with this computer</b></td><td>Starts JConnect in the background when you sign in.</td></tr>
+                <tr class="group"><th colspan="2">JVPN</th></tr>
+                <tr><td><b>Use JVPN</b></td><td>JConnect’s built-in network.</td></tr>
+                <tr><td><b>When a computer isn’t nearby, use</b></td><td>The network JConnect uses for computers that aren’t on your local network.</td></tr>
+                <tr><td><b>Networks and VPNs…</b></td><td>Connect, sign in to and import from other networks.</td></tr>
+                <tr class="group"><th colspan="2">Share through JVPN</th></tr>
+                <tr><td><b>SSH</b></td><td>Lets paired devices open SSH on this computer through JVPN, on the SSH port you set.</td></tr>
+                <tr><td><b>Remote Desktop</b></td><td>Lets paired devices use Windows Remote Desktop through JVPN.</td></tr>
+                <tr class="group"><th colspan="2">Use this computer from a phone</th></tr>
+                <tr><td><b>QR code and address</b></td><td>Opens JConnect in a phone, tablet or TV browser.</td></tr>
+                <tr class="group"><th colspan="2">Travel Mode</th></tr>
+                <tr><td><b>Travel Mode</b></td><td>For unattended computers: no new pairing and fewer resources.</td></tr>
+                <tr><td><b>Only my own devices</b></td><td>In Travel Mode, only devices marked as yours can connect.</td></tr>
+                <tr><td><b>Emergency shutdown</b></td><td>In Travel Mode, shuts the computer down after strong evidence of unauthorized activity.</td></tr>
+                <tr class="group"><th colspan="2">Security</th></tr>
+                <tr><td><b>Require password</b></td><td>Asks for a password on every connection.</td></tr>
+                <tr><td><b>Trust my account’s devices</b></td><td>Your signed-in devices connect without pairing.</td></tr>
+                <tr><td><b>Hide from nearby devices</b></td><td>Stops announcing this computer on the local network.</td></tr>
+                <tr><td><b>Allow phones and browsers</b></td><td>Serves the web page for phones, tablets and TVs.</td></tr>
+                <tr class="group"><th colspan="2">Advanced</th></tr>
+                <tr><td><b>Details</b></td><td>Device ID, encryption, port, JVPN relay state, network addresses, remote control status, streaming level and data folder.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc" id="ports" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Reference</span>
+          <h2>Network ports</h2>
+          <p>Allow these through a firewall on the networks where you use JConnect. Nothing needs to be opened to the internet: away from home, JVPN uses outgoing connections.</p>
+          <div class="doc-table-wrap">
+            <table class="doc-table">
+              <thead><tr><th>Port</th><th>Protocol</th><th>Used for</th></tr></thead>
+              <tbody>
+                <tr><td><code>47801</code></td><td>TCP</td><td>JConnect on each computer: connections, pairing and the phone page</td></tr>
+                <tr><td><code>47802</code></td><td>UDP</td><td>Finding computers on the local network</td></tr>
+                <tr><td><code>47900</code></td><td>TCP</td><td>JConnect Cloud, if you host it</td></tr>
+                <tr><td><code>3478</code></td><td>UDP</td><td>TURN media relay, if you turn it on in JConnect Cloud</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc" id="troubleshooting" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Reference</span>
+          <h2>Troubleshooting</h2>
+          <h3>A computer doesn’t appear under Nearby</h3>
+          <ul>
+            <li>Check both computers are on the same network, and that JConnect is running with <b>Remote access</b> on.</li>
+            <li>Allow JConnect through the firewall on private networks. See <a href="#ports">Network ports</a>.</li>
+            <li>Check <b>Hide from nearby devices</b> is off on the other computer.</li>
+            <li>Use <b>Add Computer → Other ways to connect</b> with its name or address, or import it from Tailscale.</li>
+          </ul>
+          <h3>“Pairing is paused for a little while”</h3>
+          <p>Too many wrong codes or declined requests pause pairing for 15 minutes. Pairing is also off in Travel Mode and during Emergency Lockdown.</p>
+          <h3>I can’t reach a computer away from home</h3>
+          <p>Sign in to the same JConnect account on both devices, keep <b>Use JVPN</b> on, and check the computer is awake and online. Or use a VPN you already have, like Tailscale.</p>
+          <h3>The phone page won’t open</h3>
+          <p>Turn on <b>Allow phones and browsers</b>, put the phone on the same network or Tailscale network, and type the address exactly as JConnect shows it, including <code>http://</code> and the port.</p>
+          <h3>I can see the screen but can’t control it</h3>
+          <p>Check your device has <b>Full control</b> on that computer. On Windows, apps running as administrator and UAC prompts ignore input from JConnect unless JConnect also runs as administrator.</p>
+        </section>
+
+        <section class="doc" id="limits" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Reference</span>
+          <h2>Known limits</h2>
+          <ul>
+            <li>The Windows app is an early beta. There are no automatic updates yet, so download new versions from the <a href="../download/">download page</a>.</li>
+            <li>Windows can’t be controlled on the secure desktop: UAC prompts, Ctrl+Alt+Del and the lock screen.</li>
+            <li>SSH to a JConnect computer needs an SSH server running on it.</li>
+            <li>Accounts, sync and JVPN away from home need a JConnect Cloud server that you run yourself.</li>
+            <li>Mac, Linux, Raspberry Pi and Apple TV apps are coming soon.</li>
+            <li>Camera sharing isn’t built yet.</li>
+          </ul>
+        </section>
+
+        <p class="docs-empty" id="docs-empty" hidden>Nothing in the docs matches that search. Try other words, or <a href="#troubleshooting">browse Troubleshooting</a>.</p>
+      </article>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <a class="brand" href="../"><img src="../assets/img/icon.png" alt="" width="22" height="22"><span>JConnect</span></a>
+        <p>Open. Connect. Work.</p>
+      </div>
+      <div class="footer-cols">
+        <div><h5>Product</h5><a href="../#features">Features</a><a href="../#jvpn">JVPN</a><a href="../#networks">Networks</a><a href="../#ssh">SSH</a></div>
+        <div><h5>Security</h5><a href="#security">Protocol v2</a><a href="#devices">Trusted devices</a><a href="#travel">Travel Mode</a></div>
+        <div><h5>Get started</h5><a href="../download/">Download</a><a href="#install">Docs</a><a href="#troubleshooting">Troubleshooting</a></div>
+      </div>
+    </div>
+    <div class="container footer-base">
+      <span>© 2026 JConnect</span>
+      <span class="footer-status"><i class="dot ok pulse"></i> All systems ready</span>
+    </div>
+  </footer>
+
+  <script src="../assets/js/site.js" defer></script>
+</body>
+</html>

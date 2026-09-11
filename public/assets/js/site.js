@@ -310,6 +310,97 @@
     }).observe(el);
   }
 
+  // ---- docs: current section, search, copy buttons ----
+  const docsNav = document.getElementById('docs-nav');
+  if (docsNav) {
+    const navLinks = $$('a[href^="#"]', docsNav);
+    const sections = $$('[data-doc]');
+    const setActive = (id) => navLinks.forEach((a) => a.classList.toggle('active', a.getAttribute('href') === `#${id}`));
+    // A link straight to a section jumps there instead of smooth-scrolling through the whole page.
+    const target = location.hash && document.getElementById(decodeURIComponent(location.hash.slice(1)));
+    if (target) {
+      document.documentElement.style.scrollBehavior = 'auto';
+      target.scrollIntoView();
+      requestAnimationFrame(() => { document.documentElement.style.scrollBehavior = ''; });
+    }
+
+    let spyQueued = false;
+    const spy = () => {
+      spyQueued = false;
+      let current = null;
+      for (const section of sections) {
+        if (section.hidden) continue;
+        if (!current || section.getBoundingClientRect().top <= 140) current = section;
+      }
+      if (current) setActive(current.id);
+    };
+    window.addEventListener('scroll', () => {
+      if (spyQueued) return;
+      spyQueued = true;
+      requestAnimationFrame(spy);
+    }, { passive: true });
+    spy();
+
+    const search = document.getElementById('docs-search');
+    const empty = document.getElementById('docs-empty');
+    if (search) {
+      const texts = new Map(sections.map((s) => [s, s.textContent.toLowerCase()]));
+      search.addEventListener('input', () => {
+        const words = search.value.toLowerCase().split(/\s+/).filter(Boolean);
+        let shown = 0;
+        for (const section of sections) {
+          const match = words.every((w) => texts.get(section).includes(w));
+          section.hidden = !match;
+          for (const a of navLinks) if (a.getAttribute('href') === `#${section.id}`) a.hidden = !match;
+          if (match) shown++;
+        }
+        for (const group of $$('.docs-group', docsNav)) group.hidden = $$('a', group).every((a) => a.hidden);
+        if (empty) empty.hidden = shown > 0;
+        spy();
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === '/' && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) {
+          e.preventDefault();
+          search.focus();
+        } else if (e.key === 'Escape' && document.activeElement === search) {
+          search.value = '';
+          search.dispatchEvent(new Event('input'));
+          search.blur();
+        }
+      });
+    }
+
+    for (const block of $$('.doc-code')) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'doc-copy';
+      button.textContent = 'Copy';
+      button.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(block.querySelector('pre').innerText.trim());
+          button.textContent = 'Copied';
+        } catch {
+          button.textContent = 'Select and copy';
+        }
+        setTimeout(() => { button.textContent = 'Copy'; }, 1600);
+      });
+      block.appendChild(button);
+    }
+
+    const menu = document.querySelector('.docs-menu');
+    if (menu) {
+      menu.addEventListener('click', () => {
+        const open = docsNav.classList.toggle('open');
+        menu.setAttribute('aria-expanded', String(open));
+      });
+      docsNav.addEventListener('click', (e) => {
+        if (!e.target.closest('a')) return;
+        docsNav.classList.remove('open');
+        menu.setAttribute('aria-expanded', 'false');
+      });
+    }
+  }
+
   // ---- download page: point each visitor at their own platform ----
   const platformCards = $$('[data-platform]');
   if (platformCards.length) {
