@@ -357,11 +357,12 @@ npm start          # listens on port 47900</code></pre></div>
                 <tr><td><code>TLS_CERT</code>, <code>TLS_KEY</code></td><td>Serve https with this certificate and key. You can also put the server behind a reverse proxy.</td></tr>
                 <tr><td><code>TURN_PUBLIC_HOST</code></td><td>Turns on TURN to relay remote-desktop media when two networks block direct connections.</td></tr>
                 <tr><td><code>TURN_PORT</code></td><td>The TURN port. The default is 3478.</td></tr>
+                <tr><td><code>JCONNECT_CLOUD_DB</code></td><td>Where the accounts database is stored. The default is <code>server/cloud/data/cloud.db</code>.</td></tr>
               </tbody>
             </table>
           </div>
           <div class="doc-code"><pre><code>TLS_CERT=/etc/jconnect/cert.pem TLS_KEY=/etc/jconnect/key.pem TURN_PUBLIC_HOST=cloud.example.com npm start</code></pre></div>
-          <p>Data is stored in <code>server/cloud/data/cloud.json</code>. JConnect only accepts <code>http://</code> cloud addresses on private networks. Everywhere else, use https.</p>
+          <p>Accounts, devices and sessions are stored in an SQLite database, which needs Node.js 22.13 or later. Accounts from an older <code>cloud.json</code> are imported the first time the server starts. JConnect only accepts <code>http://</code> cloud addresses on private networks. Everywhere else, use https.</p>
         </section>
 
         <!-- Reference -->
