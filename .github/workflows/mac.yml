@@ -3,6 +3,15 @@ name: macOS build
 on:
   push:
     branches: [app]
+    # Only changes to the desktop app start a macOS build, because macOS minutes cost ten times as much.
+    paths:
+      - src/**
+      - native/**
+      - assets/**
+      - build/**
+      - scripts/**
+      - package.json
+      - package-lock.json
   workflow_dispatch:
 
 permissions:

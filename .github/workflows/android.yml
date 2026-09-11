@@ -62,15 +62,15 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - name: Start JConnect on an emulator
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 34
-          arch: x86_64
-          target: google_apis
-          disable-animations: true
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          script: bash mobile/scripts/emulator-check.sh JConnect-android.apk ci-logs 2>&1 | tee ci-logs/4-emulator.log
+      - name: Start an Android emulator
+        timeout-minutes: 15
+        run: bash mobile/scripts/emulator-boot.sh 34 2>&1 | tee ci-logs/4-emulator-boot.log
+
+      - name: Check JConnect on the emulator
+        timeout-minutes: 5
+        run: |
+          export PATH="$ANDROID_HOME/platform-tools:$PATH"
+          bash mobile/scripts/emulator-check.sh JConnect-android.apk ci-logs 2>&1 | tee ci-logs/8-check.log
 
       # Logs go to a branch too, so they can be read with plain git.
       - name: Publish logs to the ci/android branch
@@ -87,6 +87,7 @@ jobs:
             ls -l JConnect-android.apk 2> /dev/null || echo "no APK was built"
             sha256sum JConnect-android.apk 2> /dev/null || true
           } > ci-logs/summary.txt
+          cp emulator.log sdkmanager.log ci-logs/ 2> /dev/null || true
           cd ci-logs
           git init -q -b ci/android
           git add -A
