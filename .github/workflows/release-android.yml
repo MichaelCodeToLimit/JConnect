@@ -15,12 +15,12 @@ permissions:
   contents: write
 
 env:
-  TAG: android-v0.1.0-beta.1
-  TITLE: JConnect 0.1.0 Beta 1 for Android
-  ASSET: JConnect-0.1.0-beta.1.apk
+  TAG: android-v0.1.0-beta.2
+  TITLE: JConnect 0.1.0 Beta 2 for Android
+  ASSET: JConnect-0.1.0-beta.2.apk
   # The app commit the APK was built from, and the APK's SHA-256.
-  TARGET: 37481a6960183c47d437ba341bf3fd3d52d98a63
-  SHA256: 3bc947e817e86c2554506e8750486ff6d86f0c93e2ab5868bb9c9bfd7ed44708
+  TARGET: ba871623aa8760afe38d74866141d2e48c275ec6
+  SHA256: 400a33016fec52b6ec9e7e061122b82e4ad0cbf89a1f44d9a3497d1898119075
 
 defaults:
   run:
