@@ -15,7 +15,8 @@ function quote(arg) {
 // Double-click -> Connect -> Work.
 function createShortcut(computer) {
   const desktop = app.getPath('desktop');
-  const safeName = computer.name.replace(/[\\/:*?"<>|]/g, '').trim() || 'JConnect computer';
+  // Control characters are removed too: a line break in a name would add lines to a Linux .desktop file.
+  const safeName = String(computer.name || '').replace(/[\p{Cc}\\/:*?"<>|]/gu, '').trim().slice(0, 64) || 'JConnect computer';
   const args = launchArgs([`--connect=${computer.id}`]);
 
   if (process.platform === 'win32') {
@@ -47,7 +48,10 @@ function createShortcut(computer) {
   if (process.platform === 'linux') {
     const file = path.join(desktop, `${safeName}.desktop`);
     // An AppImage runs from a temporary folder, so the shortcut starts the AppImage file itself.
-    const exec = [process.env.APPIMAGE || process.execPath, ...args].map((a) => `"${a.replace(/(["`$\\])/g, '\\$1')}"`).join(' ');
+    // Quoted as the desktop entry spec asks, without control characters, and with % doubled so it isn't a field code.
+    const exec = [process.env.APPIMAGE || process.execPath, ...args]
+      .map((a) => `"${String(a).replace(/\p{Cc}/gu, '').replace(/(["`$\\])/g, '\\$1').replace(/%/g, '%%')}"`)
+      .join(' ');
     fs.writeFileSync(file, `[Desktop Entry]\nType=Application\nName=${safeName}\nComment=Connect to ${safeName}\nExec=${exec}\nTerminal=false\nCategories=Network;\n`);
     fs.chmodSync(file, 0o755);
     return Promise.resolve(file);

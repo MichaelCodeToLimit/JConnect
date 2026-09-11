@@ -25,7 +25,7 @@ function createRouter({ store, discovery, vpn, account }) {
     const online = await account.presence([computer.id]).catch(() => []);
     if (!online.includes(computer.id)) return null;
     const ticket = await account.relayTicket(computer.id);
-    return { url: `${wsBase(account.cloud().url)}/connect?to=${computer.id}&ticket=${encodeURIComponent(ticket)}`, kind: 'jvpn' };
+    return { url: `${wsBase(account.cloud().url)}/connect?to=${encodeURIComponent(computer.id)}&ticket=${encodeURIComponent(ticket)}`, kind: 'jvpn' };
   }
 
   // For a JConnect computer: a WebSocket URL for the encrypted channel.

@@ -17,6 +17,7 @@ const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { promisify } = require('util');
 const { attachRelay, deviceIdFromKey, verifyText } = require('../relay/relay');
 const { openStore } = require('./store');
 
@@ -25,10 +26,12 @@ const TICKET_TTL_MS = 60 * 1000;
 const MAX_BODY = 4 * 1024 * 1024;
 const MAX_VAULT = 2 * 1024 * 1024;
 const KDF = { N: 32768, r: 8, p: 1 };
+const RATE_WINDOW_MAX_MS = 60 * 60 * 1000;
 
 const b64 = (buf) => Buffer.from(buf).toString('base64');
 const sha256 = (value) => crypto.createHash('sha256').update(value).digest();
 const now = () => Date.now();
+const scryptAsync = promisify(crypto.scrypt);
 
 function log(...args) {
   if (process.env.JCONNECT_CLOUD_QUIET) return;
@@ -112,9 +115,12 @@ function createCloud({ port = Number(process.env.PORT || 47900), host, database,
     }
   }
 
+  // windowMs must not be longer than RATE_WINDOW_MAX_MS, after which the sweeper forgets a key.
   const limited = (key, max, windowMs) => {
     const list = (attempts.get(key) || []).filter((t) => now() - t < windowMs);
     list.push(now());
+    // Only the newest max + 1 attempts matter, so a flood of requests can't grow the list.
+    if (list.length > max + 1) list.splice(0, list.length - max - 1);
     attempts.set(key, list);
     return list.length > max;
   };
@@ -138,7 +144,8 @@ function createCloud({ port = Number(process.env.PORT || 47900), host, database,
     return { token, userId: user.id, email: user.email, expiresAt: createdAt + SESSION_TTL_MS };
   }
 
-  const hashAuthKey = (authKey, salt) => crypto.scryptSync(authKey, salt, 32, { N: 16384, r: 8, p: 1 });
+  // scrypt runs off the event loop, so sign-ins don't hold up every other request.
+  const hashAuthKey = (authKey, salt) => scryptAsync(authKey, salt, 32, { N: 16384, r: 8, p: 1 });
 
   const relay = attachRelay(null, {
     authorizeHost: async ({ id, publicKey, token }) => {
@@ -234,7 +241,7 @@ function createCloud({ port = Number(process.env.PORT || 47900), host, database,
           id: crypto.randomUUID(),
           email: lower,
           salt: b64(saltBytes),
-          auth: `${b64(serverSalt)}:${b64(hashAuthKey(keyBytes, serverSalt))}`,
+          auth: `${b64(serverSalt)}:${b64(await hashAuthKey(keyBytes, serverSalt))}`,
           createdAt: now(),
         };
         if (!db.createUser(user)) return send(409, { error: 'exists' });
@@ -250,7 +257,7 @@ function createCloud({ port = Number(process.env.PORT || 47900), host, database,
         const user = db.userByEmail(lower);
         const keyBytes = bytesOf(authKey, 32);
         const [serverSalt, stored] = user ? user.auth.split(':') : [b64(crypto.randomBytes(16)), b64(crypto.randomBytes(32))];
-        const computed = hashAuthKey(keyBytes || Buffer.alloc(32), Buffer.from(serverSalt, 'base64'));
+        const computed = await hashAuthKey(keyBytes || Buffer.alloc(32), Buffer.from(serverSalt, 'base64'));
         if (!user || !keyBytes || !crypto.timingSafeEqual(computed, Buffer.from(stored, 'base64'))) return send(401, { error: 'credentials' });
         if (user.totp && user.totp.enabled) {
           if (!totp) return send(401, { error: 'totp-required' });
@@ -317,7 +324,8 @@ function createCloud({ port = Number(process.env.PORT || 47900), host, database,
 
       if (route === 'GET /v1/ice') {
         const iceServers = stunServers.length ? [{ urls: stunServers }] : [];
-        if (turnServer && turnServer.publicHost) {
+        // Every TURN credential stays valid for 12 hours, so how many one account can get is limited.
+        if (turnServer && turnServer.publicHost && !limited(`ice:${user.id}`, 60, 60 * 60 * 1000)) {
           const username = `${user.id.slice(0, 8)}-${crypto.randomBytes(6).toString('hex')}`;
           const credential = crypto.randomBytes(18).toString('base64url');
           turnServer.addUser(username, credential);
@@ -329,6 +337,8 @@ function createCloud({ port = Number(process.env.PORT || 47900), host, database,
       }
 
       if (route === 'POST /v1/totp/setup') {
+        // A new secret would replace the one in use and switch two-step sign-in off, so turning it off comes first.
+        if (user.totp && user.totp.enabled) return send(409, { error: 'totp-enabled' });
         const secret = base32Encode(crypto.randomBytes(20));
         db.setTotp(user.id, { secret, enabled: false }, now());
         const label = encodeURIComponent(`JConnect:${user.email}`);
@@ -336,9 +346,11 @@ function createCloud({ port = Number(process.env.PORT || 47900), host, database,
       }
 
       if (route === 'POST /v1/totp/enable' || route === 'POST /v1/totp/disable') {
+        if (limited(`totp:${user.id}`, 10, 15 * 60 * 1000)) return send(429, { error: 'slow-down' });
         const { code } = await readBody(req);
-        if (!user.totp || !totpValid(user.totp.secret, code)) return send(400, { error: 'totp' });
         const enable = route.endsWith('enable');
+        // Turning it on needs a secret from setup, and turning it off only applies while it's on.
+        if (!user.totp || user.totp.enabled === enable || !totpValid(user.totp.secret, code)) return send(400, { error: 'totp' });
         db.setTotp(user.id, enable ? { secret: user.totp.secret, enabled: true } : null, now());
         return send(200, { ok: true, totp: enable });
       }
@@ -369,6 +381,8 @@ function createCloud({ port = Number(process.env.PORT || 47900), host, database,
   let lastPurge = 0;
   const sweeper = setInterval(() => {
     for (const [ticket, t] of tickets) if (t.expires < now()) tickets.delete(ticket);
+    // Rate-limit entries older than the longest window are forgotten, so the map can't grow without end.
+    for (const [key, list] of attempts) if (!list.length || now() - list[list.length - 1] > RATE_WINDOW_MAX_MS) attempts.delete(key);
     if (now() - lastPurge > 60 * 60 * 1000) {
       lastPurge = now();
       db.purgeExpiredSessions(lastPurge);

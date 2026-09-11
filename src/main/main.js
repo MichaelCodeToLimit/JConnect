@@ -74,6 +74,11 @@ async function boot() {
   hardenSessions();
 
   store = new Store();
+  if (store.identityLocked) {
+    const message = 'JConnect couldn’t unlock this computer’s identity from the system keychain, so paired devices won’t recognize it. Unlock the keychain, then restart JConnect.';
+    store.log({ kind: 'identity', level: 'high', message });
+    notify('JConnect couldn’t unlock this computer', message);
+  }
   security = new Security(store);
   input = new InputController();
   input.init();
@@ -161,8 +166,11 @@ async function boot() {
   registerIpc();
   createTray();
   applyLoginItem();
-  account.start();
-  relayLink.start();
+  // With a temporary identity, syncing and the relay would publish a device that's gone after a restart.
+  if (!store.identityLocked) {
+    account.start();
+    relayLink.start();
+  }
 
   if (!args.hidden && !openedAtLogin()) showMain();
   if (args.connect) openSession(args.connect);
@@ -196,7 +204,8 @@ app.on('browser-window-focus', () => applyMenu());
 app.on('browser-window-blur', () => applyMenu());
 app.on('web-contents-created', (_event, contents) => {
   contents.setWindowOpenHandler(() => ({ action: 'deny' }));
-  contents.on('will-navigate', (e, url) => { if (!url.startsWith('file://')) e.preventDefault(); });
+  // JConnect's windows only change pages from the main process, so no page may navigate itself anywhere.
+  contents.on('will-navigate', (e) => e.preventDefault());
   contents.on('will-attach-webview', (e) => e.preventDefault());
   if (!app.isPackaged) {
     contents.on('console-message', (e, level, message, line, source) => {
@@ -323,10 +332,14 @@ function openSession(computerId) {
   return win;
 }
 
-const rdpTarget = (id, targetHost, port) => ({
-  id,
-  rdp: { host: targetHost, port, username: null, file: `full address:s:${targetHost}:${port}\r\nprompt for credentials:i:1\r\n` },
-});
+// The address goes into a Remote Desktop file, where a line break would add settings, so it's checked first.
+const rdpTarget = (id, targetHost, port) => {
+  if (!/^[\w.:[\]-]{1,255}$/.test(String(targetHost)) || !Number.isInteger(port) || port < 1 || port > 65535) throw new Error('unreachable');
+  return {
+    id,
+    rdp: { host: targetHost, port, username: null, file: `full address:s:${targetHost}:${port}\r\nprompt for credentials:i:1\r\n` },
+  };
+};
 
 function friendlyError(err, name = 'The computer') {
   const code = err && (err.code || err.message);
@@ -358,6 +371,7 @@ async function openRdp(id) {
     } else {
       const forward = await jvpnClient.forward(computer, 'rdp');
       forwards.add(forward);
+      forward.closed.then(() => forwards.delete(forward));
       launchRdp(rdpTarget(computer.id, '127.0.0.1', forward.port), dir);
     }
     return true;
@@ -533,8 +547,11 @@ function rememberRoute(computer, route) {
   const known = (computer.addresses || []).find((a) => a.host === route.host && a.port === route.port);
   const patch = {};
   if (route.host && (!known || Date.now() - (known.lastOk || 0) > 60000)) patch.addresses = [{ host: route.host, port: route.port, lastOk: Date.now() }];
-  if (info.os && info.os !== computer.os) patch.os = info.os;
-  if (!computer.renamed && info.name && info.name !== computer.name) patch.name = info.name;
+  // The name and OS come from the computer's own answer on the network, so they're cleaned like any outside text.
+  const os = String(info.os || '').replace(/\p{Cc}/gu, '').trim().slice(0, 32);
+  const name = String(info.name || '').replace(/\p{Cc}/gu, '').trim().slice(0, 64);
+  if (os && os !== computer.os) patch.os = os;
+  if (!computer.renamed && name && name !== computer.name) patch.name = name;
   if (computer.lastState && computer.lastState !== 'ready') patch.lastState = 'ready';
   if (Object.keys(patch).length) store.updateComputer(computer.id, { ...patch, lastSeen: Date.now() }, { quiet: true });
 }
@@ -592,7 +609,9 @@ function registerIpc() {
   handle('jc:pairing-qr', async () => {
     const QRCode = require('qrcode');
     const ifaces = localInterfaces();
-    const best = ifaces.find((i) => !i.tailscale) || ifaces[0];
+    // A phone can't reach virtual adapters (WSL, Hyper-V, Docker, virtual machines), so the real network comes first.
+    const virtual = (i) => /vEthernet|WSL|Hyper-V|Docker|VirtualBox|VMware|vboxnet|virbr|^br-|^veth/i.test(i.name);
+    const best = ifaces.find((i) => !i.tailscale && !virtual(i)) || ifaces.find((i) => !i.tailscale) || ifaces[0];
     const address = best ? best.address : '127.0.0.1';
     const key = store.publicKey.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
     const url = `http://${address}:${host.port}/?code=${host.pairingCode}&id=${store.id}&k=${key}`;
@@ -682,8 +701,8 @@ function registerIpc() {
       throw new Error('Invalid computer');
     }
     const addresses = (Array.isArray(info.addresses) ? info.addresses : [])
-      .filter((a) => a && typeof a.host === 'string' && Number.isInteger(a.port))
-      .map((a) => ({ host: a.host.slice(0, 255), port: a.port, lastOk: Date.now() }));
+      .filter((a) => a && typeof a.host === 'string' && /^[\w.:[\]-]{1,255}$/.test(a.host) && Number.isInteger(a.port) && a.port > 0 && a.port < 65536)
+      .map((a) => ({ host: a.host, port: a.port, lastOk: Date.now() }));
     const computer = store.upsertComputer({
       id: info.id,
       type: 'jconnect',
@@ -826,8 +845,8 @@ function registerIpc() {
   }));
   handle('jc:ssh-remove', (_e, id) => ssh.removeHost(text(id, 64)));
   handle('jc:ssh-import-config', () => ssh.importSshConfig().length);
-  handle('jc:ssh-public-key', () => {
-    ssh.copyPublicKey();
+  handle('jc:ssh-public-key', async () => {
+    await ssh.copyPublicKey();
     return ssh.publicKey();
   });
 

@@ -110,6 +110,23 @@ test('two-step sign-in requires a valid authenticator code once enabled', async 
   assert.strictEqual(right.status, 200);
 });
 
+test('two-step sign-in can only be replaced or turned off with a code', async (t) => {
+  const { call } = await start(t);
+  const acct = await account(call);
+  const setup = await call('POST', '/v1/totp/setup', { token: acct.token });
+  const codeNow = () => totpCode(setup.data.secret, Math.floor(Date.now() / 30000));
+  assert.strictEqual((await call('POST', '/v1/totp/enable', { token: acct.token, body: { code: codeNow() } })).status, 200);
+
+  // Setting it up again would replace the secret and switch it off, so a session alone can't do that.
+  assert.strictEqual((await call('POST', '/v1/totp/setup', { token: acct.token })).status, 409);
+  assert.strictEqual((await call('GET', '/v1/me', { token: acct.token })).data.totp, true);
+  assert.strictEqual((await call('POST', '/v1/totp/enable', { token: acct.token, body: { code: codeNow() } })).status, 400, 'already on');
+  const wrong = codeNow() === '000000' ? '111111' : '000000';
+  assert.strictEqual((await call('POST', '/v1/totp/disable', { token: acct.token, body: { code: wrong } })).status, 400);
+  assert.strictEqual((await call('POST', '/v1/totp/disable', { token: acct.token, body: { code: codeNow() } })).status, 200);
+  assert.strictEqual((await call('GET', '/v1/me', { token: acct.token })).data.totp, false);
+});
+
 test('relay: only registered account devices come online, presence is private, and dialing needs a ticket', async (t) => {
   const { call, port } = await start(t);
   const owner = await account(call, 'owner@example.com');

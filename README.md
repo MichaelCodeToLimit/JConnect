@@ -12,7 +12,7 @@ The build isn't code-signed, so Windows SmartScreen may say "Windows protected y
 
 ## Install on macOS
 
-Open `JConnect-<version>-arm64.dmg` on a Mac with Apple silicon, or `JConnect-<version>-x64.dmg` on an Intel Mac, and drag JConnect into Applications. JConnect needs macOS 12 or later.
+Open `JConnect-<version>-arm64.dmg` on a Mac with Apple silicon, or `JConnect-<version>-x64.dmg` on an Intel Mac, and drag JConnect into Applications. JConnect needs macOS 13 or later.
 
 The build isn't signed with an Apple Developer ID or notarized, so the first time you open it macOS says it can't verify JConnect. Open **System Settings → Privacy & Security**, scroll down and choose **Open Anyway**. On macOS 14 and earlier you can also Control-click JConnect in Applications and choose **Open**. Then allow what JConnect asks for:
 

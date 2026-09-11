@@ -119,29 +119,36 @@ class VpnManager extends EventEmitter {
 
   // Adds chosen machines to My Computers, remembering which network reaches them.
   import(id, items) {
+    // Names and addresses come from the network's own service, so they're cleaned before they're kept. An
+    // address also ends up in Remote Desktop files, where a line break would add settings.
+    const clean = (value, max) => String(value || '').replace(/\p{Cc}/gu, '').trim().slice(0, max);
+    const hostOf = (value) => (/^[\w.:[\]-]{1,255}$/.test(String(value || '')) ? String(value) : null);
     const added = [];
     for (const item of items) {
+      const host = hostOf(item.host);
       if (item.jconnect) {
+        if (!/^[0-9a-f]{20}$/.test(String(item.jconnect.id))) continue;
         const existing = this.store.getComputer(item.jconnect.id);
+        const port = Number.isInteger(item.jconnect.port) && item.jconnect.port > 0 && item.jconnect.port < 65536 ? item.jconnect.port : 47801;
         const computer = this.store.upsertComputer({
           id: item.jconnect.id,
           type: 'jconnect',
-          name: existing ? existing.name : item.jconnect.name || item.name,
-          os: item.jconnect.os || item.os || '',
+          name: existing ? existing.name : clean(item.jconnect.name || item.name, 64) || 'Computer',
+          os: clean(item.jconnect.os || item.os, 32),
           publicKey: item.jconnect.publicKey,
-          addresses: item.host ? [{ host: item.host, port: item.jconnect.port || 47801 }] : [],
+          addresses: host ? [{ host, port }] : [],
           via: existing && existing.via && existing.via !== 'auto' ? existing.via : id,
           source: id,
           paired: existing ? existing.paired !== false : false,
         });
         added.push(computer.id);
-      } else if (item.host) {
+      } else if (host) {
         const computer = this.store.upsertComputer({
           id: item.id,
           type: 'host',
-          name: item.name,
-          os: item.os || '',
-          host: item.host,
+          name: clean(item.name, 64) || host,
+          os: clean(item.os, 32),
+          host,
           services: { ssh: !!(item.services && item.services.ssh), rdp: !!(item.services && item.services.rdp) },
           via: id,
           source: id,

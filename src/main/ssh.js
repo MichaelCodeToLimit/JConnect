@@ -138,8 +138,9 @@ class SshManager {
 
   publicKey() { return this.key().publicKey; }
 
-  copyPublicKey() {
-    clipboard.writeText(this.publicKey());
+  async copyPublicKey() {
+    // Electron 44's clipboard methods return promises.
+    await clipboard.writeText(this.publicKey());
     return true;
   }
 

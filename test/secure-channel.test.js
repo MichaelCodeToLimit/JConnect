@@ -159,3 +159,14 @@ test('client signature and stream data frames round-trip', async (t) => {
   assert.deepStrictEqual(await echoed, [7, 'SSH BYTES']);
   client.close();
 });
+
+test('frames flooded in before the handshake close the connection', async (t) => {
+  let opened = false;
+  const { url } = await server(t, () => { opened = true; });
+  const ws = new WebSocket(url);
+  await new Promise((resolve) => ws.once('open', resolve));
+  const closed = new Promise((resolve) => ws.once('close', (code) => resolve(code)));
+  for (let i = 0; i < 4; i++) ws.send(Buffer.alloc(100 * 1024), { binary: true });
+  assert.strictEqual(await closed, 4000);
+  assert.strictEqual(opened, false);
+});

@@ -21,7 +21,10 @@ const { WebSocketServer } = require('ws');
 const nacl = require('tweetnacl');
 
 const PORT = Number(process.env.PORT || process.env.JCONNECT_RELAY_PORT || 47880);
-const MAX_PAYLOAD = 8 * 1024 * 1024;
+// JConnect frames are at most a few tens of kilobytes, so this leaves plenty of room.
+const MAX_PAYLOAD = 1024 * 1024;
+// What a client may send before the computer picks up its tunnel.
+const MAX_EARLY_BYTES = 1024 * 1024;
 const TUNNEL_ACCEPT_TIMEOUT_MS = 15000;
 const REGISTER_CLOCK_SKEW_MS = 5 * 60 * 1000;
 const MAX_TUNNELS_PER_HOST = 8;
@@ -154,7 +157,15 @@ function attachRelay(server, { authorizeHost = allowAll, authorizeConnect = asyn
     const ip = clientIp(req);
     const to = url.searchParams.get('to');
     const early = [];
-    const buffer = (data, isBinary) => { if (early.length < 64) early.push([data, isBinary]); };
+    let earlyBytes = 0;
+    const buffer = (data, isBinary) => {
+      earlyBytes += data.length;
+      if (early.length >= 64 || earlyBytes > MAX_EARLY_BYTES) {
+        client.close(4009, 'too-much-data');
+        return;
+      }
+      early.push([data, isBinary]);
+    };
     client.on('message', buffer);
 
     const hostEntry = typeof to === 'string' ? hosts.get(to) : null;

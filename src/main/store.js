@@ -103,7 +103,14 @@ class Store extends EventEmitter {
     let raw;
     try {
       raw = JSON.parse(fs.readFileSync(this.file, 'utf8'));
-    } catch {
+      if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new Error('not a settings object');
+    } catch (err) {
+      if (err.code !== 'ENOENT') {
+        // Keep a copy of a settings file that can't be read before it's replaced, so its keys and pairings aren't lost.
+        const copy = `${this.file}.unreadable-${Date.now()}`;
+        try { fs.copyFileSync(this.file, copy); } catch { /* nothing to copy */ }
+        console.error(`[jconnect] ${path.basename(this.file)} couldn't be read (${err.message}). A copy was kept as ${path.basename(copy)}.`);
+      }
       return empty;
     }
     const data = {
@@ -130,7 +137,12 @@ class Store extends EventEmitter {
           : saved.secretKey;
         this.keyPair = nacl.sign.keyPair.fromSecretKey(new Uint8Array(Buffer.from(secretB64, 'base64')));
       } catch (err) {
-        console.error('[jconnect] could not unlock device identity, creating a new one:', err.message);
+        // The saved identity is never replaced: a new one would unpair this computer from every device. The system
+        // keychain may just not be ready yet (a Linux keyring right after sign-in) or access may have been refused.
+        // Until it can be unlocked, JConnect runs with a temporary identity that isn't saved.
+        console.error('[jconnect] could not unlock this device\'s identity:', err.message);
+        this.identityLocked = true;
+        this.keyPair = nacl.sign.keyPair();
       }
     }
     if (!this.keyPair) {

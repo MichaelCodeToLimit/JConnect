@@ -15,6 +15,25 @@ const QUALITIES = ['saver', 'balanced', 'sharp'];
 const AUTH_TIMEOUT_MS = 150000;
 const MAX_STREAMS = 16;
 const STREAM_HIGH_WATER = 8 * 1024 * 1024;
+// JConnect frames are at most a few tens of kilobytes (stream data comes in socket-sized chunks).
+const MAX_FRAME = 1024 * 1024;
+// Connections that haven't signed in yet, from one address and in total.
+const MAX_PENDING_PER_SOURCE = 16;
+const MAX_PENDING = 128;
+
+// Browsers always send Origin with a WebSocket request, so other websites can't use this socket to ask for
+// pairing or guess codes. From a browser engine only the phone page this computer serves (same origin), the
+// desktop app (file://) and the Android app (http://localhost) may connect. Apps without one send no Origin.
+function originAllowed(origin, req) {
+  if (!origin) return true;
+  if (origin === 'file://' || origin === 'http://localhost' || origin === 'https://localhost') return true;
+  try {
+    const url = new URL(origin);
+    return (url.protocol === 'http:' || url.protocol === 'https:') && url.host === String(req.headers.host || '').toLowerCase();
+  } catch {
+    return false;
+  }
+}
 const SERVICE_LABELS = { ssh: 'SSH', rdp: 'Remote Desktop' };
 
 const SRC = path.join(__dirname, '..');
@@ -58,6 +77,8 @@ class HostAgent extends EventEmitter {
     this.resourceCap = 'sharp';
     this.promptLog = new Map();
     this.pendingPrompts = 0;
+    this.pendingBySource = new Map();
+    this.pendingTotal = 0;
     this.askOwner = async () => ({ allow: false });
     // Injected by the account module: devices signed in to the same JConnect account.
     this.accountDevices = () => [];
@@ -105,7 +126,13 @@ class HostAgent extends EventEmitter {
         server.listen(port, () => {
           this.server = server;
           this.port = server.address().port;
-          this.wss = new WebSocketServer({ server, path: '/ws', maxPayload: 8 * 1024 * 1024, perMessageDeflate: false });
+          this.wss = new WebSocketServer({
+            server,
+            path: '/ws',
+            maxPayload: MAX_FRAME,
+            perMessageDeflate: false,
+            verifyClient: ({ origin, req }) => originAllowed(origin, req),
+          });
           this.wss.on('connection', (ws, req) => this._onSocket(ws, req));
           this._heartbeat = setInterval(() => this._beat(), 5000);
           resolve(this.port);
@@ -164,6 +191,24 @@ class HostAgent extends EventEmitter {
 
   async _onSocket(ws, req, via = null) {
     const ip = via || normalizeIp(req && req.socket && req.socket.remoteAddress);
+    // Connections that haven't signed in yet are limited, so nobody can hold open thousands of them.
+    const pendingHere = this.pendingBySource.get(ip) || 0;
+    if (pendingHere >= MAX_PENDING_PER_SOURCE || this.pendingTotal >= MAX_PENDING) {
+      try { ws.close(1013, 'busy'); } catch { /* gone */ }
+      return;
+    }
+    this.pendingBySource.set(ip, pendingHere + 1);
+    this.pendingTotal++;
+    let pending = true;
+    const leavePending = () => {
+      if (!pending) return;
+      pending = false;
+      this.pendingTotal--;
+      const left = (this.pendingBySource.get(ip) || 1) - 1;
+      if (left > 0) this.pendingBySource.set(ip, left);
+      else this.pendingBySource.delete(ip);
+    };
+    ws.once('close', leavePending);
     const d = this.store.device();
     let channel;
     try {
@@ -182,6 +227,7 @@ class HostAgent extends EventEmitter {
       cid: crypto.randomUUID(),
       ws,
       channel,
+      leavePending,
       ip,
       path: via === 'jvpn' ? 'jvpn' : pathKind(ip),
       state: 'hello',
@@ -341,6 +387,7 @@ class HostAgent extends EventEmitter {
 
     conn.state = 'authed';
     conn.device = trusted;
+    conn.leavePending();
     clearTimeout(conn.authTimer);
     this.store.updateTrusted(trusted.id, { lastSeen: Date.now(), os: osName || trusted.os });
     this._send(conn, 'auth-ok', {

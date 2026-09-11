@@ -285,11 +285,17 @@
 
     sendData(streamId, bytes) {
       if (this.isClosed) return false;
-      const payload = new Uint8Array(4 + bytes.length);
-      writeU32(payload, 0, streamId);
-      payload.set(bytes, 4);
+      // A big write goes out as several frames, so no frame is larger than the other side accepts. The frames
+      // arrive in order, so the other side just joins them back up.
+      const MAX_DATA_FRAME = 256 * 1024;
       try {
-        this.socket.sendBinary(this.sealer.seal(KIND_DATA, payload));
+        for (let offset = 0; offset === 0 || offset < bytes.length; offset += MAX_DATA_FRAME) {
+          const piece = bytes.subarray(offset, offset + MAX_DATA_FRAME);
+          const payload = new Uint8Array(4 + piece.length);
+          writeU32(payload, 0, streamId);
+          payload.set(piece, 4);
+          this.socket.sendBinary(this.sealer.seal(KIND_DATA, payload));
+        }
         return true;
       } catch {
         return false;
@@ -306,13 +312,28 @@
 
   // ---- handshake ----
 
+  // Encrypted frames can arrive right behind the hello, before the keys exist, so a few are kept for later.
+  // More than that doesn't come from a real peer, so it ends the connection instead of filling memory.
+  const EARLY_FRAMES = 32;
+  const EARLY_BYTES = 256 * 1024;
+
   function readHello(socket, timeoutMs, early) {
     return new Promise((resolve, reject) => {
+      let earlyBytes = 0;
       const timer = setTimeout(() => {
         socket.close(4000, 'timeout');
         reject(failure('unreachable'));
       }, timeoutMs);
-      socket.binary = (bytes) => { if (early.length < 32) early.push(bytes); };
+      socket.binary = (bytes) => {
+        earlyBytes += bytes.length;
+        if (early.length >= EARLY_FRAMES || earlyBytes > EARLY_BYTES) {
+          clearTimeout(timer);
+          socket.close(4000, 'protocol');
+          reject(failure('protocol'));
+          return;
+        }
+        early.push(bytes);
+      };
       socket.closed = (code, reason) => {
         clearTimeout(timer);
         reject(failure(code >= 4000 && reason ? reason : 'unreachable'));

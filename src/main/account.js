@@ -277,18 +277,21 @@ class Account extends EventEmitter {
     try {
       this.store.update((d) => {
         d.tombstones = { ...d.tombstones, computers: merged.tombstones.computers, sshHosts: merged.tombstones.sshHosts };
-        const syncList = (list, section, tombs) => {
+        const syncList = (list, section, tombs, fields) => {
           const byId = new Map(list.map((item) => [item.id, item]));
-          for (const [id, remote] of Object.entries(section)) {
+          for (const [id, entry] of Object.entries(section)) {
+            // Only the fields JConnect syncs are taken from the vault, and an entry must carry its own id.
+            const remote = pick(entry && typeof entry === 'object' ? entry : {}, fields);
+            if (remote.id !== id) continue;
             const local = byId.get(id);
-            if (!local) list.push({ ...remote });
+            if (!local) list.push(remote);
             else if ((remote.updatedAt || 0) > (local.updatedAt || 0)) Object.assign(local, remote);
           }
           return list.filter((item) => section[item.id] || !((tombs[item.id] || 0) >= (item.updatedAt || item.addedAt || 0)));
         };
-        d.computers = syncList(d.computers, merged.computers, merged.tombstones.computers);
+        d.computers = syncList(d.computers, merged.computers, merged.tombstones.computers, COMPUTER_FIELDS);
         d.ssh = d.ssh || { hosts: [], keys: [], knownHosts: {} };
-        d.ssh.hosts = syncList(d.ssh.hosts, merged.sshHosts, merged.tombstones.sshHosts);
+        d.ssh.hosts = syncList(d.ssh.hosts, merged.sshHosts, merged.tombstones.sshHosts, SSH_FIELDS);
       });
     } finally {
       const timer = setTimeout(() => { this._applying = false; }, SYNC_DEBOUNCE_MS + 200);
@@ -363,7 +366,7 @@ class Account extends EventEmitter {
   async presence(ids) {
     const cloud = this.cloud();
     if (!cloud || !ids.length) return [];
-    const res = await request(cloud.url, 'GET', `/presence?ids=${ids.join(',')}`, { token: cloud.token, timeout: 5000 });
+    const res = await request(cloud.url, 'GET', `/presence?ids=${encodeURIComponent(ids.join(','))}`, { token: cloud.token, timeout: 5000 });
     return res.status === 200 && Array.isArray(res.data.online) ? res.data.online : [];
   }
 

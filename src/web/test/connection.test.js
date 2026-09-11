@@ -351,3 +351,48 @@ test('status reports a reachable computer as ready and an unknown address as off
   client.location.port = '1';
   assert.deepStrictEqual({ ...(await client.JCConnection.status(gone)) }, { state: 'offline' });
 });
+
+test('the computer refuses WebSocket connections from other websites', async (t) => {
+  const host = await startHost(t);
+  const url = `ws://127.0.0.1:${host.port}/ws`;
+  const attempt = (origin) => new Promise((resolve) => {
+    const ws = new WebSocket(url, origin ? { origin } : {});
+    ws.once('open', () => { ws.terminate(); resolve('open'); });
+    ws.once('unexpected-response', (req, res) => { req.destroy(); resolve(res.statusCode); });
+    ws.once('error', () => {});
+  });
+  assert.strictEqual(await attempt('http://evil.example'), 401);
+  assert.strictEqual(await attempt('null'), 401, 'sandboxed frames');
+  assert.strictEqual(await attempt(`http://127.0.0.1:${host.port}`), 'open', 'the phone page this computer serves');
+  assert.strictEqual(await attempt('file://'), 'open', 'the desktop app');
+  assert.strictEqual(await attempt('http://localhost'), 'open', 'the Android app');
+  assert.strictEqual(await attempt(null), 'open', 'apps without a browser engine');
+});
+
+test('connections that never sign in are limited', async (t) => {
+  const host = await startHost(t);
+  const url = `ws://127.0.0.1:${host.port}/ws`;
+  const sockets = [];
+  try {
+    for (let i = 0; i < 16; i++) {
+      const ws = new WebSocket(url);
+      sockets.push(ws);
+      await new Promise((resolve) => ws.once('open', resolve));
+    }
+    const extra = new WebSocket(url);
+    sockets.push(extra);
+    assert.strictEqual(await new Promise((resolve) => extra.once('close', (code) => resolve(code))), 1013);
+
+    // Once one of them goes away, the next connection is accepted.
+    sockets[0].terminate();
+    const started = Date.now();
+    while (host.agent.pendingTotal >= 16 && Date.now() - started < 3000) await new Promise((r) => setTimeout(r, 10));
+    const again = new WebSocket(url);
+    sockets.push(again);
+    await new Promise((resolve) => again.once('open', resolve));
+    await new Promise((r) => setTimeout(r, 200));
+    assert.strictEqual(again.readyState, WebSocket.OPEN);
+  } finally {
+    for (const ws of sockets) ws.terminate();
+  }
+});

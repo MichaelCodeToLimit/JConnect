@@ -133,3 +133,18 @@ test('connecting to an offline computer closes with "unreachable", and bogus tun
   const bogus = await open(`ws://127.0.0.1:${port}/accept?tunnel=nope`);
   assert.strictEqual(await closed(bogus), 4004);
 });
+
+test('a client that floods the relay before the computer picks up is disconnected', async (t) => {
+  const relay = createRelay({ port: 0, host: '127.0.0.1' });
+  const port = await relay.listen();
+  const base = `ws://127.0.0.1:${port}`;
+  t.after(() => relay.close());
+
+  const host = identity();
+  const control = await registerHost(base, host);
+  const client = await open(`${base}/connect?to=${host.id}`);
+  const whenClosed = closed(client);
+  for (let i = 0; i < 3; i++) client.send(Buffer.alloc(600 * 1024), { binary: true });
+  assert.strictEqual(await whenClosed, 4009);
+  control.close();
+});

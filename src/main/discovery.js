@@ -144,23 +144,26 @@ class Discovery extends EventEmitter {
   _onMessage(buf, rinfo) {
     let msg;
     try { msg = JSON.parse(buf.toString('utf8')); } catch { return; }
-    if (!msg || msg.app !== 'jconnect' || typeof msg.id !== 'string' || msg.id === this.selfId) return;
-    if (typeof msg.publicKey !== 'string' || !Number.isInteger(msg.port)) return;
-    this._upsertPeer(msg, rinfo.address, pathKind(rinfo.address), msg.state || 'ready');
+    if (!msg || msg.app !== 'jconnect' || msg.id === this.selfId) return;
+    this._upsertPeer(msg, rinfo.address, pathKind(rinfo.address), msg.state);
   }
 
+  // Announcements and answers from the network aren't signed, so everything in them is checked before it's used.
   _upsertPeer(info, address, kind, state) {
+    if (typeof info.id !== 'string' || !/^[0-9a-f]{20}$/.test(info.id) || typeof info.publicKey !== 'string') return;
+    if (!Number.isInteger(info.port) || info.port < 1 || info.port > 65535) return;
+    const text = (value, max) => String(value || '').replace(/\p{Cc}/gu, '').trim().slice(0, max);
     const now = Date.now();
     const peer = this.peers.get(info.id) || { id: info.id, addresses: new Map() };
     Object.assign(peer, {
-      name: String(info.name || 'Computer').slice(0, 64),
-      os: String(info.os || '').slice(0, 32),
+      name: text(info.name, 64) || 'Computer',
+      os: text(info.os, 32),
       publicKey: info.publicKey,
       port: info.port,
-      mac: Array.isArray(info.mac) ? info.mac.slice(0, 8) : peer.mac || [],
+      mac: Array.isArray(info.mac) ? info.mac.filter((m) => typeof m === 'string').slice(0, 8) : peer.mac || [],
       travelMode: !!info.travelMode,
       lockdown: !!info.lockdown,
-      state,
+      state: ['sleeping', 'security-shutdown'].includes(state) ? state : 'ready',
       lastSeen: now,
     });
     peer.addresses.set(address, { kind, lastSeen: now });

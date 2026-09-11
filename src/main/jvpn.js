@@ -18,6 +18,7 @@ const { scrypt } = require('./kdf');
 const wsBase = (url) => String(url).replace(/^http/i, 'ws').replace(/\/+$/, '');
 const registerText = (id, ts) => `jconnect-relay-register:${id}:${ts}`;
 const STREAM_HIGH_WATER = 4 * 1024 * 1024;
+const FORWARD_IDLE_MS = 5 * 60 * 1000;
 
 class RelayLink extends EventEmitter {
   constructor({ store, host, cloud }) {
@@ -267,9 +268,22 @@ class JvpnClient {
   }
 
   // Listens on 127.0.0.1 and carries every connection to `service` on the other computer through JVPN.
+  // The listener closes after FORWARD_IDLE_MS without connections, so it doesn't stay open until JConnect quits.
   async forward(computer, service, options = {}) {
     await this.channelFor(computer, options);
+    let active = 0;
+    let idleTimer = null;
+    const armIdle = () => {
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => server.close(), FORWARD_IDLE_MS);
+    };
     const server = net.createServer((socket) => {
+      active++;
+      clearTimeout(idleTimer);
+      socket.once('close', () => {
+        active--;
+        if (!active) armIdle();
+      });
       socket.setNoDelay(true);
       this.openStream(computer, service, options).then((remote) => {
         socket.pipe(remote);
@@ -285,7 +299,10 @@ class JvpnClient {
       server.once('error', reject);
       server.listen(0, '127.0.0.1', resolve);
     });
-    return { port: server.address().port, close: () => server.close() };
+    server.on('close', () => clearTimeout(idleTimer));
+    armIdle();
+    const closed = new Promise((resolve) => server.once('close', resolve));
+    return { port: server.address().port, closed, close: () => server.close() };
   }
 
   closeAll() {
