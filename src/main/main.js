@@ -557,7 +557,7 @@ function rememberRoute(computer, route) {
 }
 
 const wsUrl = (h, port) => `ws://${h.includes(':') ? `[${h}]` : h}:${port}/ws`;
-const VIA_PATTERN = /^(auto|jvpn|tailscale|twingate|zerotier|wireguard|windows)(:[\w .()-]{1,64})?$/;
+const VIA_PATTERN = /^(auto|jvpn|tailscale|twingate|zerotier|wireguard|forticlient|windows)(:[\w .()-]{1,64})?$/;
 
 // ---------------------------------------------------------------------------------------------
 // IPC

@@ -14,7 +14,7 @@ class VpnManager extends EventEmitter {
     const ctx = { store, shell };
     this.providers = new Map([
       ['jvpn', this._jvpnProvider()],
-      ...['tailscale', 'twingate', 'zerotier', 'wireguard', 'windows'].map((id) => [id, require(`./${id}`).create(ctx)]),
+      ...['tailscale', 'twingate', 'zerotier', 'wireguard', 'forticlient', 'windows'].map((id) => [id, require(`./${id}`).create(ctx)]),
     ]);
     this.cache = new Map();
   }

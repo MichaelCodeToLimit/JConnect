@@ -9,9 +9,15 @@ const fail = (code, extra) => JCSecure.failure(code, extra);
 // Runs a program and always resolves: { code, stdout, stderr }.
 function run(file, args = [], { timeout = 15000 } = {}) {
   return new Promise((resolve) => {
-    execFile(file, args, { timeout, windowsHide: true, maxBuffer: 8 * 1024 * 1024 }, (err, stdout, stderr) => {
+    const child = execFile(file, args, { timeout, windowsHide: true, maxBuffer: 8 * 1024 * 1024 }, (err, stdout, stderr) => {
       resolve({ code: err ? (typeof err.code === 'number' ? err.code : err.code || 1) : 0, stdout: String(stdout || ''), stderr: String(stderr || '') });
     });
+    // Nothing is ever typed into these programs, so one that asks for a password gets end of input at once
+    // instead of waiting for the timeout.
+    if (child.stdin) {
+      child.stdin.on('error', () => {});
+      child.stdin.end();
+    }
   });
 }
 

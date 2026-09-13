@@ -90,6 +90,7 @@ Open **Add Computer → Import from a network**, or click a network chip on the 
 | Twingate | Starts the client | Resources, using a read-only API key |
 | ZeroTier | Starts the service and joins your networks | Members, using a Central API token |
 | WireGuard | Connects a tunnel file you add | Peers listed in the tunnel file |
+| FortiClient | Connects a saved VPN connection. On Windows and macOS it opens FortiClient so you can sign in | — |
 | Windows VPN | Dials connections from Windows Settings | — |
 
 When JConnect imports machines, it checks what each one offers (JConnect, SSH, Remote Desktop) and adds your choices to **My Computers**. **Connect using…** on any computer picks the network JConnect should use. When you press Connect, JConnect starts that VPN, asking for administrator permission only when the VPN needs it, then connects. JConnect never changes a VPN's own settings.

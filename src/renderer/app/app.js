@@ -595,8 +595,10 @@
       { value: 'jvpn', title: 'JVPN', sub: 'JConnect’s own encrypted network. Works from anywhere when you’re signed in.' },
     ];
     for (const n of state.networks.filter((x) => !x.builtin && x.installed)) {
-      if ((n.id === 'wireguard' || n.id === 'windows') && n.tunnels && n.tunnels.length) {
-        for (const t of n.tunnels) options.push({ value: `${n.id}:${t.name}`, title: `${n.name} · ${t.name}`, sub: t.connected ? 'Connected' : 'JConnect connects it when needed' });
+      // A computer keeps the connection's name, so only names that can be saved are offered one by one.
+      const tunnels = (n.tunnels || []).filter((t) => /^[\w .()-]{1,64}$/.test(t.name));
+      if (['wireguard', 'forticlient', 'windows'].includes(n.id) && tunnels.length) {
+        for (const t of tunnels) options.push({ value: `${n.id}:${t.name}`, title: `${n.name} · ${t.name}`, sub: t.connected ? 'Connected' : 'JConnect connects it when needed' });
       } else {
         options.push({ value: n.id, title: n.name, sub: n.connected ? 'Connected' : 'JConnect starts it when you connect' });
       }
@@ -673,8 +675,10 @@
       } else {
         if (n.id === 'tailscale' && n.needsSignIn) buttons.push(h('button', { class: 'btn small primary', type: 'button', disabled: pending, onclick: () => act(n.id, 'signIn') }, 'Sign in'));
         if (n.id === 'wireguard') buttons.push(h('button', { class: 'btn small', type: 'button', disabled: pending, onclick: () => act(n.id, 'signIn') }, 'Add tunnel file'));
+        if (n.id === 'forticlient') buttons.push(h('button', { class: 'btn small', type: 'button', disabled: pending, onclick: () => act(n.id, 'signIn') }, 'Open FortiClient'));
         if ((n.id === 'twingate' || n.id === 'zerotier') && !n.canImport) buttons.push(h('button', { class: 'btn small', type: 'button', onclick: () => { forms[n.id] = !forms[n.id]; current.rerender(true); } }, forms[n.id] ? 'Cancel' : 'Connect account'));
-        if (!n.tunnels || !n.tunnels.length) {
+        // FortiClient on Windows and macOS doesn't say which connection is up, so the network keeps its own Disconnect.
+        if (!n.tunnels || !n.tunnels.length || (n.connected && !n.tunnels.some((t) => t.connected))) {
           buttons.push(h('button', { class: `btn small${n.connected ? '' : ' primary'}`, type: 'button', disabled: pending, onclick: () => act(n.id, n.connected ? 'disconnect' : 'connect') }, pending ? 'Working…' : n.connected ? 'Disconnect' : 'Connect'));
         }
         if (n.id === 'tailscale' || n.canImport) buttons.push(h('button', { class: 'btn small', type: 'button', onclick: () => openImport(n) }, 'Import'));
