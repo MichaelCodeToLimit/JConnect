@@ -140,8 +140,10 @@
             <li>Open JConnect and tap <b>Add Computer</b>. Scan the code your computer shows under <b>Settings → Use this computer from a phone</b>, or type the computer’s address and the pairing code shown at the bottom of its JConnect window.</li>
           </ol>
           <p>The Android app connects to your computers. It doesn’t share the phone’s own screen.</p>
-          <h3>Mac, Linux and Raspberry Pi</h3>
-          <p>These apps are coming soon. The Mac app will support Apple silicon and Intel Macs on macOS 12 or later. Until then you can reach your Windows computers from a Mac, Linux PC or Raspberry Pi through its browser, the same way as from a phone.</p>
+          <h3>Linux</h3>
+          <p>Download the .deb from the <a href="../download/#linux">download page</a> and install it with <code>sudo apt install ./JConnect-Linux.deb</code>. It works on Ubuntu, Debian, Linux Mint and other Debian-based systems on 64-bit PCs, and JConnect starts when you sign in. Paired devices can control a Linux computer in an X11 session, such as <b>Ubuntu on Xorg</b>. Wayland sessions aren't supported yet.</p>
+          <h3>Mac and Raspberry Pi</h3>
+          <p>These apps are coming soon. The Mac app will support Apple silicon and Intel Macs on macOS 13 or later. Until then you can reach your computers from a Mac or Raspberry Pi through its browser, the same way as from a phone.</p>
           <h3>Closing the window</h3>
           <p>Closing the JConnect window keeps the computer available. JConnect stays in the system tray, and <b>Start with this computer</b> in Settings starts it in the background when you sign in.</p>
         </section>
@@ -448,7 +450,7 @@ npm start          # listens on port 47900</code></pre></div>
             <li>Windows can’t be controlled on the secure desktop: UAC prompts, Ctrl+Alt+Del and the lock screen.</li>
             <li>SSH to a JConnect computer needs an SSH server running on it.</li>
             <li>Accounts, sync and JVPN away from home need a JConnect Cloud server that you run yourself.</li>
-            <li>Mac, Linux, Raspberry Pi and Apple TV apps are coming soon.</li>
+            <li>Mac, Raspberry Pi and Apple TV apps are coming soon.</li>
             <li>Camera sharing isn’t built yet.</li>
           </ul>
         </section>

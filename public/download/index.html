@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Download JConnect</title>
-  <meta name="description" content="Download JConnect for Windows and Android, or open it in the browser on iPhone, iPad and TVs. Mac, Linux, Raspberry Pi and Apple TV are coming soon.">
+  <meta name="description" content="Download JConnect for Windows, Linux and Android, or open it in the browser on iPhone, iPad and TVs. Mac, Raspberry Pi and Apple TV are coming soon.">
   <meta name="theme-color" content="#000000">
   <link rel="icon" type="image/png" href="../assets/img/icon.png">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Download JConnect">
-  <meta property="og:description" content="JConnect for Windows, plus phones, tablets and TVs in the browser.">
+  <meta property="og:description" content="JConnect for Windows, Linux and Android, plus phones, tablets and TVs in the browser.">
   <meta property="og:image" content="../assets/img/og.jpg">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -125,18 +125,23 @@
               <span class="status"><i class="dot warn"></i>Coming soon</span>
             </div>
             <h3>Mac</h3>
-            <p>Apple silicon and Intel Macs on macOS 12 or later. The first builds are being tested now.</p>
+            <p>Apple silicon and Intel Macs on macOS 13 or later. The first builds are being tested now.</p>
             <div class="platform-actions"><span class="btn btn-ghost btn-sm" aria-disabled="true">Coming soon</span></div>
           </article>
 
-          <article class="platform card spot reveal" style="--d: 160ms" id="linux" data-platform="linux">
+          <article class="platform available card spot reveal" style="--d: 160ms" id="linux" data-platform="linux">
             <div class="platform-top">
               <span class="platform-icon"><svg class="icon"><use href="#i-linux"/></svg></span>
-              <span class="status"><i class="dot warn"></i>Coming soon</span>
+              <span class="status on"><i class="dot ok"></i>Available · Beta</span>
             </div>
             <h3>Linux</h3>
-            <p>An AppImage and a .deb package for 64-bit PCs.</p>
-            <div class="platform-actions"><span class="btn btn-ghost btn-sm" aria-disabled="true">Coming soon</span></div>
+            <p>A .deb package for Ubuntu, Debian, Linux Mint and other Debian-based systems on 64-bit PCs.</p>
+            <div class="platform-actions">
+              <a class="btn btn-light btn-sm" href="JConnect-Linux.deb" download data-download>Download .deb</a>
+              <span class="platform-meta">v0.1.0 · 96 MB</span>
+            </div>
+            <span class="download-hash" data-sha256 data-sha256-src="JConnect-Linux.deb.sha256" hidden>SHA-256 <code></code></span>
+            <p class="platform-note">Install it with <b>sudo apt install ./JConnect-Linux.deb</b>. Remote control needs an X11 session, such as <b>Ubuntu on Xorg</b>.</p>
           </article>
 
           <article class="platform card spot reveal" style="--d: 240ms" id="raspberry-pi" data-platform="raspberry-pi">
