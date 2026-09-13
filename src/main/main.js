@@ -619,6 +619,18 @@ function registerIpc() {
     return { code: host.pairingCode, url, dataUrl };
   });
   handle('jc:lockdown-restore', () => security.restore('this computer'));
+  // Terminate and Shut Down work only from the main window, not from session or terminal windows.
+  const fromMainWindow = (event) => {
+    if (!mainWin || mainWin.isDestroyed() || event.sender !== mainWin.webContents) throw new Error('Not allowed');
+  };
+  handle('jc:terminate', (event) => {
+    fromMainWindow(event);
+    terminateJConnect();
+  });
+  handle('jc:shutdown', async (event) => {
+    fromMainWindow(event);
+    await shutDownComputer();
+  });
 
   handle('jc:computer-update', (_e, id, patch) => {
     const update = {};
@@ -1007,18 +1019,71 @@ function emergencyShutdown() {
   discovery.announce('security-shutdown');
   notify('JConnect Emergency Lockdown', 'This computer will shut down in 60 seconds according to your Travel Mode security policy.');
   setTimeout(() => {
-    const command = process.platform === 'win32'
-      ? 'shutdown /s /t 0'
-      : process.platform === 'darwin'
-        ? 'osascript -e \'tell app "System Events" to shut down\''
-        : 'systemctl poweroff';
-    exec(command, (err) => {
-      if (err) {
-        console.warn('[jconnect] shutdown failed:', err.message);
-        shutdownScheduled = false;
-      }
+    powerOff().catch((err) => {
+      console.warn('[jconnect] shutdown failed:', err.message);
+      shutdownScheduled = false;
     });
   }, 60000);
+}
+
+// Turns the computer off the system's normal way, as if Shut Down had been chosen from its own menu.
+function powerOff() {
+  const command = process.platform === 'win32'
+    ? 'shutdown /s /t 0'
+    : process.platform === 'darwin'
+      ? 'osascript -e \'tell app "System Events" to shut down\''
+      : 'systemctl poweroff';
+  return new Promise((resolve, reject) => exec(command, (err) => (err ? reject(err) : resolve())));
+}
+
+const TERMINATE_DETAIL = 'Every connection and task ends, and remote access, JVPN, syncing and JConnect’s other background services stop. JConnect starts again when you open it, or when you sign in if “Start with this computer” is on.';
+const SHUT_DOWN_DETAIL = 'Devices connected to this computer are disconnected, and the computer turns off. Save your work in other apps first.';
+let stopping = false;
+
+// The manual stop switch. Connected devices are told their session ended, then JConnect quits, which stops its
+// background services (remote access, discovery, JVPN, sync, input and screen capture) and closes all its windows.
+function terminateJConnect() {
+  if (stopping) return;
+  stopping = true;
+  store.log({ kind: 'terminated', level: 'info', message: 'JConnect was terminated on this computer.' });
+  host.endAll('ended-by-owner');
+  // Give the notices a moment to reach the devices. If something holds up quitting, exit anyway.
+  setTimeout(() => {
+    quitting = true;
+    app.quit();
+    setTimeout(() => app.exit(0), 5000);
+  }, 300);
+}
+
+// The Shut Down button: connected devices hear that the computer is turning off, then it shuts down right away.
+async function shutDownComputer() {
+  store.log({ kind: 'power-off', level: 'info', message: 'This computer was shut down from JConnect.' });
+  store.saveNow();
+  host.noticeAll('host-shutdown');
+  try {
+    await powerOff();
+  } catch (err) {
+    console.warn('[jconnect] shutdown failed:', err.message);
+    throw Object.assign(new Error('shutdown-failed'), { code: 'shutdown-failed' });
+  }
+}
+
+// Terminate and Shut Down from the tray menu, with the same questions the window asks.
+async function confirmStop(action) {
+  const shutDown = action === 'shutdown';
+  const { response } = await dialog.showMessageBox({
+    type: 'warning',
+    title: 'JConnect',
+    message: shutDown ? 'Shut down this computer?' : 'Terminate JConnect?',
+    detail: shutDown ? SHUT_DOWN_DETAIL : TERMINATE_DETAIL,
+    buttons: ['Cancel', shutDown ? 'Shut Down' : 'Terminate'],
+    defaultId: 0,
+    cancelId: 0,
+    noLink: true,
+  });
+  if (response !== 1) return;
+  if (!shutDown) terminateJConnect();
+  else shutDownComputer().catch(() => dialog.showErrorBox('JConnect', 'This computer couldn’t be shut down. Use the system’s own Shut Down instead.'));
 }
 
 function notify(title, body) {
@@ -1140,6 +1205,7 @@ function updateTray() {
     { label: 'JVPN', type: 'checkbox', checked: !!s.jvpnEnabled, click: (item) => setSetting('jvpnEnabled', item.checked) },
     { label: 'Travel Mode', type: 'checkbox', checked: !!s.travelMode, click: (item) => setSetting('travelMode', item.checked) },
     { type: 'separator' },
-    { label: 'Quit JConnect', click: () => { quitting = true; app.quit(); } },
+    { label: 'Terminate JConnect…', click: () => confirmStop('terminate') },
+    { label: 'Shut Down Computer…', click: () => confirmStop('shutdown') },
   ]));
 }

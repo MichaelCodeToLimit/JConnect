@@ -26,8 +26,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  TAG: linux-v0.1.0-beta.1
-  TITLE: JConnect 0.1.0 Beta 1 for Linux
+  TAG: linux-v0.1.0-beta.2
+  TITLE: JConnect 0.1.0 Beta 2 for Linux
 
 defaults:
   run:
@@ -129,6 +129,7 @@ jobs:
           path: dist
 
       - name: Create the pre-release
+        id: release
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -146,9 +147,25 @@ jobs:
             (cd release && sha256sum JConnect-* > SHA256SUMS.txt && cat SHA256SUMS.txt) 2>&1 | tee ci-logs/1-release.log
             gh release create "$TAG" release/* --target "$GITHUB_SHA" --prerelease --title "$TITLE" \
               --notes-file "$notes" 2>&1 | tee -a ci-logs/1-release.log
+            echo "published=true" >> "$GITHUB_OUTPUT"
           fi
           (gh release view "$TAG" --json tagName,name,isPrerelease,url,assets \
             --jq '{tag: .tagName, name, prerelease: .isPrerelease, url, assets: [.assets[] | {name, size}]}' || true) 2>&1 | tee ci-logs/2-release-view.log
+
+      # The website offers the .deb too. It goes on the main branch, which Render publishes.
+      - name: Put the .deb on the website
+        if: steps.release.outputs.published == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git clone -q --depth 1 --branch main "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" website
+          cp release/*.deb website/public/download/JConnect-Linux.deb
+          cd website/public/download
+          sha256sum JConnect-Linux.deb > JConnect-Linux.deb.sha256
+          git add JConnect-Linux.deb JConnect-Linux.deb.sha256
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "Offer the .deb from $TITLE for download"
+          git push -q origin main
+          { ls -l JConnect-Linux.deb; cat JConnect-Linux.deb.sha256; } 2>&1 | tee "$GITHUB_WORKSPACE/ci-logs/3-website.log"
 
       - name: Publish logs to the ci/linux-release branch
         if: always()

@@ -353,6 +353,7 @@ details.more summary { color: var(--muted); font-weight: 600; cursor: pointer; }
 
 .top-actions { display: flex; align-items: center; gap: 4px; }
 .account-btn { font-size: 15px; }
+.power-btn:hover, .power-btn:focus-visible { color: var(--bad); }
 .account-btn.signed-in {
   width: 30px;
   height: 30px;
@@ -442,6 +443,7 @@ details.more summary { color: var(--muted); font-weight: 600; cursor: pointer; }
   font-weight: 700;
 }
 .sync-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; }
+.stop-row .row-main { flex: 1; }
 
 .sas-block { margin: 14px 0 4px; padding: 12px; border-radius: 12px; background: var(--accent-soft); text-align: center; }
 .secure-note { margin: 10px 0 2px; padding: 10px 12px; border-radius: 10px; background: var(--accent-soft); font-size: 13px; }

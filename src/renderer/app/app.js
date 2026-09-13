@@ -92,6 +92,7 @@
       'not-shared': `${name} doesn't share that through JVPN yet.`,
       'not-running': `${name} doesn't have that service running.`,
       host: 'Enter a host name or address.',
+      'shutdown-failed': 'This computer couldn’t be shut down. Use the system’s own Shut Down instead.',
     };
     return messages[code] || (code && code.length > 24 ? code : 'Something went wrong. Please try again.');
   }
@@ -1075,6 +1076,39 @@
     }
   }
 
+  // ---- stop ----
+
+  const TERMINATE_TEXT = 'Every connection and task ends, and remote access, JVPN, syncing and JConnect’s other background services stop. JConnect starts again when you open it, or when you sign in if “Start with this computer” is on.';
+  const SHUT_DOWN_TEXT = 'Devices connected to this computer are disconnected, and the computer turns off. Save your work in other apps first.';
+
+  // The manual stop switch: terminate JConnect completely, or shut the whole computer down.
+  function openStop() {
+    openSheet('Stop', () => {
+      const connected = state.sessions.map((x) => x.name);
+      return [
+        connected.length > 0 && h('p', { class: 'muted' }, `${connected.join(', ')} ${connected.length === 1 ? 'is' : 'are'} connected now and will be disconnected.`),
+        h('div', { class: 'sync-row stop-row' },
+          h('span', { class: 'row-main' },
+            h('span', { class: 'row-title' }, 'Terminate JConnect'),
+            h('span', { class: 'row-sub' }, 'Ends every connection and task, stops all of JConnect’s background services and closes JConnect.')),
+          h('button', {
+            class: 'btn small danger',
+            type: 'button',
+            onclick: () => openConfirm('Terminate JConnect?', TERMINATE_TEXT, 'Terminate', () => call('jc:terminate')),
+          }, 'Terminate')),
+        h('div', { class: 'sync-row stop-row' },
+          h('span', { class: 'row-main' },
+            h('span', { class: 'row-title' }, 'Shut down this computer'),
+            h('span', { class: 'row-sub' }, 'Turns this computer off completely.')),
+          h('button', {
+            class: 'btn small danger-fill',
+            type: 'button',
+            onclick: () => openConfirm('Shut down this computer?', SHUT_DOWN_TEXT, 'Shut Down', () => call('jc:shutdown')),
+          }, 'Shut Down')),
+      ];
+    }, { live: true });
+  }
+
   // ---- start ----
 
   async function init() {
@@ -1086,6 +1120,7 @@
     });
     jc.on('jc:navigate', (where) => openSettings(where));
     document.getElementById('settings-btn').addEventListener('click', () => openSettings());
+    document.getElementById('power-btn').addEventListener('click', openStop);
     document.getElementById('account-btn').addEventListener('click', openAccount);
     document.addEventListener('keydown', (e) => {
       if (e.key !== 'Escape') return;

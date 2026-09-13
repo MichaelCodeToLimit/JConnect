@@ -684,6 +684,14 @@ class HostAgent extends EventEmitter {
     if (conn) this._closeWithNotice(conn, 'ended-by-owner');
   }
 
+  // Ends every session and stream and closes every connection. Signed-in devices are told why.
+  endAll(kind) {
+    for (const conn of this.conns.values()) {
+      if (conn.state === 'authed') this._closeWithNotice(conn, kind);
+      else conn.channel.close(4002, kind);
+    }
+  }
+
   revokeDevice(deviceId) {
     const trusted = this.store.data.trusted.find((t) => t.id === deviceId);
     this.store.removeTrusted(deviceId);

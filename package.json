@@ -113,7 +113,7 @@
         }
       ],
       "extendInfo": {
-        "NSAppleEventsUsageDescription": "JConnect uses System Events to shut down this Mac when the Travel Mode emergency shutdown is on.",
+        "NSAppleEventsUsageDescription": "JConnect uses System Events to shut down this Mac when you choose Shut Down in JConnect, or when the Travel Mode emergency shutdown is on.",
         "NSLocalNetworkUsageDescription": "JConnect finds your other computers on this network and lets your paired devices connect to this Mac."
       }
     },

@@ -47,6 +47,8 @@ Paired devices can see and control a Linux computer in an X11 session, such as L
 
 Closing the window keeps the computer available; JConnect stays in the system tray (the menu bar on macOS).
 
+To stop everything, press **⏻** at the top of the window, or use the tray menu. **Terminate JConnect** ends every connection and task, stops all of JConnect's background services and closes it. **Shut Down Computer** turns the computer off. Both ask first.
+
 ## Security
 
 Every connection uses JConnect protocol v2, whichever network carries it (LAN, JVPN, Tailscale or another VPN):

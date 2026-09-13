@@ -352,6 +352,24 @@ test('status reports a reachable computer as ready and an unknown address as off
   assert.deepStrictEqual({ ...(await client.JCConnection.status(gone)) }, { state: 'offline' });
 });
 
+test('terminating tells a connected phone that the session was ended and closes everything', async (t) => {
+  const host = await startHost(t);
+  const client = loadClient(host.port);
+  const computer = await pairWithCode(client, host);
+  const states = [];
+  const session = client.JCConnection.connect(computer, { onStream() {}, onState: (s) => states.push(s) });
+  t.after(() => session.close());
+  await waitForState(states, 'connected');
+
+  host.agent.endAll('ended-by-owner');
+  const ended = await waitForState(states, 'ended');
+  assert.strictEqual(ended.code, 'ended-by-owner');
+  const started = Date.now();
+  while (host.agent.conns.size && Date.now() - started < 3000) await new Promise((r) => setTimeout(r, 10));
+  assert.strictEqual(host.agent.conns.size, 0);
+  assert.strictEqual(host.agent.sessionList().length, 0);
+});
+
 test('the computer refuses WebSocket connections from other websites', async (t) => {
   const host = await startHost(t);
   const url = `ws://127.0.0.1:${host.port}/ws`;
