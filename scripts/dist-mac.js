@@ -52,3 +52,17 @@ if (compileIconComposerIcon()) {
   args.push('-c.mac.icon=assets/icon-mac.png');
 }
 run(path.join(root, 'node_modules', '.bin', 'electron-builder'), args);
+
+// electron-builder writes zlib-compressed DMGs. LZMA (ULMO, macOS 10.15 or later) packs Electron apps more tightly,
+// which keeps each DMG under GitHub's 100 MB file limit so the website can offer it.
+const mb = (bytes) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+const dist = path.join(root, 'dist');
+for (const name of fs.readdirSync(dist).filter((f) => f.endsWith('.dmg') && !f.endsWith('.lzma.dmg'))) {
+  const dmg = path.join(dist, name);
+  const packed = path.join(dist, name.replace(/\.dmg$/, '.lzma.dmg'));
+  const before = fs.statSync(dmg).size;
+  fs.rmSync(packed, { force: true });
+  run('hdiutil', ['convert', dmg, '-quiet', '-format', 'ULMO', '-o', packed]);
+  fs.renameSync(packed, dmg);
+  console.log(`${name}: ${mb(before)} with zlib, ${mb(fs.statSync(dmg).size)} with LZMA`);
+}

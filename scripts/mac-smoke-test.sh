@@ -2,12 +2,14 @@
 # Checks the macOS build on a Mac. Each DMG must mount and hold a signed JConnect.app with its input helper,
 # and the app must start, answer on its port and find the helper.
 # Usage: bash scripts/mac-smoke-test.sh [folder for logs and screenshots]
+# JCONNECT_ARCHES picks which DMGs to check (default "arm64 x64"), for example x64 on an Intel Mac.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
 out="${1:-dist}"
 mkdir -p "$out"
 version="$(node -p "require('./package.json').version")"
+native="$(uname -m)"
 status=0
 
 # Stop an app and everything it started, without waiting forever.
@@ -22,7 +24,7 @@ stop_app() {
   pkill -9 -f "$app/Contents" 2> /dev/null || true
 }
 
-for arch in arm64 x64; do
+for arch in ${JCONNECT_ARCHES:-arm64 x64}; do
   dmg="dist/JConnect-${version}-${arch}.dmg"
   echo "== $dmg ($(du -h "$dmg" | cut -f1))"
   mount="$(mktemp -d /tmp/jconnect-dmg.XXXX)"
@@ -38,14 +40,17 @@ for arch in arm64 x64; do
   echo "helper architectures: $(lipo -archs "$helper")"
   /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' -c 'Print :LSMinimumSystemVersion' "$app/Contents/Info.plist"
 
-  if [ "$arch" = x64 ] && ! /usr/bin/arch -x86_64 /usr/bin/true 2> /dev/null; then
+  # On Apple silicon, the Intel app runs under Rosetta. On an Intel Mac it runs natively, so it must start.
+  rosetta=0
+  if [ "$arch" = x64 ] && [ "$native" != x86_64 ]; then rosetta=1; fi
+  if [ "$rosetta" = 1 ] && ! /usr/bin/arch -x86_64 /usr/bin/true 2> /dev/null; then
     echo "Rosetta isn't installed here, so the Intel app was checked but not started."
     hdiutil detach "$mount" -force -quiet || true
     continue
   fi
-  # Intel apps run under Rosetta on Apple silicon runners, where the first launch can be very slow.
+  # The first launch under Rosetta can be very slow.
   wait_seconds=90
-  if [ "$arch" = x64 ]; then wait_seconds=240; fi
+  if [ "$rosetta" = 1 ]; then wait_seconds=240; fi
 
   echo "input helper: $(printf '' | "$helper")"
   port=$((47900 + RANDOM % 90))
@@ -63,7 +68,7 @@ for arch in arm64 x64; do
     echo "app answered on port $port: $info"
     sleep 4
     screencapture -x "$out/window-$arch.png" 2> /dev/null || true
-  elif [ "$arch" = x64 ]; then
+  elif [ "$rosetta" = 1 ]; then
     echo "::warning::The Intel app didn't answer within ${wait_seconds} seconds under Rosetta. It was built and signed, but couldn't be started on this runner."
   else
     echo "::error::JConnect ($arch) did not answer on port $port"

@@ -1,5 +1,8 @@
 name: macOS build
 
+# Builds the DMGs and checks them on an Apple silicon Mac and an Intel Mac. On the app branch, a build that passes is
+# published as a GitHub pre-release once TAG has release notes under .github/releases, and its DMGs go on the website.
+# To publish another build, change TAG and TITLE, add its notes and push.
 on:
   push:
     branches: [app]
@@ -12,6 +15,8 @@ on:
       - scripts/**
       - package.json
       - package-lock.json
+      - .github/workflows/mac.yml
+      - .github/releases/mac-*
   workflow_dispatch:
 
 permissions:
@@ -20,6 +25,10 @@ permissions:
 concurrency:
   group: macos-${{ github.ref }}
   cancel-in-progress: true
+
+env:
+  TAG: mac-v0.1.0-beta.1
+  TITLE: JConnect 0.1.0 Beta 1 for Mac
 
 defaults:
   run:
@@ -98,3 +107,130 @@ jobs:
           git add -A
           git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "macOS build $GITHUB_RUN_NUMBER: $STATUS"
           git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" ci/mac
+
+  intel:
+    name: Start the Intel app on an Intel Mac
+    needs: dmg
+    # The Apple silicon runner can only try the Intel app under Rosetta, so check it natively too.
+    runs-on: macos-15-intel
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: JConnect-macOS
+          path: dist
+
+      - name: Check the Intel DMG
+        timeout-minutes: 15
+        env:
+          JCONNECT_ARCHES: x64
+        run: |
+          mkdir -p ci-logs
+          { sw_vers; uname -m; } 2>&1 | tee ci-logs/0-runner.log
+          bash scripts/mac-smoke-test.sh ci-logs 2>&1 | tee ci-logs/1-check.log
+
+      - name: Publish logs to the ci/mac-intel branch
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATUS: ${{ job.status }}
+        run: |
+          mkdir -p ci-logs
+          {
+            echo "status: $STATUS"
+            echo "commit: $GITHUB_SHA"
+            echo "run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          } > ci-logs/summary.txt
+          cd ci-logs
+          git init -q -b ci/mac-intel
+          git add -A
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "Intel Mac check $GITHUB_RUN_NUMBER: $STATUS"
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" ci/mac-intel
+
+  release:
+    name: Publish the Mac beta
+    needs: [dmg, intel]
+    if: github.ref == 'refs/heads/app'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: JConnect-macOS
+          path: dist
+
+      - name: Create the pre-release
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          mkdir -p ci-logs release
+          notes=".github/releases/$TAG.md"
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            echo "$TAG is already published." | tee ci-logs/1-release.log
+          elif [ ! -f "$notes" ]; then
+            echo "$notes doesn't exist, so nothing was published." | tee ci-logs/1-release.log
+          else
+            # The website keeps its downloads in git, and GitHub rejects files of 100 MiB or more.
+            for dmg in dist/*.dmg; do
+              size="$(stat -c %s "$dmg")"
+              echo "$dmg: $size bytes" | tee -a ci-logs/1-release.log
+              if [ "$size" -ge 104857600 ]; then
+                echo "::error::$dmg is $size bytes, too big for the website (the limit is 104857600)" | tee -a ci-logs/1-release.log
+                exit 1
+              fi
+            done
+            version="${TAG#mac-v}"
+            cp dist/JConnect-*-arm64.dmg "release/JConnect-$version-arm64.dmg"
+            cp dist/JConnect-*-x64.dmg "release/JConnect-$version-x64.dmg"
+            (cd release && sha256sum JConnect-* > SHA256SUMS.txt && cat SHA256SUMS.txt) 2>&1 | tee -a ci-logs/1-release.log
+            gh release create "$TAG" release/* --target "$GITHUB_SHA" --prerelease --title "$TITLE" \
+              --notes-file "$notes" 2>&1 | tee -a ci-logs/1-release.log
+            echo "published=true" >> "$GITHUB_OUTPUT"
+          fi
+          (gh release view "$TAG" --json tagName,name,isPrerelease,url,assets \
+            --jq '{tag: .tagName, name, prerelease: .isPrerelease, url, assets: [.assets[] | {name, size}]}' || true) 2>&1 | tee ci-logs/2-release-view.log
+
+      # The website offers the DMGs too. They go on the main branch, which Render publishes.
+      - name: Put the DMGs on the website
+        if: steps.release.outputs.published == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git clone -q --depth 1 --branch main "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" website
+          cp release/*-arm64.dmg website/public/download/JConnect-Mac-AppleSilicon.dmg
+          cp release/*-x64.dmg website/public/download/JConnect-Mac-Intel.dmg
+          cd website/public/download
+          sha256sum JConnect-Mac-AppleSilicon.dmg > JConnect-Mac-AppleSilicon.dmg.sha256
+          sha256sum JConnect-Mac-Intel.dmg > JConnect-Mac-Intel.dmg.sha256
+          git add JConnect-Mac-*.dmg JConnect-Mac-*.dmg.sha256
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "Offer the DMGs from $TITLE for download"
+          git push -q origin main
+          { ls -l JConnect-Mac-*; cat JConnect-Mac-*.sha256; } 2>&1 | tee "$GITHUB_WORKSPACE/ci-logs/3-website.log"
+
+      - name: Publish logs to the ci/mac-release branch
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATUS: ${{ job.status }}
+        run: |
+          mkdir -p ci-logs
+          {
+            echo "status: $STATUS"
+            echo "commit: $GITHUB_SHA"
+            echo "run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          } > ci-logs/summary.txt
+          cd ci-logs
+          git init -q -b ci/mac-release
+          git add -A
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "Mac release $TAG: $STATUS"
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" ci/mac-release

@@ -101,6 +101,9 @@
       "category": "public.app-category.productivity",
       "minimumSystemVersion": "13.0",
       "darkModeSupport": true,
+      "electronLanguages": [
+        "en"
+      ],
       "identity": "-",
       "hardenedRuntime": true,
       "entitlements": "build/entitlements.mac.plist",
