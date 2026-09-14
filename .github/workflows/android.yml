@@ -51,15 +51,15 @@ jobs:
           cp app/build/outputs/apk/debug/app-debug.apk ../../JConnect-android.apk
 
       # One APK for phones, tablets and TVs. Android TV only offers apps that have a TV home screen activity and
-      # don't require a touchscreen or camera.
+      # don't require a touchscreen, a camera or Wi-Fi (many TV boxes only have Ethernet).
       - name: Check that TVs can install the APK
         run: |
           aapt2="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -n 1)aapt2"
           "$aapt2" dump badging JConnect-android.apk > ci-logs/3-tv-badging.log
           grep -E "launchable|uses-feature|uses-implied-feature" ci-logs/3-tv-badging.log
           grep -q "^leanback-launchable-activity:" ci-logs/3-tv-badging.log || { echo "::error::The APK has no activity for the Android TV home screen"; exit 1; }
-          if grep -E "^uses-feature: name='android\.hardware\.(touchscreen|camera)" ci-logs/3-tv-badging.log; then
-            echo "::error::The APK requires a touchscreen or camera, so TVs can't install it"
+          if grep -E "^uses-feature: name='android\.hardware\.(touchscreen|camera|wifi)" ci-logs/3-tv-badging.log; then
+            echo "::error::The APK requires a touchscreen, a camera or Wi-Fi, so some TVs can't install it"
             exit 1
           fi
 
