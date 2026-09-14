@@ -59,7 +59,7 @@ jobs:
       - name: Run tests
         run: >-
           node --test test/secure-channel.test.js test/jvpn.test.js test/account.test.js test/forticlient.test.js
-          src/web/test/connection.test.js server/cloud/test/cloud.test.js server/cloud/test/store.test.js 2>&1 | tee ci-logs/2-tests.log
+          src/web/test/connection.test.js src/web/test/tv.test.js server/cloud/test/cloud.test.js server/cloud/test/store.test.js 2>&1 | tee ci-logs/2-tests.log
 
       # Ubuntu 20.04 has an older glibc (2.31) than current distributions, so a helper built there also runs on older ones.
       - name: Build the input helper on Ubuntu 20.04

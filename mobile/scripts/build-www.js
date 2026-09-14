@@ -14,7 +14,7 @@ const copy = (from, to) => {
 
 fs.rmSync(www, { recursive: true, force: true });
 const webFiles = [
-  'web.css', 'identity.js', 'input.js', 'connection.js', 'app.js',
+  'web.css', 'identity.js', 'input.js', 'tv.js', 'connection.js', 'app.js',
   'vendor/nacl-fast.min.js', 'vendor/scrypt.js', 'vendor/tweetnacl-LICENSE.txt', 'vendor/scrypt-js-LICENSE.txt',
 ];
 for (const file of webFiles) copy(path.join(web, file), path.join(www, file));

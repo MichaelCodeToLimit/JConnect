@@ -241,7 +241,7 @@
     on(window, 'blur', releaseAll);
     on(document, 'visibilitychange', () => { if (document.hidden) releaseAll(); });
 
-    return {
+    const api = {
       get mode() { return mode; },
       setMode(next) { mode = next === 'trackpad' ? 'trackpad' : 'direct'; },
       setEnabled(value) { if (!value) releaseAll(); enabled = !!value; },
@@ -250,14 +250,26 @@
         for (const c of codes) emit({ t: 'k', c, d: true });
         for (const c of [...codes].reverse()) emit({ t: 'k', c, d: false });
       },
+      // For a TV remote: move the pointer by a share of the screen, and press buttons or scroll where it is.
+      pointerPosition() { return { ...cursor }; },
+      movePointerBy(dx, dy) {
+        queueMove({ x: Math.min(1, Math.max(0, cursor.x + dx)), y: Math.min(1, Math.max(0, cursor.y + dy)) });
+        return { ...cursor };
+      },
+      pointerButton(b, down) { button(b, down, { ...cursor }); },
+      scroll(dx, dy) { emit({ t: 'w', dx: Math.round(dx), dy: Math.round(dy) }); },
       releaseAll,
       destroy() {
         releaseAll();
         cancelAnimationFrame(moveFrame);
         for (const [el, type, fn, opts] of listeners) el.removeEventListener(type, fn, opts);
+        if (window.JCInput.active === api) window.JCInput.active = null;
       },
     };
+    // The session's input, for controls that aren't touch, mouse or keyboard (tv.js).
+    window.JCInput.active = api;
+    return api;
   }
 
-  window.JCInput = { createInput, contentRect };
+  window.JCInput = { createInput, contentRect, active: null };
 })();

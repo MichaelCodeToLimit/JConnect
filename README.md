@@ -21,11 +21,16 @@ The build isn't signed with an Apple Developer ID or notarized, so the first tim
 
 ## Install on Android
 
-Install `JConnect-<version>.apk` on a phone or tablet running Android 8.0 or later. Android asks you to allow installing apps from your browser or file manager the first time.
+Install `JConnect-<version>.apk` on a phone, tablet or TV running Android 8.0 or later. Android asks you to allow installing apps from your browser or file manager the first time.
 
-Tap **Add Computer**, then either scan the code JConnect shows on your computer under **Settings → Use this computer from a phone**, or type the computer's address. The phone needs to be on the same network as the computer, or on the same private network such as Tailscale.
+Tap **Add Computer**, then choose a computer JConnect found on the network, scan the code JConnect shows on your computer under **Settings → Use this computer from a phone**, or type the computer's address. The phone needs to be on the same network as the computer, or on the same private network such as Tailscale.
 
-The Android app connects to your computers. It doesn't share the phone's own screen.
+**Android TV and Google TV:** the same APK installs on TVs and appears on the TV's home screen. Install it with an app such as Downloader, or with `adb install`. On a TV, JConnect has a layout you move around with the remote:
+- **Add Computer** lists the computers on the network, so there's no address to type.
+- In a session, the arrows move the pointer and **OK** clicks. Hold **OK** to right-click, or hold it while moving to drag.
+- **Back** shows the session controls. There you can switch the arrows to scrolling or to arrow keys, or open the on-screen keyboard.
+
+The Android app connects to your computers. It doesn't share the phone's or TV's own screen.
 
 ## Install on Linux
 
@@ -151,7 +156,7 @@ Project layout:
 - `server/cloud`: JConnect Cloud (accounts, sync, relay, TURN)
 - `server/relay`: the standalone relay
 - `native`: the input helpers for macOS (Swift) and Linux (C)
-- `mobile`: the Android app. It's a Capacitor wrapper around the browser client in `src/web`, adding QR scanning, adding computers by address, and the back button.
+- `mobile`: the Android app for phones, tablets and TVs. It's a Capacitor wrapper around the browser client in `src/web`, adding QR scanning, finding computers on the network, adding computers by address, TV detection and the back button.
 
 ## Known limits
 

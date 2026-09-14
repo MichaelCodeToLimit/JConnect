@@ -1,10 +1,17 @@
-// JConnect for Android. Adds what a web page can't do by itself: scanning the code a computer shows,
-// adding a computer by its address, and the Android back button. Loads before the web client scripts.
+// JConnect for Android, on phones, tablets and TVs. Adds what a web page can't do by itself: finding the computers on
+// the network, scanning the code a computer shows, adding a computer by its address, and the Android Back button.
+// Loads before the web client scripts.
 (function () {
   const plugin = (name) => (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins[name]) || null;
   const DEFAULT_PORT = 47801;
   const QR_CODE = 0;
+  const LISTEN_MS = 4500;
   const $ = (id) => document.getElementById(id);
+  // The app's native side (DevicePlugin) marks TVs in the user agent, so this is known before anything draws.
+  const television = /\bJConnectTV\b/.test(navigator.userAgent);
+
+  const PHONE_HINT = 'On the computer, open JConnect and go to <strong>Settings → Use this computer from a phone</strong>.';
+  const TV_HINT = 'Choose a computer on this network, or type the address JConnect shows on the computer under <strong>Settings → Use this computer from a phone</strong>.';
 
   // "192.168.1.20", "office-pc:47801", "[fd7a::1]:47801" or a pasted http:// address.
   function parseAddress(text) {
@@ -26,6 +33,35 @@
       if (target) return target;
       const host = conn.hostFromLocation(url);
       return host ? { ...host, code: '', id: '', publicKey: '' } : null;
+    } catch {
+      return null;
+    }
+  }
+
+  // JConnect computers announce themselves on the local network every few seconds. Anything on the network can send
+  // an announcement, so each one is checked here, and pairing then proves the computer holds the key it announced.
+  function parseAnnouncement(text, address) {
+    let msg;
+    try { msg = JSON.parse(String(text)); } catch { return null; }
+    if (!msg || msg.app !== 'jconnect' || typeof msg.id !== 'string' || typeof msg.publicKey !== 'string') return null;
+    try {
+      if (window.JCSecure.deviceIdFromKey(msg.publicKey) !== msg.id) return null;
+    } catch {
+      return null;
+    }
+    if (!Number.isInteger(msg.port) || msg.port < 1 || msg.port > 65535) return null;
+    if (typeof address !== 'string' || !/^[0-9a-f.:]{2,45}$/i.test(address)) return null;
+    const clean = (value, max) => String(value || '').replace(/\p{Cc}/gu, '').trim().slice(0, max);
+    return { id: msg.id, publicKey: msg.publicKey, name: clean(msg.name, 64) || 'Computer', os: clean(msg.os, 32), host: address, port: msg.port };
+  }
+
+  // The computers heard on the network in the next few seconds, or null when this device can't listen.
+  async function listenNearby() {
+    const device = plugin('JConnectDevice');
+    if (!device) return null;
+    try {
+      const result = await device.listen({ ms: LISTEN_MS });
+      return ((result && result.messages) || []).map((m) => parseAnnouncement(m.text, m.address)).filter(Boolean);
     } catch {
       return null;
     }
@@ -58,8 +94,12 @@
     dialog.innerHTML = `
       <form method="dialog">
         <h2>Add a computer</h2>
-        <p class="muted native-hint">On the computer, open JConnect and go to <strong>Settings → Use this computer from a phone</strong>.</p>
+        <p id="add-hint" class="muted native-hint"></p>
         <div class="stack">
+          <div class="nearby">
+            <p id="add-nearby-status" class="muted nearby-status" role="status"></p>
+            <div id="add-nearby-list" class="nearby-list"></div>
+          </div>
           <button type="button" id="add-scan" class="primary">Scan the code</button>
           <label class="native-field">
             <span class="muted">Or type the computer’s address</span>
@@ -78,6 +118,50 @@
     return dialog;
   }
 
+  // Lists the computers heard on the network for as long as the dialog stays open.
+  let search = 0;
+  async function findNearby(d, beginPairing) {
+    const run = ++search;
+    const status = $('add-nearby-status');
+    const list = $('add-nearby-list');
+    const buttons = new Map();
+    list.replaceChildren();
+    status.textContent = 'Looking for computers on this network…';
+    status.hidden = false;
+    while (d.open && run === search) {
+      const found = await listenNearby();
+      if (!d.open || run !== search) return;
+      if (found === null) {
+        status.hidden = true;
+        return;
+      }
+      for (const c of found) {
+        let button = buttons.get(c.id);
+        if (!button) {
+          button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'nearby-item';
+          const name = document.createElement('span');
+          name.className = 'nearby-name';
+          const meta = document.createElement('span');
+          meta.className = 'nearby-meta';
+          button.append(name, meta);
+          list.append(button);
+          buttons.set(c.id, button);
+        }
+        const added = window.JCComputers && window.JCComputers.get(c.id);
+        button.firstChild.textContent = c.name;
+        button.lastChild.textContent = [added ? 'Added' : '', c.os, c.host].filter(Boolean).join(' · ');
+        button.onclick = () => {
+          d.close();
+          beginPairing({ host: c.host, port: c.port, id: c.id, publicKey: c.publicKey, code: '' });
+        };
+      }
+      status.textContent = 'No computers found yet. Check that JConnect is open on the computer and that it’s on the same network, or type its address below.';
+      status.hidden = buttons.size > 0;
+    }
+  }
+
   function addComputer(beginPairing) {
     const d = addDialog();
     const error = $('add-error');
@@ -91,6 +175,9 @@
     error.hidden = true;
     address.value = '';
     code.value = '';
+    $('add-hint').innerHTML = television ? TV_HINT : PHONE_HINT;
+    // TVs have no camera to scan with.
+    $('add-scan').hidden = television;
 
     $('add-scan').onclick = async () => {
       d.close();
@@ -101,7 +188,7 @@
       if (!target) return showError('That isn’t a JConnect code. Scan the code shown in JConnect on the computer.');
       return beginPairing(target);
     };
-    // With a code, Allow pairs straight away. Without one, someone at the computer is asked to allow this phone.
+    // With a code, Allow pairs straight away. Without one, someone at the computer is asked to allow this device.
     const useAddress = () => {
       const target = parseAddress(address.value);
       if (!target) return showError('Type the computer’s address, for example 192.168.1.20.');
@@ -119,12 +206,15 @@
     code.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); useAddress(); } };
     $('add-cancel').onclick = () => d.close();
     d.showModal();
+    findNearby(d, beginPairing);
   }
 
   // Back closes what's on top: a dialog, then the session controls, then the session or pairing screen.
   function onBack() {
     const open = document.querySelector('dialog[open]');
     if (open) { open.close(); return; }
+    // On a TV, Back shows and hides the session controls instead (tv.js).
+    if (window.JCTV && window.JCTV.back()) return;
     const visible = (id) => $(id) && !$(id).hidden;
     if (visible('screen-session')) {
       if (visible('overlay')) $('overlay-back').click();
@@ -148,8 +238,12 @@
     const button = $('use-another');
     if (button) button.textContent = 'Add Computer';
     const hint = document.querySelector('#empty-home p:not(.big)');
-    if (hint) hint.textContent = 'Tap Add Computer, then scan the code JConnect shows on your computer under Settings → Use this computer from a phone.';
+    if (hint) {
+      hint.textContent = television
+        ? 'Press Add Computer to find the computers on this network. JConnect needs to be open on them.'
+        : 'Tap Add Computer, then scan the code JConnect shows on your computer under Settings → Use this computer from a phone.';
+    }
   });
 
-  window.JCNative = { platform: 'android', addComputer, parseAddress, targetFromCode, onBack };
+  window.JCNative = { platform: 'android', television, addComputer, parseAddress, parseAnnouncement, targetFromCode, onBack };
 })();

@@ -68,7 +68,7 @@ jobs:
       - name: Run tests
         run: >-
           node --test test/secure-channel.test.js test/jvpn.test.js test/account.test.js test/forticlient.test.js
-          src/web/test/connection.test.js server/cloud/test/cloud.test.js 2>&1 | tee ci-logs/2-tests.log
+          src/web/test/connection.test.js src/web/test/tv.test.js server/cloud/test/cloud.test.js 2>&1 | tee ci-logs/2-tests.log
 
       - name: Build the DMGs
         run: npm run dist:mac 2>&1 | tee ci-logs/3-build.log

@@ -293,11 +293,15 @@
   function openBar(autoHide = true) {
     $('bar').classList.add('open');
     clearTimeout(barTimer);
-    if (autoHide) barTimer = setTimeout(closeBar, 3500);
+    if (autoHide) barTimer = setTimeout(closeBarIfIdle, 3500);
   }
   function closeBar() {
     if ($('keys-menu').hidden === false) return;
     $('bar').classList.remove('open');
+  }
+  // The controls stay while a keyboard or TV remote is moving through them.
+  function closeBarIfIdle() {
+    if (!$('bar').contains(document.activeElement)) closeBar();
   }
 
   function startSession(c) {
@@ -398,7 +402,7 @@
   $('edge').addEventListener('pointerenter', () => openBar());
   $('pull-tab').addEventListener('click', () => ($('bar').classList.contains('open') ? closeBar() : openBar()));
   $('bar').addEventListener('pointerenter', () => clearTimeout(barTimer));
-  $('bar').addEventListener('pointerleave', () => { barTimer = setTimeout(closeBar, 1200); });
+  $('bar').addEventListener('pointerleave', () => { barTimer = setTimeout(closeBarIfIdle, 1200); });
   // Keyboard shortcut to reveal controls: Ctrl + Alt + Home (not forwarded to the remote computer).
   window.addEventListener('keydown', (e) => {
     if (session && e.ctrlKey && e.altKey && e.code === 'Home') {

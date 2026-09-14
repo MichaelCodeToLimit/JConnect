@@ -47,6 +47,7 @@ const STATIC_FILES = {
   '/web.css': [path.join(WEB, 'web.css'), CSS],
   '/identity.js': [path.join(WEB, 'identity.js'), JS],
   '/input.js': [path.join(WEB, 'input.js'), JS],
+  '/tv.js': [path.join(WEB, 'tv.js'), JS],
   '/connection.js': [path.join(WEB, 'connection.js'), JS],
   '/app.js': [path.join(WEB, 'app.js'), JS],
   '/secure-channel.js': [path.join(SRC, 'shared', 'secure-channel.js'), JS],
