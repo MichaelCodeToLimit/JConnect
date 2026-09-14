@@ -1,0 +1,18 @@
+[2593:0914/142207.837206:ERROR:ui/gl/gl_display.cc:665] Initialization of all (1) EGL display types failed.
+[2593:0914/142207.838242:ERROR:ui/gl/init/gl_initializer_mac.cc:127] GLDisplayEGL::Initialize failed.
+[2593:0914/142207.838288:ERROR:ui/gl/gl_display.cc:665] Initialization of all (1) EGL display types failed.
+[2593:0914/142207.838299:ERROR:ui/gl/init/gl_initializer_mac.cc:127] GLDisplayEGL::Initialize failed.
+[2593:0914/142207.965500:ERROR:components/viz/service/main/viz_main_impl.cc:190] Exiting GPU process due to errors during initialization
+2026-09-14 14:22:10.837 JConnect Helper[2600:11354] XPC error for connection com.apple.backupd.sandbox.xpc: Connection invalid
+2026-09-14 14:22:10.837 JConnect Helper[2600:11355] XPC error for connection com.apple.backupd.sandbox.xpc: Connection invalid
+2026-09-14 14:22:10.892 JConnect Helper[2600:11354] XPC error for connection com.apple.backupd.sandbox.xpc: Connection invalid
+[2713:0914/142211.191277:ERROR:ui/gl/gl_display.cc:665] Initialization of all (1) EGL display types failed.
+[2713:0914/142211.193184:ERROR:ui/gl/init/gl_initializer_mac.cc:127] GLDisplayEGL::Initialize failed.
+[2713:0914/142211.193270:ERROR:ui/gl/gl_display.cc:665] Initialization of all (1) EGL display types failed.
+[2713:0914/142211.193304:ERROR:ui/gl/init/gl_initializer_mac.cc:127] GLDisplayEGL::Initialize failed.
+[2713:0914/142211.254204:ERROR:components/viz/service/main/viz_main_impl.cc:190] Exiting GPU process due to errors during initialization
+[2717:0914/142211.545809:ERROR:ui/gl/gl_display.cc:665] Initialization of all (1) EGL display types failed.
+[2717:0914/142211.546207:ERROR:ui/gl/init/gl_initializer_mac.cc:127] GLDisplayEGL::Initialize failed.
+[2717:0914/142211.546226:ERROR:ui/gl/gl_display.cc:665] Initialization of all (1) EGL display types failed.
+[2717:0914/142211.546235:ERROR:ui/gl/init/gl_initializer_mac.cc:127] GLDisplayEGL::Initialize failed.
+[2717:0914/142211.590841:ERROR:components/viz/service/main/viz_main_impl.cc:190] Exiting GPU process due to errors during initialization

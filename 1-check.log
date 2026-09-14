@@ -1,0 +1,30 @@
+== dist/JConnect-0.1.0-beta.1-x64.dmg ( 97M)
+Applications shortcut: yes
+signature: valid
+Identifier=app.jconnect.desktop
+Format=app bundle with Mach-O thin (x86_64)
+Signature=adhoc
+app architectures: x86_64
+helper architectures: x86_64 arm64
+0.1.0-beta.1
+13.0
+input helper: ready
+app answered on port 47904: {"app":"jconnect","v":2,"id":"6c34601bbfaba99e47b0","name":"sjc20-cw752-b6efb9eb-df8e-49a9-b7f9-d852f52d6141-3EF6C9D51F41.local","os":"macOS","publicKey":"a7mcAOd2yInoJ2uSqhisZ5x/rs645PQxNyPjR+PdTIA=","port":47904}
+  app: [2593:0914/142207.837206:ERROR:ui/gl/gl_display.cc:665] Initialization of all (1) EGL display types failed.
+  app: [2593:0914/142207.838242:ERROR:ui/gl/init/gl_initializer_mac.cc:127] GLDisplayEGL::Initialize failed.
+  app: [2593:0914/142207.838288:ERROR:ui/gl/gl_display.cc:665] Initialization of all (1) EGL display types failed.
+  app: [2593:0914/142207.838299:ERROR:ui/gl/init/gl_initializer_mac.cc:127] GLDisplayEGL::Initialize failed.
+  app: [2593:0914/142207.965500:ERROR:components/viz/service/main/viz_main_impl.cc:190] Exiting GPU process due to errors during initialization
+  app: 2026-09-14 14:22:10.837 JConnect Helper[2600:11354] XPC error for connection com.apple.backupd.sandbox.xpc: Connection invalid
+  app: 2026-09-14 14:22:10.837 JConnect Helper[2600:11355] XPC error for connection com.apple.backupd.sandbox.xpc: Connection invalid
+  app: 2026-09-14 14:22:10.892 JConnect Helper[2600:11354] XPC error for connection com.apple.backupd.sandbox.xpc: Connection invalid
+  app: [2713:0914/142211.191277:ERROR:ui/gl/gl_display.cc:665] Initialization of all (1) EGL display types failed.
+  app: [2713:0914/142211.193184:ERROR:ui/gl/init/gl_initializer_mac.cc:127] GLDisplayEGL::Initialize failed.
+  app: [2713:0914/142211.193270:ERROR:ui/gl/gl_display.cc:665] Initialization of all (1) EGL display types failed.
+  app: [2713:0914/142211.193304:ERROR:ui/gl/init/gl_initializer_mac.cc:127] GLDisplayEGL::Initialize failed.
+  app: [2713:0914/142211.254204:ERROR:components/viz/service/main/viz_main_impl.cc:190] Exiting GPU process due to errors during initialization
+  app: [2717:0914/142211.545809:ERROR:ui/gl/gl_display.cc:665] Initialization of all (1) EGL display types failed.
+  app: [2717:0914/142211.546207:ERROR:ui/gl/init/gl_initializer_mac.cc:127] GLDisplayEGL::Initialize failed.
+  app: [2717:0914/142211.546226:ERROR:ui/gl/gl_display.cc:665] Initialization of all (1) EGL display types failed.
+  app: [2717:0914/142211.546235:ERROR:ui/gl/init/gl_initializer_mac.cc:127] GLDisplayEGL::Initialize failed.
+  app: [2717:0914/142211.590841:ERROR:components/viz/service/main/viz_main_impl.cc:190] Exiting GPU process due to errors during initialization
