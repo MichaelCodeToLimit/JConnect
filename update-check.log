@@ -1,0 +1,15 @@
+[14:08:22] installing JConnect-Setup-0.0.1-test.1.exe
+[14:09:09] installed version: 0.0.1-test.1
+[14:09:09] starting the older JConnect, with updates from http://127.0.0.1:8123/
+[14:09:17] running 8 seconds after starting: true
+[14:09:28] installed 0.0.1-test.1 · running true
+[14:09:38] installed 0.0.1-test.1 · running true
+[14:09:49] installed 0.0.1-test.1 · running true
+[14:10:00] installed 0.0.1-test.1 · running true
+[14:10:09] served GET /JConnect-Setup.exe.json
+[14:10:09] served GET /JConnect-Setup.exe
+[14:10:11] installed 0.0.1-test.1 · running true
+[14:10:13] the older JConnect exited with 0
+[14:10:21] installed null · running false
+[14:10:35] installed 0.0.1-test.2 · running true
+[14:10:35] PASS: JConnect 0.0.1-test.1 updated itself to 0.0.1-test.2 and started again

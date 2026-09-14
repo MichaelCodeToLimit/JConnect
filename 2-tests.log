@@ -1,0 +1,14 @@
+✔ versions compare the way releases are numbered (1.6687ms)
+✔ only a well-formed description of the expected download is used (1.1897ms)
+✔ each kind of install gets its own download and way of updating (0.7987ms)
+✔ updates come from the website, or from this computer when testing (0.6415ms)
+✔ a download is kept only when it matches the published size and SHA-256 (267.6894ms)
+✔ a JConnect started by an update stays in the background if the old one was (4.5163ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 380.4473
