@@ -48,6 +48,9 @@
 
     // Coalesce moves to one per frame so a fast mouse doesn't flood the connection.
     function queueMove(p) {
+      // The pointer is where it was last sent, so moves by a share of the screen (a TV remote) add up.
+      cursor.x = p.x;
+      cursor.y = p.y;
       pendingMove = p;
       if (moveFrame) return;
       moveFrame = requestAnimationFrame(() => {
