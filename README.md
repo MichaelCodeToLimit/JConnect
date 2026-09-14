@@ -146,7 +146,7 @@ cd mobile && npm install && npm run sync && cd android && ./gradlew assembleDebu
 node --test test/*.test.js src/web/test/connection.test.js server/relay/test/relay.test.js server/cloud/test/cloud.test.js
 ```
 
-**Releases and updates.** Build a release with the version it's published as, so the updater can tell versions apart, for example `npm run dist:win -- -c.extraMetadata.version=0.1.0-beta.2`. The Linux workflow does this from its `TAG`. When a download on the website changes, write the description the updater reads next to it: `node scripts/update-info.js ../jconnect-website/public/download/JConnect-Setup.exe 0.1.0-beta.2`. An APK also needs `--version-code`, the `versionCode` from `mobile/android/app/build.gradle`. The Linux release job writes its own.
+**Releases and updates.** Build a release with the version it's published as, so the updater can tell versions apart, for example `npm run dist:win -- -c.extraMetadata.version=0.1.0-beta.2`. The Linux and Mac workflows do this from their `TAG`. When a download on the website changes, write the description the updater reads next to it: `node scripts/update-info.js ../jconnect-website/public/download/JConnect-Setup.exe 0.1.0-beta.2`. An APK also needs `--version-code`, the `versionCode` from `mobile/android/app/build.gradle`. The Linux and Mac release jobs write their own.
 
 DMGs can only be built on a Mac, because they need Apple's tools. `.github/workflows/mac.yml` builds and checks both DMGs on a GitHub-hosted Mac whenever the `app` branch is pushed. Download them from the run's **Artifacts**.
 

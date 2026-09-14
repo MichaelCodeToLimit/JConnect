@@ -8,7 +8,6 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 out="${1:-dist}"
 mkdir -p "$out"
-version="$(node -p "require('./package.json').version")"
 native="$(uname -m)"
 status=0
 
@@ -25,7 +24,8 @@ stop_app() {
 }
 
 for arch in ${JCONNECT_ARCHES:-arm64 x64}; do
-  dmg="dist/JConnect-${version}-${arch}.dmg"
+  # Each DMG is named with the version it was built as, which the release workflow sets.
+  dmg="$(ls dist/JConnect-*-"${arch}".dmg | head -1)"
   echo "== $dmg ($(du -h "$dmg" | cut -f1))"
   mount="$(mktemp -d /tmp/jconnect-dmg.XXXX)"
   hdiutil attach -nobrowse -readonly -mountpoint "$mount" "$dmg" > /dev/null

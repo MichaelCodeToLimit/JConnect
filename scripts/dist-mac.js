@@ -44,7 +44,8 @@ function compileIconComposerIcon() {
 run(process.execPath, ['scripts/make-icons.js']);
 run(process.execPath, ['scripts/build-mac-input.js']);
 
-const args = ['--mac'];
+// Anything after `npm run dist:mac --` goes to electron-builder, such as -c.extraMetadata.version=0.1.0-beta.2.
+const args = ['--mac', ...process.argv.slice(2)];
 if (compileIconComposerIcon()) {
   console.log('Using the Icon Composer icon.');
 } else {

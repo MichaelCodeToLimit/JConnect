@@ -67,11 +67,12 @@ jobs:
 
       - name: Run tests
         run: >-
-          node --test test/secure-channel.test.js test/jvpn.test.js test/account.test.js test/forticlient.test.js
+          node --test test/secure-channel.test.js test/jvpn.test.js test/account.test.js test/forticlient.test.js test/updater.test.js
           src/web/test/connection.test.js src/web/test/tv.test.js server/cloud/test/cloud.test.js 2>&1 | tee ci-logs/2-tests.log
 
+      # The app reports the version it's released as, which its updater compares with the website's.
       - name: Build the DMGs
-        run: npm run dist:mac 2>&1 | tee ci-logs/3-build.log
+        run: npm run dist:mac -- -c.extraMetadata.version="${TAG#mac-v}" 2>&1 | tee ci-logs/3-build.log
 
       # Upload first, so the DMGs are kept even if a check below fails.
       - name: Upload the DMGs
@@ -212,7 +213,10 @@ jobs:
           cd website/public/download
           sha256sum JConnect-Mac-AppleSilicon.dmg > JConnect-Mac-AppleSilicon.dmg.sha256
           sha256sum JConnect-Mac-Intel.dmg > JConnect-Mac-Intel.dmg.sha256
-          git add JConnect-Mac-*.dmg JConnect-Mac-*.dmg.sha256
+          # What JConnect's updater reads to find this version, from the recompressed DMGs being published.
+          node "$GITHUB_WORKSPACE/scripts/update-info.js" JConnect-Mac-AppleSilicon.dmg "${TAG#mac-v}"
+          node "$GITHUB_WORKSPACE/scripts/update-info.js" JConnect-Mac-Intel.dmg "${TAG#mac-v}"
+          git add JConnect-Mac-*.dmg JConnect-Mac-*.dmg.sha256 JConnect-Mac-*.dmg.json
           git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "Offer the DMGs from $TITLE for download"
           git push -q origin main
           { ls -l JConnect-Mac-*; cat JConnect-Mac-*.sha256; } 2>&1 | tee "$GITHUB_WORKSPACE/ci-logs/3-website.log"
