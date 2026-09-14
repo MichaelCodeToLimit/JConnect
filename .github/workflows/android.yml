@@ -2,7 +2,8 @@ name: Android build
 
 on:
   push:
-    branches: [app]
+    # The android branch is for trying Android changes without starting the desktop builds.
+    branches: [app, android]
     paths:
       - mobile/**
       - src/web/**

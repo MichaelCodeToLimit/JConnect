@@ -49,4 +49,6 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Lets the app hear computers announcing themselves on Wi-Fi. -->
     <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+    <!-- Lets the app hand a newer version from JConnect's website to Android's installer. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 </manifest>

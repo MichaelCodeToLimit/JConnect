@@ -58,7 +58,7 @@ jobs:
 
       - name: Run tests
         run: >-
-          node --test test/secure-channel.test.js test/jvpn.test.js test/account.test.js test/forticlient.test.js
+          node --test test/secure-channel.test.js test/jvpn.test.js test/account.test.js test/forticlient.test.js test/updater.test.js
           src/web/test/connection.test.js src/web/test/tv.test.js server/cloud/test/cloud.test.js server/cloud/test/store.test.js 2>&1 | tee ci-logs/2-tests.log
 
       # Ubuntu 20.04 has an older glibc (2.31) than current distributions, so a helper built there also runs on older ones.
@@ -75,7 +75,8 @@ jobs:
       - name: Build the AppImage and .deb
         run: |
           node scripts/make-icons.js
-          npx electron-builder --linux 2>&1 | tee ci-logs/4-build.log
+          # The app reports the version it's released as, which its updater compares with the website's.
+          npx electron-builder --linux -c.extraMetadata.version="${TAG#linux-v}" 2>&1 | tee ci-logs/4-build.log
 
       # Upload first, so the packages are kept even if a check below fails.
       - name: Upload the packages
@@ -162,7 +163,9 @@ jobs:
           cp release/*.deb website/public/download/JConnect-Linux.deb
           cd website/public/download
           sha256sum JConnect-Linux.deb > JConnect-Linux.deb.sha256
-          git add JConnect-Linux.deb JConnect-Linux.deb.sha256
+          # What JConnect's updater reads to find this version.
+          node "$GITHUB_WORKSPACE/scripts/update-info.js" JConnect-Linux.deb "${TAG#linux-v}"
+          git add JConnect-Linux.deb JConnect-Linux.deb.sha256 JConnect-Linux.deb.json
           git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "Offer the .deb from $TITLE for download"
           git push -q origin main
           { ls -l JConnect-Linux.deb; cat JConnect-Linux.deb.sha256; } 2>&1 | tee "$GITHUB_WORKSPACE/ci-logs/3-website.log"

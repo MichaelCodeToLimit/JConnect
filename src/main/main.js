@@ -31,7 +31,7 @@ const PRELOAD = path.join(__dirname, 'preload.js');
 const ICON = path.join(ASSETS, 'icon.png');
 
 let store; let security; let input; let capture; let host; let discovery; let resources; let selftest;
-let account; let relayLink; let vpn; let router; let jvpnClient; let ssh;
+let account; let relayLink; let vpn; let router; let jvpnClient; let ssh; let updater;
 let mainWin = null;
 let tray = null;
 let quitting = false;
@@ -163,6 +163,22 @@ async function boot() {
   });
   powerMonitor.on('shutdown', () => host.noticeAll('host-shutdown'));
 
+  const { createUpdater } = require('./updater');
+  updater = createUpdater({
+    app,
+    store,
+    isIdle: updateIsIdle,
+    beforeInstall: prepareForUpdate,
+    quit: () => {
+      quitting = true;
+      app.quit();
+      setTimeout(() => app.exit(0), 5000);
+    },
+    notify,
+    openExternal: (url) => shell.openExternal(url),
+  });
+  updater.events.on('change', scheduleUpdate);
+
   registerIpc();
   createTray();
   applyLoginItem();
@@ -177,6 +193,7 @@ async function boot() {
   statusLoop();
   refreshNetworks();
   setInterval(() => refreshNetworks(), 60000);
+  updater.start();
 
   if (!app.isPackaged) {
     console.log(`[jconnect] ${store.device().name} ready on port ${host.port} · pairing code ${host.pairingCode}`);
@@ -197,6 +214,7 @@ app.on('will-quit', () => {
   if (jvpnClient) jvpnClient.closeAll();
   for (const forward of forwards) forward.close();
   if (input) input.close();
+  if (updater) updater.stop();
 });
 app.on('window-all-closed', () => { /* JConnect stays ready in the background */ });
 app.on('activate', () => showMain());
@@ -449,6 +467,7 @@ function snapshot() {
       shareSsh: s.shareSsh,
       sshPort: s.sshPort,
       shareRdp: s.shareRdp,
+      autoUpdate: s.autoUpdate,
     },
     computers: store.data.computers.map(computerView),
     sshHosts: ssh.hosts().filter((h) => !h.id.startsWith('ssh-host-')),
@@ -468,6 +487,7 @@ function snapshot() {
     cloudServer: store.data.cloudServer || '',
     jvpn: relayLink.status(),
     networks,
+    update: updater ? updater.snapshot() : null,
     permissions: process.platform === 'darwin' ? macPermissions() : null,
     advanced: {
       id: store.id,
@@ -601,6 +621,12 @@ function registerIpc() {
   });
 
   handle('jc:set-setting', (_e, key, value) => setSetting(key, value));
+  handle('jc:update', (_e, action) => {
+    if (action === 'check') return updater.check();
+    if (action === 'install') return updater.install();
+    if (action === 'website') return shell.openExternal(updater.downloadPage);
+    throw new Error('Not allowed');
+  });
   handle('jc:set-password', (_e, password) => {
     store.setPassword(password ? String(password).slice(0, 256) : null);
     store.log({ kind: 'password', level: 'info', message: password ? 'A password is now required to connect.' : 'The connection password was removed.' });
@@ -912,7 +938,7 @@ function registerIpc() {
 }
 
 function setSetting(key, value) {
-  const booleans = ['remoteAccess', 'startAtLogin', 'travelMode', 'travelOwnerOnly', 'emergencyShutdown', 'hideFromNearby', 'allowBrowserClients', 'accountTrust', 'jvpnEnabled', 'shareSsh', 'shareRdp'];
+  const booleans = ['remoteAccess', 'startAtLogin', 'travelMode', 'travelOwnerOnly', 'emergencyShutdown', 'hideFromNearby', 'allowBrowserClients', 'accountTrust', 'jvpnEnabled', 'shareSsh', 'shareRdp', 'autoUpdate'];
   if (key === 'deviceName') {
     const name = String(value ?? '').replace(/\p{Cc}/gu, '').trim().slice(0, 64);
     store.setSetting('deviceName', name || null);
@@ -952,6 +978,7 @@ function setSetting(key, value) {
   }
   if (key === 'travelOwnerOnly') host.applyTravelMode();
   if (key === 'startAtLogin') applyLoginItem();
+  if (key === 'autoUpdate' && updater) updater.settingsChanged();
   if (key === 'hideFromNearby') discovery.announce();
   if (key === 'jvpnEnabled') {
     relayLink.refresh();
@@ -1055,6 +1082,44 @@ function terminateJConnect() {
   }, 300);
 }
 
+// ---------------------------------------------------------------------------------------------
+// Updates (src/main/updater.js)
+
+// Nobody would notice JConnect restarting: no device is connected to this computer, no JConnect window is open on
+// another computer or SSH host, and the JConnect window isn't being used.
+function updateIsIdle() {
+  const inUse = mainWin && !mainWin.isDestroyed() && mainWin.isVisible() && mainWin.isFocused();
+  return host.sessions.size === 0 && host.streamList().length === 0 && sessionWins.size === 0 && ssh.sessions.size === 0 && !inUse;
+}
+
+// Just before the installer takes over: connected devices hear that JConnect is updating, and everything is saved.
+async function prepareForUpdate(version) {
+  const hidden = !(mainWin && !mainWin.isDestroyed() && mainWin.isVisible());
+  store.log({ kind: 'update', level: 'info', message: `JConnect is updating to ${version}.` });
+  host.noticeAll('host-updating');
+  store.saveNow();
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  return { hidden };
+}
+
+function openUpdates() {
+  const win = showMain();
+  const open = () => win.webContents.send('jc:navigate', 'updates');
+  if (win.webContents.isLoading()) win.webContents.once('did-finish-load', () => setTimeout(open, 300));
+  else open();
+}
+
+function checkForUpdatesNow() {
+  openUpdates();
+  if (updater) updater.check().catch(() => {});
+}
+
+function updateMenuItem() {
+  const u = updater ? updater.snapshot() : null;
+  if (u && u.state === 'ready') return { label: `Restart to Update to ${u.available.version}`, click: openUpdates };
+  return { label: 'Check for Updates…', click: checkForUpdatesNow };
+}
+
 // The Shut Down button: connected devices hear that the computer is turning off, then it shuts down right away.
 async function shutDownComputer() {
   store.log({ kind: 'power-off', level: 'info', message: 'This computer was shut down from JConnect.' });
@@ -1156,6 +1221,7 @@ function applyMenu() {
       label: app.name,
       submenu: [
         { label: `About ${app.name}`, click: () => app.showAboutPanel() },
+        { label: 'Check for Updates…', click: checkForUpdatesNow },
         { type: 'separator' },
         { label: 'Settings…', accelerator: key('Command+,'), click: openSettingsWindow },
         { type: 'separator' },
@@ -1204,6 +1270,8 @@ function updateTray() {
     { label: 'Remote access', type: 'checkbox', checked: !!s.remoteAccess, click: (item) => setSetting('remoteAccess', item.checked) },
     { label: 'JVPN', type: 'checkbox', checked: !!s.jvpnEnabled, click: (item) => setSetting('jvpnEnabled', item.checked) },
     { label: 'Travel Mode', type: 'checkbox', checked: !!s.travelMode, click: (item) => setSetting('travelMode', item.checked) },
+    { type: 'separator' },
+    updateMenuItem(),
     { type: 'separator' },
     { label: 'Terminate JConnect…', click: () => confirmStop('terminate') },
     { label: 'Shut Down Computer…', click: () => confirmStop('shutdown') },

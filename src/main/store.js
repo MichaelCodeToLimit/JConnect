@@ -14,6 +14,7 @@ const DEFAULT_SETTINGS = {
   requirePassword: false,
   passwordHash: null,
   startAtLogin: true,
+  autoUpdate: true,
   travelMode: false,
   travelOwnerOnly: true,
   emergencyShutdown: false,

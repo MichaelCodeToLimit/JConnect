@@ -182,6 +182,8 @@
           this.overlay({ title: `${name} was turned off.`, text: 'JConnect will reconnect when it is back.', spinner: true, actions: [['Close', () => this.exit()]] });
         } else if (this.hostDown === 'sleep') {
           this.overlay({ title: `${name} went to sleep.`, text: 'JConnect will reconnect when it wakes up.', spinner: true, actions: [['Close', () => this.exit()]] });
+        } else if (this.hostDown === 'updating') {
+          this.overlay({ title: `JConnect is updating on ${name}.`, text: 'JConnect will reconnect when it’s back, usually within a minute.', spinner: true, actions: [['Close', () => this.exit()]] });
         } else if (elapsed < (this.wasLive ? 15000 : 7000)) {
           this.overlay(this.wasLive
             ? { title: 'Connection interrupted', text: 'Reconnecting…', spinner: true }
@@ -376,6 +378,7 @@
         case 'disabled': this.end('disabled'); break;
         case 'host-shutdown': this.hostDown = m.reason === 'security' ? 'security-shutdown' : 'shutdown'; break;
         case 'host-sleep': this.hostDown = 'sleep'; break;
+        case 'host-updating': this.hostDown = 'updating'; break;
         case 'permission':
           this.permission = m.permission;
           if (m.permission === 'view') this.releaseKeys();

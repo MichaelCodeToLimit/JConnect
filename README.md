@@ -32,6 +32,18 @@ Tap **Add Computer**, then choose a computer JConnect found on the network, scan
 
 The Android app connects to your computers. It doesn't share the phone's or TV's own screen.
 
+## Updates
+
+JConnect checks its website for a new version every few hours. **Settings → Updates** shows the version you have, and **Check now** checks straight away.
+
+- **Windows:** JConnect downloads the update and installs it when nobody is using the computer, then starts again. Turn off **Update automatically** to choose when instead.
+- **Mac:** JConnect downloads the update, and **Update** installs it. Afterwards, macOS asks you to allow Screen Recording and Accessibility for JConnect again.
+- **Linux (.deb):** JConnect downloads the update, and **Update** installs it after your system asks for an administrator password.
+- **Android, including TVs:** the home screen shows **Update** when there's a new version. The first time, Android asks you to allow JConnect to install apps.
+- **Portable Windows app and AppImage:** JConnect tells you about the new version, and you download it from the website.
+
+Before installing anything, JConnect checks that the download has exactly the size and SHA-256 that the website publishes for it.
+
 ## Install on Linux
 
 JConnect runs on 64-bit Intel and AMD PCs.
@@ -133,6 +145,8 @@ npm run dist:linux           # on Linux: build dist/JConnect-*-x86_64.AppImage a
 cd mobile && npm install && npm run sync && cd android && ./gradlew assembleDebug   # Android APK (needs JDK 17–21)
 node --test test/*.test.js src/web/test/connection.test.js server/relay/test/relay.test.js server/cloud/test/cloud.test.js
 ```
+
+**Releases and updates.** Build a release with the version it's published as, so the updater can tell versions apart, for example `npm run dist:win -- -c.extraMetadata.version=0.1.0-beta.2`. The Linux workflow does this from its `TAG`. When a download on the website changes, write the description the updater reads next to it: `node scripts/update-info.js ../jconnect-website/public/download/JConnect-Setup.exe 0.1.0-beta.2`. An APK also needs `--version-code`, the `versionCode` from `mobile/android/app/build.gradle`. The Linux release job writes its own.
 
 DMGs can only be built on a Mac, because they need Apple's tools. `.github/workflows/mac.yml` builds and checks both DMGs on a GitHub-hosted Mac whenever the `app` branch is pushed. Download them from the run's **Artifacts**.
 

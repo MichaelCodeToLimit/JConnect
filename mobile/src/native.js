@@ -209,6 +209,70 @@
     findNearby(d, beginPairing);
   }
 
+  // ---------- updates ----------
+  // The app's native side (DevicePlugin) checks JConnect's website for a newer APK, downloads it, checks its SHA-256
+  // and hands it to Android's installer, which only installs it over this app if it has the same signature.
+  const UPDATE_EVERY_MS = 12 * 60 * 60 * 1000;
+  let updateInfo = null;
+  let updating = false;
+
+  function updateBanner() {
+    if ($('update-banner')) return $('update-banner');
+    const header = document.querySelector('#screen-home header');
+    if (!header) return null;
+    const banner = document.createElement('div');
+    banner.id = 'update-banner';
+    banner.className = 'update-banner';
+    banner.hidden = true;
+    banner.innerHTML = '<div class="update-text"><strong>Update available</strong><span id="update-detail"></span></div><button type="button" id="update-now" class="primary">Update</button>';
+    header.after(banner);
+    $('update-now').addEventListener('click', installUpdate);
+    return banner;
+  }
+
+  async function checkForUpdate() {
+    const device = plugin('JConnectDevice');
+    if (!device || updating) return;
+    try {
+      const result = await device.checkUpdate();
+      updateInfo = result && result.available ? result : null;
+    } catch {
+      return; // offline, or the website has no update information yet
+    }
+    const banner = updateBanner();
+    if (!banner) return;
+    banner.hidden = !updateInfo;
+    if (updateInfo) $('update-detail').textContent = `JConnect ${updateInfo.version} · ${Math.max(1, Math.round(updateInfo.size / 1048576))} MB`;
+  }
+
+  async function installUpdate() {
+    const device = plugin('JConnectDevice');
+    if (!device || !updateInfo || updating) return;
+    updating = true;
+    const button = $('update-now');
+    const detail = $('update-detail');
+    button.disabled = true;
+    const progress = await device.addListener('updateProgress', (e) => {
+      detail.textContent = `Downloading… ${Math.round((e.progress || 0) * 100)}%`;
+    });
+    try {
+      await device.downloadUpdate();
+      detail.textContent = 'Opening the installer…';
+      const result = await device.installUpdate();
+      detail.textContent = result && result.needsPermission
+        ? 'Allow JConnect to install apps, then press Update again.'
+        : `JConnect ${updateInfo.version} · finish in Android’s installer.`;
+    } catch (err) {
+      detail.textContent = /match/i.test(String(err && err.message))
+        ? 'The download didn’t match JConnect’s website, so it wasn’t installed.'
+        : 'The update couldn’t be downloaded. Try again later.';
+    } finally {
+      progress.remove();
+      button.disabled = false;
+      updating = false;
+    }
+  }
+
   // Back closes what's on top: a dialog, then the session controls, then the session or pairing screen.
   function onBack() {
     const open = document.querySelector('dialog[open]');
@@ -243,6 +307,8 @@
         ? 'Press Add Computer to find the computers on this network. JConnect needs to be open on them.'
         : 'Tap Add Computer, then scan the code JConnect shows on your computer under Settings → Use this computer from a phone.';
     }
+    setTimeout(checkForUpdate, 15000);
+    setInterval(checkForUpdate, UPDATE_EVERY_MS);
   });
 
   window.JCNative = { platform: 'android', television, addComputer, parseAddress, parseAnnouncement, targetFromCode, onBack };

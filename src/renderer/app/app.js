@@ -93,6 +93,12 @@
       'not-running': `${name} doesn't have that service running.`,
       host: 'Enter a host name or address.',
       'shutdown-failed': 'This computer couldn’t be shut down. Use the system’s own Shut Down instead.',
+      'update-check': 'JConnect couldn’t check for updates. Check the internet connection.',
+      'update-download': 'The update couldn’t be downloaded. Check the internet connection and try again.',
+      'update-corrupt': 'The downloaded update didn’t match what JConnect’s website published, so it wasn’t installed.',
+      'update-install': 'The update couldn’t be installed. Try again, or download JConnect from the website.',
+      'update-permission': 'JConnect can’t replace itself where it’s installed. Download the new version from the website.',
+      'update-dev': 'This copy of JConnect runs from its source code, so it doesn’t update itself.',
     };
     return messages[code] || (code && code.length > 24 ? code : 'Something went wrong. Please try again.');
   }
@@ -212,6 +218,7 @@
         h('div', { class: 'banner-icon' }, '🔐'),
         h('div', { class: 'banner-main' }, h('strong', {}, 'Allow JConnect on this Mac'), h('div', {}, 'macOS needs your permission before your devices can see and control this Mac.')),
         h('button', { class: 'btn small', type: 'button', onclick: () => openSettings('mac') }, 'Allow')),
+      updateBanner(),
       networkStrip(),
       h('section', { class: 'section' },
         h('h2', { class: 'section-title' }, 'My Computers'),
@@ -930,6 +937,89 @@
     return h('dl', { class: 'diag' }, rows.map(([k, v]) => [h('dt', {}, k), h('dd', {}, String(v))]));
   }
 
+  // ---- updates ----
+
+  const megabytes = (bytes) => `${Math.max(1, Math.round(bytes / 1048576))} MB`;
+
+  // Asks first, saying what updating will do on this computer.
+  function startUpdate() {
+    const u = state.update;
+    if (!u || !u.available) return;
+    if (u.method === 'manual') {
+      call('jc:update', 'website');
+      return;
+    }
+    const notes = ['JConnect restarts to finish updating.'];
+    if (state.sessions.length) notes.push(`${state.sessions.map((x) => x.name).join(', ')} will be disconnected until it’s back.`);
+    if (u.method === 'dmg') notes.push('Afterwards, macOS asks you to allow Screen Recording and Accessibility for JConnect again.');
+    if (u.method === 'deb') notes.push('Your system asks for an administrator password to install it.');
+    openConfirm(`Update to JConnect ${u.available.version}?`, notes.join(' '), 'Update', () => call('jc:update', 'install'));
+  }
+
+  function updateBanner() {
+    const u = state.update;
+    if (!u || !u.available || !['available', 'ready'].includes(u.state)) return null;
+    const manual = u.method === 'manual';
+    return h('div', { class: 'banner' },
+      h('div', { class: 'banner-icon' }, '⬆'),
+      h('div', { class: 'banner-main' },
+        h('strong', {}, u.state === 'ready' ? 'Update ready' : 'Update available'),
+        h('div', {}, manual ? `JConnect ${u.available.version} is available on JConnect’s website.` : `JConnect ${u.available.version} is ${u.state === 'ready' ? 'ready to install' : 'available'}.`)),
+      h('button', { class: 'btn small primary', type: 'button', onclick: startUpdate }, manual ? 'Download' : 'Update'));
+  }
+
+  function updatesView() {
+    const u = state.update;
+    if (!u) return [];
+    let status;
+    let action = null;
+    switch (u.state) {
+      case 'unavailable':
+        status = 'This copy of JConnect doesn’t update itself.';
+        break;
+      case 'checking':
+        status = 'Checking for updates…';
+        break;
+      case 'available':
+        status = `JConnect ${u.available.version} is available (${megabytes(u.available.size)}).`;
+        action = [u.method === 'manual' ? 'Download' : 'Update', startUpdate];
+        break;
+      case 'downloading':
+        status = `Downloading JConnect ${u.available.version}… ${Math.round(u.progress * 100)}%`;
+        break;
+      case 'ready':
+        status = `JConnect ${u.available.version} is ready to install.`;
+        action = ['Restart to update', startUpdate];
+        break;
+      case 'installing':
+        status = 'Installing the update…';
+        break;
+      case 'error':
+        status = u.checkedAt ? `Checked ${ago(u.checkedAt)}` : 'Not checked yet.';
+        action = ['Try again', () => call('jc:update', u.available ? 'install' : 'check')];
+        break;
+      default:
+        status = u.checkedAt ? `Up to date · checked ${ago(u.checkedAt)}` : 'Not checked yet.';
+        action = ['Check now', () => call('jc:update', 'check')];
+    }
+    const problem = u.error === 'elevation-cancelled' ? 'Installing the update needs an administrator password.' : u.error ? errorText(u.error) : null;
+    const autoText = u.method === 'nsis'
+      ? 'Downloads updates and installs them when nobody is using this computer.'
+      : u.method === 'manual'
+        ? 'Tells you when a new version is on JConnect’s website.'
+        : 'Downloads updates in the background. You choose when to install them.';
+    return [
+      h('div', { class: 'sync-row' },
+        h('span', { class: `dot ${u.state === 'up-to-date' ? 'ok' : ['available', 'ready', 'error'].includes(u.state) ? 'warn' : 'off'}` }),
+        h('span', { class: 'row-main' },
+          h('span', { class: 'row-title' }, `JConnect ${u.current}`),
+          h('span', { class: 'row-sub' }, status),
+          problem && h('span', { class: 'row-sub error-text' }, problem)),
+        action && h('button', { class: `btn small${['available', 'ready'].includes(u.state) ? ' primary' : ''}`, type: 'button', onclick: action[1] }, action[0])),
+      u.state !== 'unavailable' && toggle('Update automatically', autoText, state.settings.autoUpdate, (e) => call('jc:set-setting', 'autoUpdate', e.target.checked)),
+    ];
+  }
+
   function openSettings(focus) {
     let passwordOpen = false;
     let advancedOpen = false;
@@ -1016,6 +1106,7 @@
               h('p', { class: 'muted small' }, 'The phone needs to be on the same network, or on the same private network such as Tailscale.'),
               qr && h('code', { class: 'url' }, qr.url))),
         ]),
+        group('updates', 'Updates', updatesView()),
         group('travel', 'Travel Mode', [
           toggle('✈ Travel Mode', 'Use when you leave this computer unattended. New pairing is turned off and JConnect uses fewer resources.', s.travelMode, setBool('travelMode')),
           toggle('Only my own devices', 'While in Travel Mode, only devices marked as yours can connect.', s.travelOwnerOnly, setBool('travelOwnerOnly')),

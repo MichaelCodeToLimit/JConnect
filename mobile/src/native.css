@@ -34,6 +34,22 @@
 #add-dialog .nearby-meta { color: var(--muted); font-size: 14px; }
 .tv #add-dialog .nearby-status, .tv #add-dialog .nearby-meta { font-size: 17px; }
 
+/* A newer version of the app on JConnect's website. */
+.update-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 4px 0 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+}
+.update-banner .update-text { display: grid; flex: 1; min-width: 0; }
+.update-banner .update-text span { color: var(--muted); font-size: 14px; }
+.update-banner .primary { min-height: 40px; }
+.tv .update-banner .update-text span { font-size: 17px; }
+
 /* The Android status and navigation bars overlap the page edge to edge. */
 .native-app .bar { padding-top: max(8px, env(safe-area-inset-top)); }
 .native-app .pull-tab { top: env(safe-area-inset-top); }
