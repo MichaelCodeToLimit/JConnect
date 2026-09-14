@@ -71,11 +71,18 @@ async function main() {
   if (!fs.existsSync(exe)) throw new Error(`the installer didn't put JConnect at ${exe}`);
 
   log('starting the older JConnect, with updates from', `http://127.0.0.1:${PORT}/`);
-  spawn(exe, ['--hidden'], {
+  // JConnect's own output goes to a log, so a JConnect that doesn't start says why.
+  const output = fs.openSync(path.join(logs, 'jconnect-old.log'), 'a');
+  const older = spawn(exe, ['--hidden'], {
     detached: true,
-    stdio: 'ignore',
-    env: { ...process.env, JCONNECT_UPDATE_URL: `http://127.0.0.1:${PORT}/` },
-  }).unref();
+    stdio: ['ignore', output, output],
+    env: { ...process.env, JCONNECT_UPDATE_URL: `http://127.0.0.1:${PORT}/`, ELECTRON_ENABLE_LOGGING: '1' },
+  });
+  older.on('error', (err) => log('the older JConnect didn\'t start:', err.message));
+  older.on('exit', (code, signal) => log(`the older JConnect exited with ${code}${signal ? ` (${signal})` : ''}`));
+  older.unref();
+  await sleep(8000);
+  log('running 8 seconds after starting:', running());
 
   const deadline = Date.now() + WAIT_MS;
   let version = before;
@@ -96,7 +103,17 @@ async function main() {
   log(`PASS: JConnect ${before} updated itself to ${version} and started again`);
 }
 
-main().then(() => process.exit(0), (err) => {
+// The updater's own record of running the installer.
+function keepInstallLog() {
+  const file = path.join(process.env.APPDATA, 'JConnect', 'update-install.log');
+  if (fs.existsSync(file)) fs.copyFileSync(file, path.join(logs, 'update-install.log'));
+}
+
+main().then(() => {
+  keepInstallLog();
+  process.exit(0);
+}, (err) => {
   log('FAIL:', err.message);
+  keepInstallLog();
   process.exit(1);
 });

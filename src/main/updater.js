@@ -142,12 +142,20 @@ async function download(url, dest, { size, sha256, onProgress = () => {}, signal
 
 // ---------- installing ----------
 
-// Waits for this JConnect to close, runs the silent installer, then starts the new JConnect.
+// Waits for this JConnect to close, runs the silent installer, then starts the new JConnect. What happens goes to
+// update-install.log next to JConnect's settings.
 function startWindowsInstall(installer, hidden) {
+  const logFile = path.join(path.dirname(path.dirname(installer)), 'update-install.log');
+  const exeName = path.win32.parse(process.execPath).name;
   const script = [
+    `Start-Transcript -Path ${psQuote(logFile)} -Force | Out-Null`,
     `Wait-Process -Id ${process.pid} -Timeout 30 -ErrorAction SilentlyContinue`,
-    `Start-Process -Wait -FilePath ${psQuote(installer)} -ArgumentList '/S','--updated'`,
+    // Electron's helper processes can outlive the main one for a moment, and the installer won't replace files in use.
+    `Get-Process -Name ${psQuote(exeName)} -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq ${psQuote(process.execPath)} } | Wait-Process -Timeout 30 -ErrorAction SilentlyContinue`,
+    `$setup = Start-Process -Wait -PassThru -FilePath ${psQuote(installer)} -ArgumentList '/S','--updated'`,
+    `"installer exit code: $($setup.ExitCode)"`,
     `Start-Process -FilePath ${psQuote(process.execPath)}${hidden ? " -ArgumentList '--hidden'" : ''}`,
+    'Stop-Transcript | Out-Null',
   ].join('; ');
   spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-Command', script], {
     detached: true, stdio: 'ignore', windowsHide: true,

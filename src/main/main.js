@@ -51,6 +51,7 @@ if (!app.requestSingleInstanceLock()) {
     else showMain();
   });
   app.whenReady().then(boot).catch((err) => {
+    console.error('[jconnect] could not start:', err.stack || err.message);
     dialog.showErrorBox('JConnect could not start', err.stack || err.message);
     app.exit(1);
   });
