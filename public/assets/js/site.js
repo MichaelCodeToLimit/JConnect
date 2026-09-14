@@ -418,7 +418,7 @@
     };
     // [button label, where it goes, note under it, whether it downloads] for visitors not on Windows
     const RECOMMEND = {
-      mac: ['JConnect for Mac is coming soon', '#mac', 'Apple silicon and Intel Macs. Windows and Linux are available now.'],
+      mac: ['Download for Mac', 'JConnect-Mac-AppleSilicon.dmg', 'Version 0.1.0 beta · Apple silicon Macs, macOS 13 or later · 86 MB. For an Intel Mac, choose Intel below.', true],
       linux: ['Download for Linux', 'JConnect-Linux.deb', 'Version 0.1.0 beta · .deb for Ubuntu, Debian and Linux Mint · 96 MB', true],
       'raspberry-pi': ['Raspberry Pi is coming soon', '#raspberry-pi', '64-bit Raspberry Pi OS. Windows and Linux are available now.'],
       android: ['Download for Android', 'JConnect-Android.apk', 'Version 0.1.0 beta · Android 8.0 or later · 34 MB', true],
@@ -446,6 +446,15 @@
         delete button.dataset.download;
       }
       [button.textContent, button.href, note.textContent] = [label, href, text];
+      // Every Mac browser says "Intel" in its user agent. Chromium browsers can tell the real chip.
+      if (current === 'mac' && navigator.userAgentData && navigator.userAgentData.getHighEntropyValues) {
+        navigator.userAgentData.getHighEntropyValues(['architecture']).then(({ architecture }) => {
+          if (architecture !== 'x86') return;
+          [button.textContent, button.href, note.textContent] = [
+            'Download for Intel Mac', 'JConnect-Mac-Intel.dmg', 'Version 0.1.0 beta · Intel Macs, macOS 13 or later · 97 MB',
+          ];
+        }).catch(() => {});
+      }
     }
   }
 

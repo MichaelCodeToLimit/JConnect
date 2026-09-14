@@ -142,8 +142,15 @@
           <p>The Android app connects to your computers. It doesn’t share the phone’s own screen.</p>
           <h3>Linux</h3>
           <p>Download the .deb from the <a href="../download/#linux">download page</a> and install it with <code>sudo apt install ./JConnect-Linux.deb</code>. It works on Ubuntu, Debian, Linux Mint and other Debian-based systems on 64-bit PCs, and JConnect starts when you sign in. Paired devices can control a Linux computer in an X11 session, such as <b>Ubuntu on Xorg</b>. Wayland sessions aren't supported yet.</p>
-          <h3>Mac and Raspberry Pi</h3>
-          <p>These apps are coming soon. The Mac app will support Apple silicon and Intel Macs on macOS 13 or later. Until then you can reach your computers from a Mac or Raspberry Pi through its browser, the same way as from a phone.</p>
+          <h3>Mac</h3>
+          <ol>
+            <li>Download the DMG for your Mac from the <a href="../download/#mac">download page</a>: <b>Apple silicon</b> or <b>Intel</b>. Apple menu → <b>About This Mac</b> shows <b>Chip</b> on Apple silicon Macs and <b>Processor</b> on Intel Macs. JConnect needs macOS 13 Ventura or later.</li>
+            <li>Open the DMG and drag <b>JConnect</b> into <b>Applications</b>.</li>
+            <li>Open JConnect. It isn’t notarized by Apple yet, so the first time macOS says it can’t check it. Close that message, open <b>System Settings → Privacy &amp; Security</b>, and choose <b>Open Anyway</b> next to JConnect.</li>
+            <li>So your paired devices can see and control the Mac, open <b>Settings → Mac permissions</b> in JConnect and turn on <b>Screen Recording</b> and <b>Accessibility</b>.</li>
+          </ol>
+          <h3>Raspberry Pi</h3>
+          <p>The Raspberry Pi app is coming soon. Until then you can reach your computers from a Raspberry Pi through its browser, the same way as from a phone.</p>
           <h3>Closing the window</h3>
           <p>Closing the JConnect window keeps the computer available. JConnect stays in the system tray, and <b>Start with this computer</b> in Settings starts it in the background when you sign in.</p>
         </section>
@@ -446,11 +453,12 @@ npm start          # listens on port 47900</code></pre></div>
           <span class="eyebrow"><i class="eyebrow-dot"></i>Reference</span>
           <h2>Known limits</h2>
           <ul>
-            <li>The Windows and Android apps are early betas. There are no automatic updates yet, so download new versions from the <a href="../download/">download page</a>.</li>
+            <li>The Windows, Mac, Linux and Android apps are early betas. There are no automatic updates yet, so download new versions from the <a href="../download/">download page</a>.</li>
+            <li>The Mac app isn’t notarized yet, so macOS asks you to confirm it the first time. It doesn’t share the Mac’s sound yet.</li>
             <li>Windows can’t be controlled on the secure desktop: UAC prompts, Ctrl+Alt+Del and the lock screen.</li>
             <li>SSH to a JConnect computer needs an SSH server running on it.</li>
             <li>Accounts, sync and JVPN away from home need a JConnect Cloud server that you run yourself.</li>
-            <li>Mac, Raspberry Pi and Apple TV apps are coming soon.</li>
+            <li>Raspberry Pi and Apple TV apps are coming soon.</li>
             <li>Camera sharing isn’t built yet.</li>
           </ul>
         </section>

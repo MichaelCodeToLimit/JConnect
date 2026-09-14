@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Download JConnect</title>
-  <meta name="description" content="Download JConnect for Windows, Linux and Android, or open it in the browser on iPhone, iPad and TVs. Mac, Raspberry Pi and Apple TV are coming soon.">
+  <meta name="description" content="Download JConnect for Windows, Mac, Linux and Android, or open it in the browser on iPhone, iPad and TVs. Raspberry Pi and Apple TV are coming soon.">
   <meta name="theme-color" content="#000000">
   <link rel="icon" type="image/png" href="../assets/img/icon.png">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Download JConnect">
-  <meta property="og:description" content="JConnect for Windows, Linux and Android, plus phones, tablets and TVs in the browser.">
+  <meta property="og:description" content="JConnect for Windows, Mac, Linux and Android, plus phones, tablets and TVs in the browser.">
   <meta property="og:image" content="../assets/img/og.jpg">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -68,7 +68,7 @@
       <div class="container hero-inner">
         <a class="pill reveal" href="#platforms">
           <span class="pill-tag">Beta</span>
-          <span>JConnect 0.1.0 for Windows and Android is here</span>
+          <span>JConnect 0.1.0 for Mac is here</span>
           <span class="arrow" aria-hidden="true">→</span>
         </a>
         <h1 class="hero-title reveal" style="--d: 80ms">Download<br><span class="gradient-text">JConnect.</span></h1>
@@ -119,14 +119,21 @@
             <p class="platform-note" data-download-note>Not code-signed yet. If SmartScreen warns you, choose <b>More info → Run anyway</b>.</p>
           </article>
 
-          <article class="platform card spot reveal" style="--d: 80ms" id="mac" data-platform="mac">
+          <article class="platform available card spot reveal" style="--d: 80ms" id="mac" data-platform="mac">
             <div class="platform-top">
               <span class="platform-icon"><svg class="icon"><use href="#i-mac"/></svg></span>
-              <span class="status"><i class="dot warn"></i>Coming soon</span>
+              <span class="status on"><i class="dot ok"></i>Available · Beta</span>
             </div>
             <h3>Mac</h3>
-            <p>Apple silicon and Intel Macs on macOS 13 or later. The first builds are being tested now.</p>
-            <div class="platform-actions"><span class="btn btn-ghost btn-sm" aria-disabled="true">Coming soon</span></div>
+            <p>macOS 13 Ventura or later. Choose the download for your Mac’s chip.</p>
+            <div class="platform-actions">
+              <a class="btn btn-light btn-sm" href="JConnect-Mac-AppleSilicon.dmg" download data-download>Apple silicon</a>
+              <a class="btn btn-ghost btn-sm" href="JConnect-Mac-Intel.dmg" download data-download>Intel</a>
+              <span class="platform-meta">v0.1.0 · 86 MB, Intel 97 MB</span>
+            </div>
+            <span class="download-hash" data-sha256 data-sha256-src="JConnect-Mac-AppleSilicon.dmg.sha256" hidden>SHA-256, Apple silicon <code></code></span>
+            <span class="download-hash" data-sha256 data-sha256-src="JConnect-Mac-Intel.dmg.sha256" hidden>SHA-256, Intel <code></code></span>
+            <p class="platform-note">Not sure which? Apple menu → <b>About This Mac</b> shows <b>Chip</b> on Apple silicon and <b>Processor</b> on Intel. It isn’t notarized yet, so the first time, open <b>System Settings → Privacy &amp; Security</b> and choose <b>Open Anyway</b>.</p>
           </article>
 
           <article class="platform available card spot reveal" style="--d: 160ms" id="linux" data-platform="linux">
