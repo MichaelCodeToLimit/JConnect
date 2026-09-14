@@ -103,17 +103,7 @@ async function main() {
   log(`PASS: JConnect ${before} updated itself to ${version} and started again`);
 }
 
-// The updater's own record of running the installer.
-function keepInstallLog() {
-  const file = path.join(process.env.APPDATA, 'JConnect', 'update-install.log');
-  if (fs.existsSync(file)) fs.copyFileSync(file, path.join(logs, 'update-install.log'));
-}
-
-main().then(() => {
-  keepInstallLog();
-  process.exit(0);
-}, (err) => {
+main().then(() => process.exit(0), (err) => {
   log('FAIL:', err.message);
-  keepInstallLog();
   process.exit(1);
 });

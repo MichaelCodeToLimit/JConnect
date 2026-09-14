@@ -9,7 +9,7 @@ const http = require('http');
 const crypto = require('crypto');
 const { execFileSync } = require('child_process');
 
-const { compareVersions, parseUpdateInfo, updateTarget, updateBase, download, UPDATE_BASE } = require('../src/main/updater');
+const { compareVersions, parseUpdateInfo, updateTarget, updateBase, download, takeRelaunchMarker, UPDATE_BASE } = require('../src/main/updater');
 
 test('versions compare the way releases are numbered', () => {
   assert.strictEqual(compareVersions('0.1.0-beta.3', '0.1.0-beta.2'), 1);
@@ -112,6 +112,27 @@ test('a download is kept only when it matches the published size and SHA-256', a
     assert.deepStrictEqual(info, { file: 'JConnect-Setup.exe', version: '0.1.0-beta.3', sha256, size: body.length });
   } finally {
     server.close();
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('a JConnect started by an update stays in the background if the old one was', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'jconnect-relaunch-test-'));
+  const marker = path.join(dir, 'update-relaunch.json');
+  try {
+    assert.strictEqual(takeRelaunchMarker(dir), null);
+    fs.writeFileSync(marker, JSON.stringify({ hidden: true, at: Date.now() }));
+    assert.deepStrictEqual(takeRelaunchMarker(dir), { hidden: true });
+    assert.strictEqual(fs.existsSync(marker), false);
+    assert.strictEqual(takeRelaunchMarker(dir), null);
+    fs.writeFileSync(marker, JSON.stringify({ hidden: false, at: Date.now() }));
+    assert.deepStrictEqual(takeRelaunchMarker(dir), { hidden: false });
+    fs.writeFileSync(marker, JSON.stringify({ hidden: true, at: Date.now() - 60 * 60 * 1000 }));
+    assert.strictEqual(takeRelaunchMarker(dir), null);
+    fs.writeFileSync(marker, 'not json');
+    assert.strictEqual(takeRelaunchMarker(dir), null);
+    assert.strictEqual(fs.existsSync(marker), false);
+  } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });

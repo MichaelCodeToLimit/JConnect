@@ -189,6 +189,9 @@ async function boot() {
     relayLink.start();
   }
 
+  // Started again by an update: stay in the background if JConnect was before.
+  const relaunch = require('./updater').takeRelaunchMarker(app.getPath('userData'));
+  if (relaunch && relaunch.hidden) args.hidden = true;
   if (!args.hidden && !openedAtLogin()) showMain();
   if (args.connect) openSession(args.connect);
   statusLoop();

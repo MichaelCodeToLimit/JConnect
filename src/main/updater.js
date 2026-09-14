@@ -14,7 +14,7 @@ const crypto = require('crypto');
 const { spawn } = require('child_process');
 const { finished } = require('stream/promises');
 const { EventEmitter } = require('events');
-const { run, psQuote } = require('./vpn/util');
+const { run } = require('./vpn/util');
 
 const UPDATE_BASE = 'https://jconnect-1dsx.onrender.com/download/';
 const APP_ID = 'app.jconnect.desktop';
@@ -142,24 +142,32 @@ async function download(url, dest, { size, sha256, onProgress = () => {}, signal
 
 // ---------- installing ----------
 
-// Waits for this JConnect to close, runs the silent installer, then starts the new JConnect. What happens goes to
-// update-install.log next to JConnect's settings.
-function startWindowsInstall(installer, hidden) {
-  const logFile = path.join(path.dirname(path.dirname(installer)), 'update-install.log');
-  const exeName = path.win32.parse(process.execPath).name;
-  const script = [
-    `Start-Transcript -Path ${psQuote(logFile)} -Force | Out-Null`,
-    `Wait-Process -Id ${process.pid} -Timeout 30 -ErrorAction SilentlyContinue`,
-    // Electron's helper processes can outlive the main one for a moment, and the installer won't replace files in use.
-    `Get-Process -Name ${psQuote(exeName)} -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq ${psQuote(process.execPath)} } | Wait-Process -Timeout 30 -ErrorAction SilentlyContinue`,
-    `$setup = Start-Process -Wait -PassThru -FilePath ${psQuote(installer)} -ArgumentList '/S','--updated'`,
-    `"installer exit code: $($setup.ExitCode)"`,
-    `Start-Process -FilePath ${psQuote(process.execPath)}${hidden ? " -ArgumentList '--hidden'" : ''}`,
-    'Stop-Transcript | Out-Null',
-  ].join('; ');
-  spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-Command', script], {
-    detached: true, stdio: 'ignore', windowsHide: true,
-  }).unref();
+// The installer closes this JConnect, installs over it without asking anything and, with --force-run, starts the new
+// JConnect, the same way electron-updater runs it. It can't pass --hidden on, so a marker tells the new JConnect to
+// stay in the background if this one was.
+const RELAUNCH_MARKER = 'update-relaunch.json';
+
+function startWindowsInstall(installer, hidden, userData) {
+  fs.writeFileSync(path.join(userData, RELAUNCH_MARKER), JSON.stringify({ hidden, at: Date.now() }));
+  const child = spawn(installer, ['--updated', '/S', '--force-run'], { detached: true, stdio: 'ignore' });
+  child.on('error', () => {});
+  child.unref();
+}
+
+// Read once by a JConnect that an update started: whether to stay in the background. An old marker is ignored.
+function takeRelaunchMarker(userData, now = Date.now()) {
+  const file = path.join(userData, RELAUNCH_MARKER);
+  let text;
+  try {
+    text = fs.readFileSync(file, 'utf8');
+  } catch {
+    return null;
+  }
+  fs.rmSync(file, { force: true });
+  let marker;
+  try { marker = JSON.parse(text); } catch { return null; }
+  if (!marker || typeof marker.at !== 'number' || now - marker.at > 15 * 60 * 1000 || marker.at > now + 60000) return null;
+  return { hidden: !!marker.hidden };
 }
 
 // Copies JConnect.app out of the disk image next to this one, after checking it's JConnect and its signature is intact.
@@ -358,7 +366,7 @@ function createUpdater({ app, store, isIdle, beforeInstall, quit, notify, openEx
       const version = s.available.version;
       if (target.method === 'nsis') {
         const { hidden } = await beforeInstall(version);
-        startWindowsInstall(downloaded.path, hidden);
+        startWindowsInstall(downloaded.path, hidden, app.getPath('userData'));
       } else if (target.method === 'dmg') {
         const staged = await stageMacApp(downloaded.path, target.bundle);
         const { hidden } = await beforeInstall(version);
@@ -404,4 +412,4 @@ function createUpdater({ app, store, isIdle, beforeInstall, quit, notify, openEx
   };
 }
 
-module.exports = { createUpdater, compareVersions, parseUpdateInfo, updateTarget, updateBase, download, UPDATE_BASE };
+module.exports = { createUpdater, compareVersions, parseUpdateInfo, updateTarget, updateBase, download, takeRelaunchMarker, UPDATE_BASE };
