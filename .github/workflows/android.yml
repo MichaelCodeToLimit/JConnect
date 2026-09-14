@@ -58,7 +58,8 @@ jobs:
           "$aapt2" dump badging JConnect-android.apk > ci-logs/3-tv-badging.log
           grep -E "launchable|uses-feature|uses-implied-feature" ci-logs/3-tv-badging.log
           grep -q "^leanback-launchable-activity:" ci-logs/3-tv-badging.log || { echo "::error::The APK has no activity for the Android TV home screen"; exit 1; }
-          if grep -E "^uses-feature: name='android\.hardware\.(touchscreen|camera|wifi)" ci-logs/3-tv-badging.log; then
+          # aapt2 indents these lines.
+          if grep -E "^\s*uses-feature: name='android\.hardware\.(touchscreen|camera|wifi)'" ci-logs/3-tv-badging.log; then
             echo "::error::The APK requires a touchscreen, a camera or Wi-Fi, so some TVs can't install it"
             exit 1
           fi
