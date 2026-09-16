@@ -1,0 +1,36 @@
+
+> jconnect-cloud@0.1.0 test
+> node --test test/cloud.test.js test/store.test.js test/postgres.test.js
+
+✔ sign-up, sign-in with the derived key, and no account discovery through prelogin (SQLite) (275.525971ms)
+✔ the vault stores only what the device sends and refuses stale writes (SQLite) (46.241657ms)
+✔ devices must prove their key to join an account (SQLite) (106.637774ms)
+✔ two-step sign-in requires a valid authenticator code once enabled (SQLite) (146.676364ms)
+✔ two-step sign-in can only be replaced or turned off with a code (SQLite) (52.97651ms)
+✔ changing the password needs the current one, swaps the vault and signs out every session (SQLite) (372.83266ms)
+✔ deleting the account needs the password and code, and removes everything it had (SQLite) (285.611974ms)
+✔ relay: only registered account devices come online, presence is private, and dialing needs a ticket (SQLite) (109.067602ms)
+✔ sign-up, sign-in with the derived key, and no account discovery through prelogin (Postgres) (2703.981207ms)
+✔ the vault stores only what the device sends and refuses stale writes (Postgres) (1889.652504ms)
+✔ devices must prove their key to join an account (Postgres) (1949.511476ms)
+✔ two-step sign-in requires a valid authenticator code once enabled (Postgres) (1337.204225ms)
+✔ two-step sign-in can only be replaced or turned off with a code (Postgres) (1266.482168ms)
+✔ changing the password needs the current one, swaps the vault and signs out every session (Postgres) (1550.282855ms)
+✔ deleting the account needs the password and code, and removes everything it had (Postgres) (1451.620484ms)
+✔ relay: only registered account devices come online, presence is private, and dialing needs a ticket (Postgres) (1330.376857ms)
+✔ accounts, the vault, two-step sign-in and sessions (2141.061944ms)
+✔ devices can be registered again and removed, and an account has at most 50 (1264.869641ms)
+✔ a password change swaps the keys and the vault together and signs out every session (1159.855313ms)
+✔ JConnect Cloud won’t start on a database without its tables (1138.732035ms)
+✔ databases away from this computer are reached over TLS with the certificate checked (1.102565ms)
+✔ accounts, devices, sessions and the vault survive a restart (70.451479ms)
+✔ devices can be registered again and removed, and expired sessions are purged (0.865275ms)
+✔ accounts move over from the old JSON file once, and the file is kept (6.57284ms)
+ℹ tests 24
+ℹ suites 0
+ℹ pass 24
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 20928.518735

@@ -1,0 +1,17 @@
+✔ relay registers hosts, reports presence, and pipes a tunnel both ways (53.639316ms)
+✔ relay rejects a registration whose id is not bound to the key (14.659841ms)
+✔ relay rejects stale or badly signed registrations (20.766659ms)
+✔ connecting to an offline computer closes with "unreachable", and bogus tunnels are refused (4.473872ms)
+✔ a client that floods the relay before the computer picks up is disconnected (30.322179ms)
+✔ two devices on one account sync computers and SSH hosts, including removals (298.679387ms)
+✔ wrong passwords are refused and the server address must be secure (225.838498ms)
+✔ a password change keeps this device syncing, and other devices sign in again with the new password (676.103562ms)
+✔ deleting the account signs this device out and keeps its computers (271.886034ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1766.263688
