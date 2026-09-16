@@ -1,0 +1,7 @@
+status: success
+commit: dbe0b946ed961e211f7520ac791cdee87dcbc22d
+run: https://github.com/MichaelCodeToLimit/JConnect/actions/runs/35066695337
+-rw-r--r--@ 1 runner  staff   89691738 Sep 16 07:07 dist/JConnect-0.1.0-beta.1-arm64.dmg
+-rw-r--r--@ 1 runner  staff  101372559 Sep 16 07:08 dist/JConnect-0.1.0-beta.1-x64.dmg
+f4c47775f50c3f2934dfc568b9d347131828aee8001fe53e7c69d2f44b65ed27  dist/JConnect-0.1.0-beta.1-arm64.dmg
+fdb709d81393a9cb819d1effeaa01e83fe611186d2740c8c0ed990df07495cf0  dist/JConnect-0.1.0-beta.1-x64.dmg
