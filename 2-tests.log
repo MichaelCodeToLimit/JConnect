@@ -1,0 +1,69 @@
+✔ sign-up, sign-in with the derived key, and no account discovery through prelogin (SQLite) (390.103008ms)
+✔ the vault stores only what the device sends and refuses stale writes (SQLite) (53.564749ms)
+✔ devices must prove their key to join an account (SQLite) (100.984127ms)
+✔ two-step sign-in requires a valid authenticator code once enabled (SQLite) (162.300391ms)
+✔ two-step sign-in can only be replaced or turned off with a code (SQLite) (59.049568ms)
+✔ changing the password needs the current one, swaps the vault and signs out every session (SQLite) (415.073855ms)
+✔ deleting the account needs the password and code, and removes everything it had (SQLite) (320.303684ms)
+✔ relay: only registered account devices come online, presence is private, and dialing needs a ticket (SQLite) (117.410513ms)
+﹣ sign-up, sign-in with the derived key, and no account discovery through prelogin (Postgres) (0.205411ms) # run npm install in server/cloud first
+﹣ the vault stores only what the device sends and refuses stale writes (Postgres) (0.200241ms) # run npm install in server/cloud first
+﹣ devices must prove their key to join an account (Postgres) (0.088154ms) # run npm install in server/cloud first
+﹣ two-step sign-in requires a valid authenticator code once enabled (Postgres) (0.051004ms) # run npm install in server/cloud first
+﹣ two-step sign-in can only be replaced or turned off with a code (Postgres) (0.044693ms) # run npm install in server/cloud first
+﹣ changing the password needs the current one, swaps the vault and signs out every session (Postgres) (0.04324ms) # run npm install in server/cloud first
+﹣ deleting the account needs the password and code, and removes everything it had (Postgres) (0.040575ms) # run npm install in server/cloud first
+﹣ relay: only registered account devices come online, presence is private, and dialing needs a ticket (Postgres) (0.039443ms) # run npm install in server/cloud first
+✔ accounts, devices, sessions and the vault survive a restart (12.937227ms)
+✔ devices can be registered again and removed, and expired sessions are purged (1.110231ms)
+✔ accounts move over from the old JSON file once, and the file is kept (7.061228ms)
+Downloading Electron binary...
+✔ QR link is parsed into a pairing target (71.664036ms)
+✔ scanning the code pairs the phone, and the first paired device becomes the owner (1011.290331ms)
+✔ without a code, the computer asks its owner with a matching verification code, and "Cancel" is respected (545.318004ms)
+✔ a wrong code is refused and logged (724.034885ms)
+✔ a QR code for a different computer is caught before trusting anything (84.29401ms)
+✔ Travel Mode turns away devices that were never paired (327.433798ms)
+✔ Connect negotiates a session with signed offer and answer (976.515828ms)
+✔ a password-protected computer accepts the right password proof and rejects a wrong one (1947.401593ms)
+✔ an offer that is not signed by the paired computer stops the session (938.945643ms)
+✔ the owner phone can restore remote access after an emergency lockdown (1012.735717ms)
+✔ status reports a reachable computer as ready and an unknown address as offline (836.867359ms)
+✔ terminating tells a connected phone that the session was ended and closes everything (989.550874ms)
+✔ the computer refuses WebSocket connections from other websites (9.589006ms)
+✔ connections that never sign in are limited (230.304367ms)
+✔ TVs get the TV layout, and other devices do not (3.394684ms)
+✔ the arrows move to the nearest control in that direction (1.591015ms)
+✔ two devices on one account sync computers and SSH hosts, including removals (338.12545ms)
+✔ wrong passwords are refused and the server address must be secure (244.544946ms)
+✔ a password change keeps this device syncing, and other devices sign in again with the new password (805.69264ms)
+✔ deleting the account signs this device out and keeps its computers (314.968557ms)
+✔ reads connections and adapter state from FortiClient for Windows (1.972062ms)
+✔ reads connections from FortiClient for macOS, and its tunnel from the system VPN list (0.593943ms)
+✔ reads profiles, status and profile settings from FortiClient for Linux (0.974369ms)
+✔ a trusted device reaches a shared service through an encrypted stream (363.37667ms)
+✔ devices that were never paired cannot open streams (37.599798ms)
+✔ through JConnect Cloud: the computer stays reachable via the relay and streams stay end to end (375.745681ms)
+✔ handshake establishes an encrypted channel both ways and agrees on the short code (67.667746ms)
+✔ nothing readable crosses the wire after the hello (27.241403ms)
+✔ a tampered frame closes the channel (21.659118ms)
+✔ a replayed frame closes the channel (22.394303ms)
+✔ a computer with a different key than the one paired is refused (17.635216ms)
+✔ a server that cannot sign with its claimed key is refused (27.655863ms)
+✔ pairing and password proofs match between Node scrypt and the browser scrypt library (453.309967ms)
+✔ client signature and stream data frames round-trip (33.834372ms)
+✔ frames flooded in before the handshake close the connection (11.599528ms)
+✔ versions compare the way releases are numbered (2.158197ms)
+✔ only a well-formed description of the expected download is used (0.992864ms)
+✔ each kind of install gets its own download and way of updating (0.593221ms)
+✔ updates come from the website, or from this computer when testing (0.336605ms)
+✔ a download is kept only when it matches the published size and SHA-256 (222.383776ms)
+✔ a JConnect started by an update stays in the background if the old one was (1.516186ms)
+ℹ tests 60
+ℹ suites 0
+ℹ pass 52
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 8
+ℹ todo 0
+ℹ duration_ms 17346.236574

@@ -1,0 +1,88 @@
+display: dimensions:    1920x1080
+apparmor_restrict_unprivileged_userns: 1
+== dist/JConnect-0.1.0-beta.2-amd64.deb
+Package: jconnect
+Version: 0.1.0~beta.2
+Architecture: amd64
+Maintainer: Michael Davies <205437504+MichaelCodeToLimit@users.noreply.github.com>
+Installed-Size: 298617
+Depends: libgtk-3-0, libnotify4, libnss3, libxss1, libxtst6, xdg-utils, libatspi2.0-0, libuuid1, libsecret-1-0
+-rwxr-xr-x ./opt/JConnect/jconnect-input
+-rwxr-xr-x ./opt/JConnect/chrome-sandbox
+-rwxr-xr-x ./opt/JConnect/jconnect
+
+No VM guests are running outdated hypervisor (qemu) binaries on this host.
+input helper: ready
+input helper needs GLIBC_2.4 or later
+-rwxr-xr-x+ 1 root root 15232 Sep 16 07:05 /opt/JConnect/chrome-sandbox
+lrwxrwxrwx  1 root root    26 Sep 16 07:05 /usr/bin/jconnect -> /etc/alternatives/jconnect
+AppArmor profile: jconnect
+JConnect (deb) answered on port 47901: {"app":"jconnect","v":2,"id":"f531a607f7a8838a07a4","name":"runnervmlun5p","os":"Ubuntu 24.04","publicKey":"mThiNN6NQgVpVcXx8I4FTICr0jaLrrTtFSpR4LXNakM=","port":47901}
+  app: [5199:0916/070746.093294:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+  app: [5199:0916/070746.274781:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+  app: [5199:0916/070746.325648:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+  app: [5199:0916/070746.326082:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+  app: [5199:0916/070746.449696:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+  app: [5199:0916/070749.531261:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+start at login: Exec="/opt/JConnect/jconnect" --hidden
+== the .deb app with user namespaces restricted
+JConnect (deb-restricted) answered on port 47902: {"app":"jconnect","v":2,"id":"d9998fed5fc23dabdd7c","name":"runnervmlun5p","os":"Ubuntu 24.04","publicKey":"uWcVMFn1vftPiMlO5nCnxjlugt4eo4COBb13NF7oewI=","port":47902}
+  app: [5297:0916/070751.006530:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+  app: [5297:0916/070751.195681:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+  app: [5297:0916/070751.274332:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+  app: [5297:0916/070751.274538:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+  app: [5297:0916/070751.295290:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+  app: [5297:0916/070751.344944:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+== /home/runner/work/JConnect/JConnect/dist/JConnect-0.1.0-beta.2-x86_64.AppImage (114M)
+JConnect (appimage) answered on port 47903: {"app":"jconnect","v":2,"id":"f531a607f7a8838a07a4","name":"runnervmlun5p","os":"Ubuntu 24.04","publicKey":"mThiNN6NQgVpVcXx8I4FTICr0jaLrrTtFSpR4LXNakM=","port":47903}
+  app: [5401:0916/070756.354462:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+  app: [5401:0916/070756.877379:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+  app: [5401:0916/070756.928715:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+  app: [5401:0916/070756.929486:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+  app: [5401:0916/070756.992121:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+  app: [5466:0916/070757.025410:ERROR:gpu/ipc/client/command_buffer_proxy_impl.cc:285] ContextResult::kTransientFailure: Failed to send GpuControl.CreateCommandBuffer.
+  app: [5401:0916/070757.114775:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+start at login: Exec="/home/runner/work/JConnect/JConnect/dist/JConnect-0.1.0-beta.2-x86_64.AppImage" --hidden
+== the AppImage with user namespaces restricted
+JConnect (appimage-restricted) answered on port 47904: {"app":"jconnect","v":2,"id":"4ce00f325717410a4175","name":"runnervmlun5p","os":"Ubuntu 24.04","publicKey":"TEzrRNw9pX8rqhDwxZMErTyqmlcRuA35MVIgade6f8M=","port":47904}
+  app: [5508:0916/070801.876488:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+  app: [5508:0916/070803.041958:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+  app: [5508:0916/070803.151214:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+  app: [5508:0916/070803.151311:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+  app: [5508:0916/070803.275072:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+  app: [5587:0916/070803.320038:ERROR:gpu/ipc/client/command_buffer_proxy_impl.cc:285] ContextResult::kTransientFailure: Failed to send GpuControl.CreateCommandBuffer.
+  app: [5508:0916/070803.463262:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+== remote control
+[input-check] helper: ready
+[input-check] pointer: sent to 283,138, now at 283,138
+[input-check] focus after a left click: text
+[input-check] typed: "Hello, Linux! 0123456789 `~!@#$%^&*()-_=+[]{}\\|;:'\",.<>/?"
+[input-check] typed: " äöü é ß € ✓ 日本"
+[input-check] keys: 130 of 130 arrived
+[input-check] scrolling: down to 360, then back up to 120
+[input-check] mouse buttons that arrived: 0 1 2 3 4
+[input-check] passed
+== screen sharing
+[selftest] pair {"ok":true,"computerId":"7c9fb515b57a9af2b8e6","name":"runnervmlun5p"}
+[selftest] overlay {"title":"Connecting to runnervmlun5p…","text":""}
+[selftest] route {"kind":"local"}
+[selftest] live {"quality":"auto"}
+[selftest] screenshot /home/runner/work/JConnect/JConnect/ci-logs/stream.png
+[selftest] stats {"framesDecoded":234,"fps":29,"width":1920,"height":1080,"rtt":0.002}
+average brightness of the received screen: 0.137277
+  host: [6124:0916/070821.323875:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+  host: [6124:0916/070821.527623:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+  host: [6124:0916/070821.584129:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+  host: [6124:0916/070821.584248:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+  host: [6124:0916/070821.608903:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+  host: [6176:0916/070821.616204:ERROR:gpu/ipc/client/command_buffer_proxy_impl.cc:285] ContextResult::kTransientFailure: Failed to send GpuControl.CreateCommandBuffer.
+  host: [6124:0916/070821.680745:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+  host: [6124:0916/070827.295704:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+  host: [6124:0916/070827.295870:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+  host: [6124:0916/070827.296197:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+  host: [6124:0916/070827.296858:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+  host: [6124:0916/070827.392212:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+  host: [6124:0916/070827.392298:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+  host: [6124:0916/070827.392378:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+  host: [6124:0916/070827.392400:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+  host: [jconnect] capture: quality mode: sharp, preference applied

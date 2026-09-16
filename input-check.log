@@ -1,0 +1,14 @@
+[5696:0916/070808.499309:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[5696:0916/070808.561084:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[5696:0916/070808.698454:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[5696:0916/070808.698595:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[5696:0916/070808.714721:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[input-check] helper: ready
+[input-check] pointer: sent to 283,138, now at 283,138
+[input-check] focus after a left click: text
+[input-check] typed: "Hello, Linux! 0123456789 `~!@#$%^&*()-_=+[]{}\\|;:'\",.<>/?"
+[input-check] typed: " äöü é ß € ✓ 日本"
+[input-check] keys: 130 of 130 arrived
+[input-check] scrolling: down to 360, then back up to 120
+[input-check] mouse buttons that arrived: 0 1 2 3 4
+[input-check] passed

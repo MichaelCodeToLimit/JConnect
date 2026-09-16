@@ -1,0 +1,53 @@
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following additional packages will be installed:
+  libappindicator3-1 libnotify4 libsecret-1-0 libsecret-common
+Suggested packages:
+  indicator-application notification-daemon
+The following NEW packages will be installed:
+  jconnect libappindicator3-1 libnotify4 libsecret-1-0 libsecret-common
+0 upgraded, 5 newly installed, 0 to remove and 64 not upgraded.
+Need to get 170 kB/101 MB of archives.
+After this operation, 306 MB of additional disk space will be used.
+Get:1 /home/runner/work/JConnect/JConnect/dist/JConnect-0.1.0-beta.2-amd64.deb jconnect amd64 0.1.0~beta.2 [100 MB]
+Get:2 file:/etc/apt/apt-mirrors.txt Mirrorlist [144 B]
+Get:3 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libnotify4 amd64 0.8.3-1build2 [25.6 kB]
+Get:4 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libsecret-common all 0.21.4-1build3 [4962 B]
+Get:5 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libsecret-1-0 amd64 0.21.4-1build3 [116 kB]
+Get:6 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libappindicator3-1 amd64 12.10.1+20.10.20200706.1-0ubuntu5 [23.3 kB]
+Fetched 170 kB in 1s (324 kB/s)
+Selecting previously unselected package libnotify4:amd64.
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 204056 files and directories currently installed.)
+Preparing to unpack .../libnotify4_0.8.3-1build2_amd64.deb ...
+Unpacking libnotify4:amd64 (0.8.3-1build2) ...
+Selecting previously unselected package libsecret-common.
+Preparing to unpack .../libsecret-common_0.21.4-1build3_all.deb ...
+Unpacking libsecret-common (0.21.4-1build3) ...
+Selecting previously unselected package libsecret-1-0:amd64.
+Preparing to unpack .../libsecret-1-0_0.21.4-1build3_amd64.deb ...
+Unpacking libsecret-1-0:amd64 (0.21.4-1build3) ...
+Selecting previously unselected package jconnect.
+Preparing to unpack .../JConnect-0.1.0-beta.2-amd64.deb ...
+Unpacking jconnect (0.1.0~beta.2) ...
+Selecting previously unselected package libappindicator3-1.
+Preparing to unpack .../libappindicator3-1_12.10.1+20.10.20200706.1-0ubuntu5_amd64.deb ...
+Unpacking libappindicator3-1 (12.10.1+20.10.20200706.1-0ubuntu5) ...
+Setting up libappindicator3-1 (12.10.1+20.10.20200706.1-0ubuntu5) ...
+Setting up libnotify4:amd64 (0.8.3-1build2) ...
+Setting up libsecret-common (0.21.4-1build3) ...
+Setting up libsecret-1-0:amd64 (0.21.4-1build3) ...
+Setting up jconnect (0.1.0~beta.2) ...
+update-alternatives: using /opt/JConnect/jconnect to provide /usr/bin/jconnect (jconnect) in auto mode
+Processing triggers for libc-bin (2.39-0ubuntu8.8) ...
+Processing triggers for hicolor-icon-theme (0.17-2) ...
+
+Running kernel seems to be up-to-date.
+
+No services need to be restarted.
+
+No containers need to be restarted.
+
+No user sessions are running outdated binaries.
+
+No VM guests are running outdated hypervisor (qemu) binaries on this host.
