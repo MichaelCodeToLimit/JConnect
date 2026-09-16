@@ -73,6 +73,7 @@
       outdated: `${name} uses a different version of JConnect. Update JConnect on both computers.`,
       protocol: `${name} uses a different version of JConnect. Update JConnect on both computers.`,
       credentials: "That email and password don't match.",
+      'wrong-password': "That password isn't right.",
       totp: "That code didn't work. Check your authenticator app.",
       'totp-required': 'Enter the 6-digit code from your authenticator app.',
       exists: 'An account with this email already exists. Sign in instead.',
@@ -826,6 +827,48 @@
     const confirm = h('input', { class: 'text-input', type: 'password', autocomplete: 'new-password' });
     const totp = h('input', { class: 'code-input', inputmode: 'numeric', maxlength: '6', placeholder: '000000', autocomplete: 'one-time-code' });
     const totpCode = h('input', { class: 'code-input', inputmode: 'numeric', maxlength: '6', placeholder: '000000' });
+    // Changing the password and deleting the account both ask for the password again.
+    let form = null; // 'password' or 'delete'
+    let formError = '';
+    const currentPassword = h('input', { class: 'text-input', type: 'password', autocomplete: 'current-password' });
+    const newPassword = h('input', { class: 'text-input', type: 'password', autocomplete: 'new-password' });
+    const newConfirm = h('input', { class: 'text-input', type: 'password', autocomplete: 'new-password' });
+    const reauthCode = h('input', { class: 'code-input', inputmode: 'numeric', maxlength: '6', placeholder: '000000', autocomplete: 'one-time-code' });
+    const formInputs = [currentPassword, newPassword, newConfirm, reauthCode];
+
+    const openForm = (name) => {
+      form = name;
+      formError = '';
+      formInputs.forEach((el) => { el.value = ''; });
+      current.rerender(true);
+      if (name) setTimeout(() => currentPassword.focus(), 30);
+    };
+
+    const submitForm = async () => {
+      if (working) return;
+      formError = '';
+      if (form === 'password' && newPassword.value !== newConfirm.value) {
+        formError = "The new passwords don't match.";
+        current.rerender(true);
+        return;
+      }
+      const which = form;
+      working = true;
+      current.rerender(true);
+      try {
+        if (which === 'password') await jc.invoke('jc:account', 'change-password', { current: currentPassword.value, next: newPassword.value, totp: reauthCode.value });
+        else await jc.invoke('jc:account', 'delete-account', { password: currentPassword.value, totp: reauthCode.value });
+        form = null;
+        formInputs.forEach((el) => { el.value = ''; });
+        toast(which === 'password' ? 'Password changed. Sign in with it on your other devices.' : 'Your JConnect account is deleted.');
+      } catch (err) {
+        formError = errorText(err);
+      } finally {
+        working = false;
+        if (sheet === current) current.rerender(true);
+      }
+    };
+    formInputs.forEach((el) => el.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitForm(); }));
 
     const submit = async () => {
       error = '';
@@ -883,7 +926,29 @@
               h('button', { class: 'btn small primary', type: 'button', onclick: async () => { if (await call('jc:account', 'totp-enable', { code: totpCode.value })) { totpSetup = null; toast('Two-step sign-in is on.'); } } }, 'Turn on')]
               : [h('p', { class: 'muted' }, 'Add a code from an authenticator app to every new sign-in.'),
                 h('button', { class: 'btn small', type: 'button', onclick: async () => { totpSetup = await call('jc:account', 'totp-setup'); current.rerender(true); } }, 'Set up')],
+          h('h3', { class: 'sub-title' }, 'Password'),
+          form === 'password'
+            ? [field('Current password', currentPassword),
+              field('New password', newPassword, 'At least 10 characters. It can’t be recovered, so keep it somewhere safe.'),
+              field('Confirm new password', newConfirm),
+              a.totp && field('Authenticator code', reauthCode),
+              formError && h('p', { class: 'error' }, formError),
+              h('div', { class: 'button-row' },
+                h('button', { class: 'btn', type: 'button', onclick: () => openForm(null) }, 'Cancel'),
+                h('button', { class: 'btn primary', type: 'button', disabled: working, onclick: submitForm }, working ? 'Please wait…' : 'Change password'))]
+            : [h('p', { class: 'muted' }, 'Your synced data is encrypted again with the new password, and your other devices need to sign in with it.'),
+              h('button', { class: 'btn small', type: 'button', onclick: () => openForm('password') }, 'Change password')],
           h('button', { class: 'btn wide danger', type: 'button', onclick: () => call('jc:account', 'sign-out') }, 'Sign out'),
+          form === 'delete'
+            ? [h('h3', { class: 'sub-title' }, 'Delete account'),
+              h('p', { class: 'muted' }, 'This deletes your account, its encrypted synced data and its device list from JConnect Cloud. Computers stay on this device. It can’t be undone.'),
+              field('Password', currentPassword),
+              a.totp && field('Authenticator code', reauthCode),
+              formError && h('p', { class: 'error' }, formError),
+              h('div', { class: 'button-row' },
+                h('button', { class: 'btn', type: 'button', onclick: () => openForm(null) }, 'Cancel'),
+                h('button', { class: 'btn danger-fill', type: 'button', disabled: working, onclick: submitForm }, working ? 'Please wait…' : 'Delete account'))]
+            : h('button', { class: 'btn small danger', type: 'button', onclick: () => openForm('delete') }, 'Delete account…'),
         ];
       }
       return [

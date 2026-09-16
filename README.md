@@ -94,6 +94,9 @@ Click the person icon at the top of JConnect to sign in or create an account.
 - Your password stays on the device. It's turned into two keys: one the server checks, and one that encrypts your data before upload.
 - Computers, SSH hosts and your list of devices sync between your devices, stored on the server only as ciphertext.
 - Two-step sign-in with an authenticator app is available under **Account**.
+- **Change password** and **Delete account** are under **Account** too. Both ask for your password again, and for an authenticator code when two-step sign-in is on.
+  - A new password re-encrypts your synced data and signs out your other devices, which then sign in with it.
+  - A forgotten password can't be recovered, because nothing on the server can open your data.
 - **Trust my account's devices** (off by default) lets your own signed-in devices connect without pairing.
 
 ## Networks and VPNs
@@ -129,9 +132,12 @@ npm start          # listens on port 47900
 
 - **TLS:** set `TLS_CERT` and `TLS_KEY`, or put it behind a reverse proxy. JConnect only accepts `http://` cloud addresses on private networks.
 - **TURN:** set `TURN_PUBLIC_HOST` (and optionally `TURN_PORT`) to relay remote-desktop media when two networks block direct connections.
-- **Data:** stored in an SQLite database at `server/cloud/data/cloud.db`. Set `JCONNECT_CLOUD_DB` to keep it elsewhere. It needs Node.js 22.13 or later.
+- **Data:** stored in an SQLite database at `server/cloud/data/cloud.db` unless Postgres is set up (below). Set `JCONNECT_CLOUD_DB` to keep it elsewhere. It needs Node.js 22.13 or later.
   - Accounts from an older `cloud.json` are imported the first time it starts, and the file is kept as `cloud.json.imported`.
-  - `server/cloud/supabase/migrations` has the same tables for Postgres (Supabase).
+- **Postgres or Supabase:** apply `server/cloud/supabase/migrations` to the database, then set `DATABASE_URL` to its connection string. The server won't start until the tables are there.
+  - On Supabase, apply the file with `supabase db push` or in the SQL Editor. The tables go in a `jconnect` schema that Supabase's Data API doesn't expose, so the project's public API keys can't reach them.
+  - From a host without IPv6 (Render, for example), use Supabase's **Session pooler** connection string.
+  - A database on another machine is reached over TLS with its certificate checked. If Supabase's certificate is refused, set `DATABASE_CA_CERT` to the certificate from **Database Settings → SSL Configuration** (its text or a file path).
 
 ## Development
 
@@ -144,6 +150,7 @@ npm run dist:mac             # on a Mac: build dist/JConnect-*-arm64.dmg and dis
 npm run dist:linux           # on Linux: build dist/JConnect-*-x86_64.AppImage and dist/JConnect-*-amd64.deb
 cd mobile && npm install && npm run sync && cd android && ./gradlew assembleDebug   # Android APK (needs JDK 17–21)
 node --test test/*.test.js src/web/test/connection.test.js server/relay/test/relay.test.js server/cloud/test/cloud.test.js
+cd server/cloud && npm install && npm test   # JConnect Cloud with SQLite and with Postgres (PGlite)
 ```
 
 **Releases and updates.** Build a release with the version it's published as, so the updater can tell versions apart, for example `npm run dist:win -- -c.extraMetadata.version=0.1.0-beta.2`. The Linux and Mac workflows do this from their `TAG`. When a download on the website changes, write the description the updater reads next to it: `node scripts/update-info.js ../jconnect-website/public/download/JConnect-Setup.exe 0.1.0-beta.2`. An APK also needs `--version-code`, the `versionCode` from `mobile/android/app/build.gradle`. The Linux and Mac release jobs write their own.

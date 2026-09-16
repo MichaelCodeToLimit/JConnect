@@ -20,6 +20,14 @@ const SSH_FIELDS = ['id', 'name', 'host', 'port', 'username', 'auth', 'keyId', '
 const fail = (code, extra) => JCSecure.failure(code, extra);
 const pick = (obj, fields) => Object.fromEntries(fields.filter((f) => obj[f] !== undefined).map((f) => [f, obj[f]]));
 const sha512 = (...parts) => crypto.createHash('sha512').update(Buffer.concat(parts.map((p) => Buffer.from(p)))).digest();
+const emptyVault = () => ({ v: 1, devices: {}, computers: {}, sshHosts: {}, tombstones: {} });
+
+// JConnect Cloud answers calls that need the password again with 403, because 401 means the session ended.
+function reauthError(res) {
+  if (res.status === 403) return fail(['totp', 'totp-required'].includes(res.data.error) ? res.data.error : 'wrong-password');
+  if (res.status === 429) return fail('slow-down');
+  return fail(res.data.error || 'server');
+}
 
 function normalizeServer(value) {
   let text = String(value || '').trim();
@@ -216,6 +224,66 @@ class Account extends EventEmitter {
     this._set('signed-out');
   }
 
+  // Checks the password on this device before it's used: it must give the vault key this device already holds.
+  async _reauth(password) {
+    const pre = await request(this.data.server, 'POST', '/v1/prelogin', { body: { email: this.data.email } });
+    if (pre.status !== 200) throw fail(pre.data.error || 'server');
+    const keys = await this._keys(password, pre.data.salt, pre.data.kdf);
+    if (!crypto.timingSafeEqual(Buffer.from(keys.vaultKey), Buffer.from(this._vaultKey()))) throw fail('wrong-password');
+    return keys;
+  }
+
+  // A new password gives new keys, so the synced data is encrypted again with the new vault key and sent with
+  // the new salt and auth key. JConnect Cloud signs out every session; this device carries on with a new one.
+  async changePassword({ current, next, totp }) {
+    if (!this.signedIn()) throw fail('signed-out');
+    if (String(next || '').length < 10) throw fail('weak-password');
+    const old = await this._reauth(current);
+    const salt = crypto.randomBytes(16).toString('base64');
+    const keys = await this._keys(next, salt, MIN_KDF);
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const got = await this._call('GET', '/v1/vault');
+      if (got.status !== 200) throw fail('server');
+      const merged = mergeVaults(got.data.blob ? this._decrypt(got.data.blob) : emptyVault(), this._local());
+      const res = await this._call('POST', '/v1/password', {
+        authKey: old.authKey.toString('base64'),
+        totp: totp || undefined,
+        salt,
+        newAuthKey: keys.authKey.toString('base64'),
+        baseVersion: got.data.version,
+        blob: this._encrypt(merged, new Uint8Array(keys.vaultKey)),
+      });
+      // Another device synced in between, so start again from its version.
+      if (res.status === 409) continue;
+      if (res.status !== 200) throw reauthError(res);
+      this.store.update((d) => {
+        d.account.token = this.store.seal(res.data.token);
+        d.account.vaultKey = this.store.seal(Buffer.from(keys.vaultKey).toString('base64'));
+        d.account.expiresAt = res.data.expiresAt;
+        d.account.lastSync = Date.now();
+      });
+      this.vault = merged;
+      this._apply(merged);
+      this.store.log({ kind: 'account', level: 'info', message: 'Changed the JConnect account password. Other devices need to sign in again.' });
+      this._set('signed-in');
+      return;
+    }
+    throw fail('server');
+  }
+
+  // Deletes the account and everything JConnect Cloud keeps for it. Computers and SSH hosts stay on this device.
+  async deleteAccount({ password, totp }) {
+    if (!this.signedIn()) throw fail('signed-out');
+    const keys = await this._reauth(password);
+    const res = await this._call('DELETE', '/v1/account', { authKey: keys.authKey.toString('base64'), totp: totp || undefined });
+    if (res.status !== 200) throw reauthError(res);
+    const { email } = this.data;
+    this.store.update((d) => { d.account = null; });
+    this.vault = null;
+    this.store.log({ kind: 'account', level: 'info', message: `Deleted the JConnect account ${email}.` });
+    this._set('signed-out');
+  }
+
   async _call(method, pathname, body) {
     const cloud = this.cloud();
     if (!cloud) throw fail('signed-out');
@@ -241,9 +309,9 @@ class Account extends EventEmitter {
     return new Uint8Array(Buffer.from(key, 'base64'));
   }
 
-  _encrypt(obj) {
+  _encrypt(obj, key = this._vaultKey()) {
     const nonce = nacl.randomBytes(24);
-    const box = nacl.secretbox(new Uint8Array(Buffer.from(JSON.stringify(obj), 'utf8')), nonce, this._vaultKey());
+    const box = nacl.secretbox(new Uint8Array(Buffer.from(JSON.stringify(obj), 'utf8')), nonce, key);
     return Buffer.concat([Buffer.from(nonce), Buffer.from(box)]).toString('base64');
   }
 
@@ -313,7 +381,7 @@ class Account extends EventEmitter {
         for (let attempt = 0; attempt < 3; attempt++) {
           const got = await this._call('GET', '/v1/vault');
           if (got.status !== 200) throw fail('server');
-          const remote = got.data.blob ? this._decrypt(got.data.blob) : { v: 1, devices: {}, computers: {}, sshHosts: {}, tombstones: {} };
+          const remote = got.data.blob ? this._decrypt(got.data.blob) : emptyVault();
           const merged = mergeVaults(remote, this._local());
           this.vault = merged;
           this._apply(merged);

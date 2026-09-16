@@ -851,6 +851,12 @@ function registerIpc() {
       case 'sign-out':
         await account.signOut();
         break;
+      case 'change-password':
+        await account.changePassword({ current: String(payload.current || ''), next: String(payload.next || ''), totp: text(payload.totp, 8) });
+        break;
+      case 'delete-account':
+        await account.deleteAccount({ password: String(payload.password || ''), totp: text(payload.totp, 8) });
+        break;
       case 'sync':
         await account.sync();
         break;

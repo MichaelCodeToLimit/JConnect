@@ -102,3 +102,43 @@ test('wrong passwords are refused and the server address must be secure', async 
   await account.signOut();
   assert.strictEqual(store.data.account, null);
 });
+
+test('a password change keeps this device syncing, and other devices sign in again with the new password', async (t) => {
+  const { server } = await startCloud(t);
+  const credentials = { server, email: 'me@example.com', password: 'correct horse battery staple' };
+  const laptop = new FakeStore('Laptop');
+  const a = new Account({ store: laptop });
+  await a.signUp(credentials);
+  laptop.addComputer({ id: 'c1', type: 'jconnect', name: 'Home PC', os: 'Windows 11', publicKey: 'AAAA' });
+  await a.sync();
+  const b = new Account({ store: new FakeStore('Office PC') });
+  await b.signIn(credentials);
+
+  await assert.rejects(a.changePassword({ current: 'wrong horse battery staple', next: 'a brand new passphrase' }), { code: 'wrong-password' });
+  await assert.rejects(a.changePassword({ current: credentials.password, next: 'short' }), { code: 'weak-password' });
+  await a.changePassword({ current: credentials.password, next: 'a brand new passphrase' });
+  await tick();
+  laptop.addComputer({ id: 'c2', type: 'jconnect', name: 'Garage Pi', os: 'Linux', publicKey: 'BBBB' });
+  await a.sync();
+  assert.strictEqual(a.state, 'signed-in');
+
+  await assert.rejects(b.sync(), { code: 'expired' });
+  const phone = new Account({ store: new FakeStore('Phone') });
+  await assert.rejects(phone.signIn(credentials), { code: 'credentials' });
+  await phone.signIn({ ...credentials, password: 'a brand new passphrase' });
+  assert.deepStrictEqual(phone.store.data.computers.map((c) => c.name).sort(), ['Garage Pi', 'Home PC'], 'synced data opens with the new password');
+});
+
+test('deleting the account signs this device out and keeps its computers', async (t) => {
+  const { cloud, server } = await startCloud(t);
+  const store = new FakeStore('Laptop');
+  const account = new Account({ store });
+  await account.signUp({ server, email: 'gone@example.com', password: 'correct horse battery staple' });
+  store.addComputer({ id: 'c1', type: 'jconnect', name: 'Home PC' });
+  await account.sync();
+
+  await assert.rejects(account.deleteAccount({ password: 'wrong horse battery staple' }), { code: 'wrong-password' });
+  await account.deleteAccount({ password: 'correct horse battery staple' });
+  assert.deepStrictEqual([store.data.account, account.state, store.data.computers.map((c) => c.name)], [null, 'signed-out', ['Home PC']]);
+  assert.strictEqual(cloud.db.dump().accounts.length, 0);
+});
