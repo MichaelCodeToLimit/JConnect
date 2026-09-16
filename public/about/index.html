@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>About JConnect</title>
+  <meta name="description" content="What JConnect is, how it works and who makes it: the remote-device app with no IP addresses, no port forwarding and no required account. History, architecture, security model and platform support.">
+  <meta name="theme-color" content="#000000">
+  <link rel="icon" type="image/png" href="../assets/img/icon.png">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="About JConnect">
+  <meta property="og:description" content="How JConnect works, what it is built from, and where the project stands.">
+  <meta property="og:image" content="../assets/img/og.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/site.css">
+</head>
+<body>
+  <div class="noise" aria-hidden="true"></div>
+
+  <header class="nav" id="nav">
+    <div class="container nav-inner">
+      <a class="brand" href="../" aria-label="JConnect home">
+        <img src="../assets/img/icon.png" alt="" width="26" height="26">
+        <span>JConnect</span>
+      </a>
+      <nav class="nav-links" id="nav-links" aria-label="Primary">
+        <a href="../#features">Features</a>
+        <a href="../#jvpn">JVPN</a>
+        <a href="../#security">Security</a>
+        <a href="../docs/">Docs</a>
+        <a href="./" aria-current="page">About</a>
+        <a href="../press/">Press</a>
+      </nav>
+      <div class="nav-cta">
+        <a class="btn btn-ghost btn-sm hide-sm" href="../press/">Press kit</a>
+        <a class="btn btn-light btn-sm" href="../download/">Download</a>
+        <button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="nav-links"><span></span><span></span></button>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="docs-hero">
+      <div class="hero-media" aria-hidden="true">
+        <div class="hero-glow"></div>
+        <div class="grid-lines"></div>
+        <div class="beam beam-1"></div>
+      </div>
+      <div class="container docs-hero-inner">
+        <span class="eyebrow reveal"><i class="eyebrow-dot"></i>About the project</span>
+        <h1 class="reveal" style="--d: 60ms">About <span class="gradient-text">JConnect</span></h1>
+        <p class="reveal" style="--d: 120ms">JConnect is a remote-device app for Windows, macOS, Linux and Android, built around one idea: remote access should be as easy as using a computer normally. This page is the reference account of what it is, how it works and where it stands.</p>
+      </div>
+    </section>
+
+    <div class="container" style="padding-top: 44px; padding-bottom: 110px;">
+      <article class="docs-content">
+
+        <section class="doc" id="overview" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Overview</span>
+          <h2>What JConnect is</h2>
+          <p><b>JConnect</b> is remote-desktop and remote-access software that lets someone use one of their own computers from another computer, a phone, a tablet or a television. It was designed so that the everyday case &mdash; reaching your own machines &mdash; needs no network knowledge at all: there are no IP addresses to find, no ports to forward, no VPN profile to configure and no account to create. Two computers on the same network discover each other automatically; the user pairs them once with a six-digit code and presses <b>Connect</b>.</p>
+          <p>The name is short for <i>Just Connect</i>, which is also the project&rsquo;s design rule: any feature that would require the user to understand networking before it works is considered unfinished.</p>
+          <p>Beyond screen sharing and remote control, JConnect includes an SSH client, Remote Desktop (RDP) routing, an optional encrypted account with device sync, and JVPN &mdash; its own relay network for reaching machines away from home without installing a separate VPN. It can also drive VPNs the user already has, including Tailscale, Twingate, ZeroTier, WireGuard, FortiClient and Windows VPN connections.</p>
+        </section>
+
+        <section class="doc" id="history" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>History</span>
+          <h2>History</h2>
+          <p>JConnect was started on <b>10 September 2026</b> by <b>Michael Davies</b>, an independent developer. The first working version paired two Windows computers over a local network and shared one screen with the other.</p>
+          <p>Development moved quickly across platforms in the days that followed:</p>
+          <ul>
+            <li>The desktop agent, browser client and relay, followed by the Windows installer.</li>
+            <li>Encrypted protocol v2, JVPN, accounts with sync, the VPN integrations and SSH.</li>
+            <li>The macOS build, with a Swift input helper, permission handling and a menu-bar presence. Its DMGs are built on CI, because they need Apple&rsquo;s own tools.</li>
+            <li>Linux packages (.deb and AppImage) with a C input helper for X11, built on an older base so they also run on older distributions.</li>
+            <li>The Android app, a Capacitor wrapper around the browser client, extended for Android TV and Google TV so a television becomes a remote-control client.</li>
+          </ul>
+          <p>The first public builds were released as <b>version 0.1.0 beta</b> through the project&rsquo;s own website rather than through app stores. As of this writing the software is an early beta: it is usable day to day, but the Windows and macOS builds are not yet code-signed or notarized, and several features listed below are incomplete.</p>
+        </section>
+
+        <section class="doc" id="how" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>How it works</span>
+          <h2>How it works</h2>
+          <h3>Discovery and pairing</h3>
+          <p>A computer running JConnect announces only a name and a public key on the local network, and that announcement can be turned off. Another device shows those computers under <b>Add Computer</b>. Pairing happens once, in one of two ways: the user types the six-digit code shown on the other computer, or chooses <b>Ask for permission</b>, in which case someone at the other machine confirms that both screens show the same verification code. After pairing, the computer recognises the device by its key.</p>
+          <h3>Identity instead of addresses</h3>
+          <p>Every device holds an Ed25519 identity key, and its device ID is derived from that key. Because identity is a key rather than an address, the same paired relationship keeps working when a machine moves between networks, changes IP address or is reached through a relay &mdash; which is what removes address and port configuration from the user&rsquo;s side of the problem.</p>
+          <h3>Connections</h3>
+          <p>Control data &mdash; input events, SSH traffic and RDP traffic &mdash; travels over JConnect protocol v2, an encrypted channel described below. Screen and sound travel over WebRTC, which is itself DTLS-SRTP encrypted, with its keys signed inside the protocol v2 channel so they cannot be substituted.</p>
+          <h3>Getting there</h3>
+          <p>On a local network, devices connect directly. Away from home, JVPN carries the connection: each computer keeps an outbound, signed connection to a JConnect Cloud relay, and the user&rsquo;s other devices dial it through that relay using a one-minute ticket. The relay passes encrypted bytes only &mdash; it cannot read, alter or impersonate a connection &mdash; and only devices registered to the same account can see or dial each other. JVPN installs no system-wide network adapter, so other applications on the machine do not see it as a VPN.</p>
+          <p>Where a user already runs a private network, JConnect can use that instead. It starts the VPN when needed, asking for administrator permission only where the VPN itself requires it, imports the machines on it, checks what each one offers (JConnect, SSH or Remote Desktop), and never modifies the VPN&rsquo;s own settings.</p>
+        </section>
+
+        <section class="doc" id="security" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Security</span>
+          <h2>Security model</h2>
+          <p>Every connection uses JConnect protocol v2 regardless of which network carries it.</p>
+          <ul>
+            <li><b>End-to-end encryption.</b> Each connection performs an ephemeral X25519 key exchange, after which messages are sealed with XSalsa20-Poly1305. Frames are numbered, so altered, replayed or reordered data closes the connection.</li>
+            <li><b>Mutual authentication.</b> The computer signs the connection&rsquo;s transcript with its Ed25519 identity key and the connecting device checks it against the key it paired with; the connecting device signs the same transcript, so a captured message cannot be reused elsewhere.</li>
+            <li><b>Secrets stay local.</b> Pairing codes and passwords never cross the network. They are turned into scrypt proofs bound to a single connection, so an eavesdropper learns nothing reusable.</li>
+            <li><b>Keys at rest.</b> Device keys, API keys, account tokens and SSH keys are encrypted with the operating system&rsquo;s key store &mdash; DPAPI on Windows, the Keychain on macOS.</li>
+            <li><b>Account data.</b> The account password never leaves the device. It is stretched into two keys: one the server verifies, and one that encrypts synced data before upload, so the server stores ciphertext it cannot open. A forgotten password therefore cannot be recovered. Two-step sign-in with an authenticator app is supported.</li>
+            <li><b>Reduced surface.</b> Discovery can be disabled, windows receive only the permissions they need, and the packaged application ships with Electron fuses set: no Node integration, no inspector, and asar integrity checking.</li>
+            <li><b>Travel Mode and Emergency Lockdown</b> restrict or sever access across every path, JVPN included.</li>
+          </ul>
+        </section>
+
+        <section class="doc" id="platforms" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Availability</span>
+          <h2>Platforms</h2>
+          <div class="doc-table-wrap">
+            <table class="doc-table">
+              <thead><tr><th>Platform</th><th>Requirement</th><th>Format</th><th>Can be controlled</th></tr></thead>
+              <tbody>
+                <tr><td>Windows</td><td>Windows 10 or 11, 64-bit</td><td>Installer (.exe, per-user, no admin) and portable .exe</td><td>Yes, except the secure desktop</td></tr>
+                <tr><td>macOS</td><td>macOS 13 Ventura or later</td><td>.dmg for Apple silicon and Intel</td><td>Yes, with Screen Recording and Accessibility granted</td></tr>
+                <tr><td>Linux</td><td>64-bit Intel or AMD</td><td>.deb and AppImage</td><td>X11 sessions only; Wayland not yet supported</td></tr>
+                <tr><td>Android</td><td>Android 8.0 or later</td><td>.apk from the website</td><td>No &mdash; it connects to computers</td></tr>
+                <tr><td>Android TV / Google TV</td><td>Android 8.0 or later</td><td>The same .apk, with a remote-control layout</td><td>No &mdash; it connects to computers</td></tr>
+                <tr><td>Phones, tablets, other devices</td><td>A modern web browser</td><td>Served by a JConnect computer; nothing to install</td><td>No &mdash; it connects to computers</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>On a television, the arrow keys move the pointer and <b>OK</b> clicks; holding <b>OK</b> right-clicks or drags, and <b>Back</b> opens the session controls. Computers on the network are listed by name, so there is no address to type with a remote.</p>
+        </section>
+
+        <section class="doc" id="architecture" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Under the hood</span>
+          <h2>Architecture</h2>
+          <p>The desktop application is built on <b>Electron</b>. Its main process holds the host agent that shares the machine, the JVPN client, account and sync, the VPN integrations, routing and the SSH client, along with input injection, the tray and window management. A shared layer implements the v2 secure channel, the client protocol and the remote-desktop viewer, and is used by every client &mdash; desktop, browser and mobile &mdash; so all three speak the same protocol.</p>
+          <p>Input injection needs native code on two platforms: a <b>Swift</b> helper on macOS and a <b>C</b> helper using X11 and XTest on Linux. The Linux helper is compiled on an older base so the packages also run on older distributions.</p>
+          <p>The browser client serves phones, tablets and televisions. The <b>Android</b> app is a Capacitor wrapper around it, adding QR scanning, network discovery, adding computers by address, television detection and back-button handling.</p>
+          <p><b>JConnect Cloud</b> is a Node.js server providing accounts, encrypted sync, the JVPN relay and TURN. It stores data in SQLite by default, or in PostgreSQL &mdash; including Supabase &mdash; and users can run their own instance rather than relying on one operated by the project.</p>
+          <p>Cryptography uses TweetNaCl (X25519, Ed25519, XSalsa20-Poly1305) with scrypt for password and pairing-code proofs; SSH uses ssh2, with xterm.js as the terminal.</p>
+        </section>
+
+        <section class="doc" id="approach" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Design</span>
+          <h2>Design decisions</h2>
+          <p>Several choices distinguish JConnect from other remote-access tools, and each carries a cost worth stating plainly.</p>
+          <h3>No account required</h3>
+          <p>Local connections and pairing work with no sign-up at all, and an account is needed only for reaching machines away from home and for syncing device lists. The cost is that the convenience people expect from commercial tools &mdash; a device list that follows you everywhere &mdash; arrives only when a user chooses to create one.</p>
+          <h3>No system-wide VPN</h3>
+          <p>JVPN is built into the application rather than installed as a network adapter, so it does not change how other applications see the network, and it does not require administrator rights to run. The cost is that JVPN carries only what JConnect carries: remote desktop, SSH and RDP to JConnect computers, not arbitrary traffic.</p>
+          <h3>A self-hostable server</h3>
+          <p>The relay, account server and sync store are a single Node.js application anyone can run, against SQLite or PostgreSQL. A user who does not want to depend on infrastructure operated by the project is not required to.</p>
+          <h3>The television as a first-class client</h3>
+          <p>Rather than treating a TV as a large phone, the Android build detects televisions and switches to a layout designed for a directional remote. This is unusual among remote-desktop applications and was a deliberate target rather than a side effect.</p>
+        </section>
+
+        <section class="doc" id="status" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Status</span>
+          <h2>Status and known limits</h2>
+          <p>JConnect is an early beta, and the project states its limits rather than working around them:</p>
+          <ul>
+            <li>The Windows build is not code-signed, so SmartScreen warns on first run. The macOS build is not notarized, so macOS asks the user to confirm it.</li>
+            <li>Windows cannot be controlled on the secure desktop &mdash; UAC prompts, Ctrl+Alt+Del and the lock screen. Applications running as administrator ignore input unless JConnect also runs as administrator.</li>
+            <li>Linux computers can be controlled only in X11 sessions. Wayland control is not implemented and screen sharing there is untested.</li>
+            <li>A Mac cannot be controlled at its lock screen or login window, and its sound is not shared yet.</li>
+            <li>The browser client for phones is served over plain HTTP on the local network. The connection itself is still end-to-end encrypted, but the desktop app is recommended on untrusted networks.</li>
+            <li>The Android app is signed with a development key and is not distributed through Google Play.</li>
+            <li>Camera sharing is described in the project&rsquo;s vision but is not built.</li>
+          </ul>
+          <p>Updates are delivered from the project&rsquo;s own website: the application checks for a new version every few hours and verifies that a download matches the exact size and SHA-256 the site publishes before installing anything.</p>
+        </section>
+
+        <section class="doc" id="licence" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Licensing</span>
+          <h2>Licensing and the name</h2>
+          <p>JConnect is proprietary software. Its source code is not public, and the builds offered on this site are free to download and use during the beta.</p>
+          <p>The name is not unique. Unrelated products and organisations also use &ldquo;JConnect&rdquo;, including a professional networking organisation and unrelated mobile applications; there is no connection between them and this project. Where ambiguity matters, this software is <i>JConnect &mdash; Just Connect</i>, the remote-device application described on this page.</p>
+        </section>
+
+        <section class="doc" id="facts" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Reference</span>
+          <h2>Project facts</h2>
+          <div class="doc-table-wrap">
+            <table class="doc-table">
+              <tbody>
+                <tr><th>Developer</th><td>Michael Davies</td></tr>
+                <tr><th>First released</th><td>September 2026 (version 0.1.0 beta)</td></tr>
+                <tr><th>Development began</th><td>10 September 2026</td></tr>
+                <tr><th>Type</th><td>Remote desktop and remote access software</td></tr>
+                <tr><th>Written in</th><td>JavaScript (Electron, Node.js), Swift (macOS input helper), C (Linux input helper)</td></tr>
+                <tr><th>Operating systems</th><td>Windows 10 and 11, macOS 13+, Linux (x86-64), Android 8.0+, Android TV</td></tr>
+                <tr><th>Protocol</th><td>JConnect protocol v2 (X25519, Ed25519, XSalsa20-Poly1305, scrypt); WebRTC for media</td></tr>
+                <tr><th>Server</th><td>JConnect Cloud &mdash; Node.js, SQLite or PostgreSQL, relay and TURN; self-hostable</td></tr>
+                <tr><th>Licence</th><td>Proprietary; free during the beta</td></tr>
+                <tr><th>Website</th><td><a href="../">jconnect-1dsx.onrender.com</a></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout">
+            <span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></span>
+            <p>Writing about JConnect? The <a href="../press/">press kit</a> has boilerplate, a fact sheet, logos and screenshots you may use.</p>
+          </div>
+        </section>
+
+      </article>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <a class="brand" href="../"><img src="../assets/img/icon.png" alt="" width="22" height="22"><span>JConnect</span></a>
+        <p>Open. Connect. Work.</p>
+      </div>
+      <div class="footer-cols">
+        <div><h5>Product</h5><a href="../#features">Features</a><a href="../#jvpn">JVPN</a><a href="../#networks">Networks</a><a href="../#ssh">SSH</a></div>
+        <div><h5>Project</h5><a href="./">About</a><a href="../press/">Press kit</a><a href="#status">Status</a><a href="#facts">Project facts</a></div>
+        <div><h5>Get started</h5><a href="../download/">Download</a><a href="../docs/">Docs</a><a href="../docs/#troubleshooting">Troubleshooting</a></div>
+      </div>
+    </div>
+    <div class="container footer-base">
+      <span>&copy; 2026 JConnect</span>
+      <span class="footer-status"><i class="dot ok pulse"></i> All systems ready</span>
+    </div>
+  </footer>
+
+  <script src="../assets/js/site.js" defer></script>
+</body>
+</html>

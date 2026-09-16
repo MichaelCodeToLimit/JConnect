@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JConnect Press Kit</title>
+  <meta name="description" content="Press kit for JConnect: boilerplate, fact sheet, logos, screenshots, review builds and contact details for writers covering the remote-device app.">
+  <meta name="theme-color" content="#000000">
+  <link rel="icon" type="image/png" href="../assets/img/icon.png">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="JConnect Press Kit">
+  <meta property="og:description" content="Boilerplate, facts, logos and screenshots for writers covering JConnect.">
+  <meta property="og:image" content="../assets/img/og.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/site.css">
+</head>
+<body>
+  <div class="noise" aria-hidden="true"></div>
+
+  <header class="nav" id="nav">
+    <div class="container nav-inner">
+      <a class="brand" href="../" aria-label="JConnect home">
+        <img src="../assets/img/icon.png" alt="" width="26" height="26">
+        <span>JConnect</span>
+      </a>
+      <nav class="nav-links" id="nav-links" aria-label="Primary">
+        <a href="../#features">Features</a>
+        <a href="../#jvpn">JVPN</a>
+        <a href="../#security">Security</a>
+        <a href="../docs/">Docs</a>
+        <a href="../about/">About</a>
+        <a href="./" aria-current="page">Press</a>
+      </nav>
+      <div class="nav-cta">
+        <a class="btn btn-ghost btn-sm hide-sm" href="#contact">Contact</a>
+        <a class="btn btn-light btn-sm" href="../download/">Download</a>
+        <button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="nav-links"><span></span><span></span></button>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="docs-hero">
+      <div class="hero-media" aria-hidden="true">
+        <div class="hero-glow"></div>
+        <div class="grid-lines"></div>
+        <div class="beam beam-1"></div>
+      </div>
+      <div class="container docs-hero-inner">
+        <span class="eyebrow reveal"><i class="eyebrow-dot"></i>Press kit</span>
+        <h1 class="reveal" style="--d: 60ms">JConnect <span class="gradient-text">press kit</span></h1>
+        <p class="reveal" style="--d: 120ms">Everything you need to write about JConnect: boilerplate you may quote directly, a fact sheet, logos and screenshots cleared for use, and a contact for review builds and questions.</p>
+      </div>
+    </section>
+
+    <div class="container" style="padding-top: 44px; padding-bottom: 110px;">
+      <article class="docs-content">
+
+        <section class="doc" id="status" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Read first</span>
+          <h2>Where the project stands</h2>
+          <p>JConnect is an <b>early beta</b>, released in September 2026. It works day to day across Windows, macOS, Linux and Android, and it is honest about what it cannot do yet. Anyone writing about it should know three things up front:</p>
+          <ul>
+            <li>The Windows build is <b>not code-signed</b> and the macOS build is <b>not notarized</b>, so both operating systems warn on first run. This is a cost and paperwork gap, not a technical one, and it is being addressed.</li>
+            <li>The Android app is signed with a development key and is <b>not on Google Play</b>. It installs from the website.</li>
+            <li>Linux machines can be controlled in <b>X11 sessions only</b>. Wayland is not supported yet.</li>
+          </ul>
+          <p>The full list is on the <a href="../about/#status">About page</a> and in the <a href="../docs/#limits">docs</a>. Please quote these limits rather than discovering them mid-review; they are deliberately published.</p>
+        </section>
+
+        <section class="doc" id="boilerplate" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Copy you may use</span>
+          <h2>Boilerplate</h2>
+          <p>These descriptions may be quoted, edited or trimmed without asking.</p>
+          <h3>One line</h3>
+          <div class="doc-code"><pre><code>JConnect is a remote-device app for Windows, macOS, Linux and Android with no IP addresses, no port forwarding and no required account: install it, pair once, press Connect.</code></pre></div>
+          <h3>Fifty words</h3>
+          <div class="doc-code"><pre><code>JConnect is remote-desktop software built on one rule: remote access should be as
+easy as using a computer normally. Computers on a network find each other, pair once
+with a six-digit code, and connect. Every session is end-to-end encrypted, and no
+account is needed to use it at home.</code></pre></div>
+          <h3>A hundred words</h3>
+          <div class="doc-code"><pre><code>JConnect is a remote-device app for Windows, macOS, Linux and Android that removes
+the setup step from remote access. There are no IP addresses to find, no ports to
+forward, no VPN profile to configure and no account to create: two computers on the
+same network discover each other, the user pairs them once with a six-digit code, and
+presses Connect. Away from home, JVPN carries the session over a relay that can only
+pass encrypted bytes. It also includes SSH, Remote Desktop routing, encrypted device
+sync, and an Android app that turns a television into a client. It is free during the
+beta.</code></pre></div>
+        </section>
+
+        <section class="doc" id="facts" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Reference</span>
+          <h2>Fact sheet</h2>
+          <div class="doc-table-wrap">
+            <table class="doc-table">
+              <tbody>
+                <tr><th>Product</th><td>JConnect &mdash; Just Connect</td></tr>
+                <tr><th>Category</th><td>Remote desktop and remote access software</td></tr>
+                <tr><th>Developer</th><td>Michael Davies, independent</td></tr>
+                <tr><th>Current version</th><td>0.1.0 beta (Android: 0.1.0 beta 2)</td></tr>
+                <tr><th>First released</th><td>September 2026</td></tr>
+                <tr><th>Price</th><td>Free during the beta</td></tr>
+                <tr><th>Licence</th><td>Proprietary; source not public</td></tr>
+                <tr><th>Platforms</th><td>Windows 10 and 11 (64-bit), macOS 13+ (Apple silicon and Intel), Linux x86-64 (.deb, AppImage), Android 8.0+, Android TV and Google TV, plus any modern browser</td></tr>
+                <tr><th>Encryption</th><td>X25519 key exchange, XSalsa20-Poly1305 sealing, Ed25519 device identities, scrypt proofs; WebRTC (DTLS-SRTP) for screen and sound</td></tr>
+                <tr><th>Built with</th><td>Electron and Node.js; Swift (macOS input helper); C with X11/XTest (Linux input helper); Capacitor (Android)</td></tr>
+                <tr><th>Server</th><td>JConnect Cloud &mdash; Node.js with SQLite or PostgreSQL, relay and TURN; users can run their own</td></tr>
+                <tr><th>Distribution</th><td>Direct download from the project website; Android APK also published as a GitHub pre-release</td></tr>
+                <tr><th>Website</th><td><a href="../">jconnect-1dsx.onrender.com</a></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc" id="angles" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>For writers</span>
+          <h2>What is actually different</h2>
+          <p>Remote-desktop software is a crowded category. These are the points a reviewer is most likely to find worth writing about, stated without exaggeration.</p>
+          <h3>Nothing to configure, and no account at home</h3>
+          <p>Local use requires no sign-up, no ID number to read aloud, and no network settings. Machines announce a name and a public key, pair once with a six-digit code, and are then recognised by key rather than address. The pairing code never crosses the network &mdash; it becomes a scrypt proof bound to a single connection.</p>
+          <h3>A VPN that is not a VPN</h3>
+          <p>JVPN reaches machines away from home without installing a network adapter, so other applications on the computer do not see a VPN and it needs no administrator rights. It carries only JConnect, SSH and RDP traffic to the user&rsquo;s own machines &mdash; a narrower promise than a general-purpose VPN, and a smaller attack surface.</p>
+          <h3>The relay cannot read anything</h3>
+          <p>Sessions away from home pass through a relay that handles encrypted bytes only, with dialling gated by one-minute tickets and limited to devices on the same account. Account sync is encrypted on the device before upload, which means a forgotten password genuinely cannot be recovered &mdash; a tradeoff worth putting to readers.</p>
+          <h3>Your television is a client</h3>
+          <p>The Android build detects TVs and switches to a layout for a directional remote: arrows move the pointer, OK clicks, holding OK right-clicks or drags. Computers are listed by name, so nothing has to be typed with a remote control. Few remote-desktop apps treat this as a target rather than an accident.</p>
+          <h3>It brings its own VPN integrations</h3>
+          <p>Tailscale, Twingate, ZeroTier, WireGuard, FortiClient and Windows VPN can each be started and imported from inside JConnect, which then checks what each imported machine offers. It never edits a VPN&rsquo;s own configuration.</p>
+          <h3>The server is yours if you want it</h3>
+          <p>Accounts, sync, relay and TURN are one Node.js application that runs against SQLite or PostgreSQL. Self-hosting is a documented path, not a hypothetical one.</p>
+        </section>
+
+        <section class="doc" id="assets" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Downloads</span>
+          <h2>Logos and screenshots</h2>
+          <p>These files may be used in articles, reviews and listings about JConnect. Please do not alter the mark&rsquo;s colours or proportions.</p>
+          <div class="doc-table-wrap">
+            <table class="doc-table">
+              <thead><tr><th>Asset</th><th>Use</th><th>File</th></tr></thead>
+              <tbody>
+                <tr><td>App icon</td><td>Listings, article thumbnails</td><td><a href="../assets/img/icon.png" download>icon.png</a></td></tr>
+                <tr><td>Social card</td><td>Link previews, headers</td><td><a href="../assets/img/og.jpg" download>og.jpg</a></td></tr>
+                <tr><td>Desktop session</td><td>Screenshot of a remote session</td><td><a href="../media/desktop.jpg" download>desktop.jpg</a></td></tr>
+                <tr><td>JVPN</td><td>Reaching machines away from home</td><td><a href="../media/jvpn.jpg" download>jvpn.jpg</a></td></tr>
+                <tr><td>Sync</td><td>Devices and encrypted sync</td><td><a href="../media/sync.jpg" download>sync.jpg</a></td></tr>
+                <tr><td>Product shot</td><td>General illustration</td><td><a href="../media/cta.jpg" download>cta.jpg</a></td></tr>
+                <tr><td>Hero animation</td><td>Video, MP4</td><td><a href="../media/hero.mp4" download>hero.mp4</a></td></tr>
+                <tr><td>JVPN animation</td><td>Video, MP4</td><td><a href="../media/jvpn.mp4" download>jvpn.mp4</a></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Need a screenshot that is not here &mdash; a specific screen, a particular platform, or a clean capture at a set resolution? Ask, and it can usually be produced the same day.</p>
+        </section>
+
+        <section class="doc" id="review" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Trying it</span>
+          <h2>Review builds</h2>
+          <p>Every build is public: the <a href="../download/">download page</a> serves the current release for all four platforms, and each download is published alongside its exact size and SHA-256. There is no reviewer gate and no time limit.</p>
+          <p>Two notes that save time in a review:</p>
+          <ul>
+            <li>Because the builds are unsigned, Windows SmartScreen and macOS Gatekeeper both interrupt the first launch. The <a href="../docs/#install">install docs</a> give the exact steps.</li>
+            <li>To test the away-from-home path (JVPN), an account is needed on a JConnect Cloud server. Get in touch and one can be arranged, or run the server yourself &mdash; it is a documented <code>npm start</code>.</li>
+          </ul>
+        </section>
+
+        <section class="doc" id="name" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Style</span>
+          <h2>Using the name</h2>
+          <ul>
+            <li>Write it <b>JConnect</b> &mdash; one word, capital J, capital C. Not &ldquo;JConnect&rdquo; with a space, not &ldquo;Jconnect&rdquo;, not &ldquo;J-Connect&rdquo;.</li>
+            <li>The tagline is <b>Open. Connect. Work.</b> The name expands to <i>Just Connect</i>.</li>
+            <li>Call it a <b>remote-device app</b> or <b>remote-desktop software</b>. It is not a VPN, although it includes one for its own traffic.</li>
+            <li>Other unrelated products and organisations use the name JConnect. If ambiguity is possible in your publication, <i>JConnect (remote desktop software)</i> disambiguates it.</li>
+          </ul>
+        </section>
+
+        <section class="doc" id="contact" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Get in touch</span>
+          <h2>Contact</h2>
+          <!-- TODO: replace with the address you want published. A dedicated press@ alias is better than a personal inbox. -->
+          <p>Press enquiries, interview requests, review builds, custom screenshots and fact checks: <b>[ add press contact address ]</b>.</p>
+          <p>Questions about how something works are welcome before publication, and corrections after it. The <a href="../about/">About page</a> is kept accurate and is the best source for technical detail; the <a href="../docs/">documentation</a> covers behaviour in full.</p>
+        </section>
+
+      </article>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <a class="brand" href="../"><img src="../assets/img/icon.png" alt="" width="22" height="22"><span>JConnect</span></a>
+        <p>Open. Connect. Work.</p>
+      </div>
+      <div class="footer-cols">
+        <div><h5>Product</h5><a href="../#features">Features</a><a href="../#jvpn">JVPN</a><a href="../#networks">Networks</a><a href="../#ssh">SSH</a></div>
+        <div><h5>Project</h5><a href="../about/">About</a><a href="./">Press kit</a><a href="#assets">Logos</a><a href="#contact">Contact</a></div>
+        <div><h5>Get started</h5><a href="../download/">Download</a><a href="../docs/">Docs</a><a href="../docs/#troubleshooting">Troubleshooting</a></div>
+      </div>
+    </div>
+    <div class="container footer-base">
+      <span>&copy; 2026 JConnect</span>
+      <span class="footer-status"><i class="dot ok pulse"></i> All systems ready</span>
+    </div>
+  </footer>
+
+  <script src="../assets/js/site.js" defer></script>
+</body>
+</html>
