@@ -2,11 +2,12 @@
   "name": "jconnect-android",
   "version": "0.1.0",
   "private": true,
-  "description": "JConnect for Android: connect to your JConnect computers from a phone, tablet or TV.",
+  "description": "JConnect for Android and iOS: connect to your JConnect computers from a phone, tablet or TV.",
   "license": "UNLICENSED",
   "scripts": {
     "www": "node scripts/build-www.js",
-    "sync": "node scripts/build-www.js && cap sync android"
+    "sync": "node scripts/build-www.js && cap sync android",
+    "sync:ios": "node scripts/build-www.js && cap sync ios"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.1",

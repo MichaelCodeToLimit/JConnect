@@ -1,0 +1,186 @@
+name: iOS build
+
+# Builds the iPhone and iPad app, runs it in the iOS Simulator and has it pair with a test computer. On the app branch,
+# a build that passes is uploaded to TestFlight once these repository secrets exist:
+#   APPLE_TEAM_ID            the 10-character Team ID from developer.apple.com → Membership
+#   ASC_KEY_ID, ASC_ISSUER_ID and ASC_KEY_P8
+#                            an App Store Connect API key with the App Manager or Admin role (Users and Access →
+#                            Integrations), and the full contents of its .p8 file
+# Push to the ios branch to try iOS changes without starting the desktop builds.
+on:
+  push:
+    branches: [app, ios]
+    paths:
+      - mobile/**
+      - src/web/**
+      - src/shared/secure-channel.js
+      - src/main/host.js
+      - src/main/security.js
+      - build/JConnect.icon/**
+      - .github/workflows/ios.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  simulator:
+    name: Build the app and check it in the Simulator
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      # The app icon is an Icon Composer document, which needs Xcode 26 or later.
+      - name: Use the newest Xcode
+        run: |
+          mkdir -p ci-logs
+          newest="$(ls -d /Applications/Xcode_*.app 2> /dev/null | grep -v -i -E 'beta|rc' | sort -V | tail -1)"
+          if [ -n "$newest" ]; then sudo xcode-select -s "$newest/Contents/Developer"; fi
+          { sw_vers; xcodebuild -version; xcrun simctl list runtimes; } 2>&1 | tee ci-logs/0-runner.log
+
+      - name: Install dependencies
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: 1
+        run: |
+          npm ci 2>&1 | tee ci-logs/1-install.log
+          (cd mobile && npm ci) 2>&1 | tee -a ci-logs/1-install.log
+
+      - name: Run tests
+        run: node --test mobile/test/ios-sockets.test.js src/web/test/connection.test.js 2>&1 | tee ci-logs/2-tests.log
+
+      - name: Build the app for the Simulator
+        run: |
+          cd mobile
+          npm run sync:ios 2>&1 | tee ../ci-logs/3-sync.log
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' -derivedDataPath ../build/ios \
+            CODE_SIGNING_ALLOWED=NO build 2>&1 | tee ../ci-logs/4-build.log | grep -E '(error|warning: .*JConnect|BUILD)' || true
+          test -d ../build/ios/Build/Products/Debug-iphonesimulator/App.app || { echo "::error::The app wasn't built"; tail -60 ../ci-logs/4-build.log; exit 1; }
+
+      - name: Check the app in the Simulator
+        timeout-minutes: 15
+        run: bash mobile/scripts/ios-check.sh build/ios/Build/Products/Debug-iphonesimulator/App.app ci-logs 2>&1 | tee ci-logs/8-check.log
+
+      - name: Publish logs to the ci/ios branch
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATUS: ${{ job.status }}
+        run: |
+          mkdir -p ci-logs
+          {
+            echo "status: $STATUS"
+            echo "branch: $GITHUB_REF_NAME"
+            echo "commit: $GITHUB_SHA"
+            echo "run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          } > ci-logs/summary.txt
+          cd ci-logs
+          git init -q -b ci/ios
+          git add -A
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "iOS build $GITHUB_RUN_NUMBER on $GITHUB_REF_NAME: $STATUS"
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" ci/ios
+
+  testflight:
+    name: Upload to TestFlight
+    needs: simulator
+    if: github.ref == 'refs/heads/app'
+    runs-on: macos-26
+    timeout-minutes: 45
+    env:
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+    steps:
+      - name: Check the App Store Connect secrets
+        id: secrets
+        run: |
+          mkdir -p ci-logs
+          if [ -n "$APPLE_TEAM_ID" ] && [ -n "$ASC_KEY_ID" ] && [ -n "$ASC_ISSUER_ID" ] && [ -n "$ASC_KEY_P8" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "The App Store Connect secrets are set." | tee ci-logs/0-secrets.log
+          else
+            echo "::notice::Nothing was uploaded to TestFlight, because the App Store Connect secrets aren't set (see the top of ios.yml)."
+            echo "The App Store Connect secrets aren't set, so nothing was uploaded." > ci-logs/0-secrets.log
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.secrets.outputs.ready == 'true'
+        with:
+          path: src
+
+      - uses: actions/setup-node@v4
+        if: steps.secrets.outputs.ready == 'true'
+        with:
+          node-version: 24
+
+      - name: Build, sign and upload
+        if: steps.secrets.outputs.ready == 'true'
+        run: |
+          newest="$(ls -d /Applications/Xcode_*.app 2> /dev/null | grep -v -i -E 'beta|rc' | sort -V | tail -1)"
+          if [ -n "$newest" ]; then sudo xcode-select -s "$newest/Contents/Developer"; fi
+          key="$RUNNER_TEMP/AuthKey_$ASC_KEY_ID.p8"
+          printf '%s\n' "$ASC_KEY_P8" > "$key"
+          auth=(-allowProvisioningUpdates -authenticationKeyPath "$key" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID")
+          # Every upload needs a higher build number than the last.
+          build_number="$((GITHUB_RUN_NUMBER + 1))"
+
+          cd src/mobile
+          npm ci 2>&1 | tee "$GITHUB_WORKSPACE/ci-logs/1-install.log"
+          npm run sync:ios 2>&1 | tee "$GITHUB_WORKSPACE/ci-logs/2-sync.log"
+
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/JConnect.xcarchive" "${auth[@]}" \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" CODE_SIGN_STYLE=Automatic CURRENT_PROJECT_VERSION="$build_number" \
+            archive 2>&1 | tee "$GITHUB_WORKSPACE/ci-logs/3-archive.log" | grep -E '(error|ARCHIVE)' || true
+          test -d "$RUNNER_TEMP/JConnect.xcarchive" || { echo "::error::The archive wasn't built"; tail -60 "$GITHUB_WORKSPACE/ci-logs/3-archive.log"; exit 1; }
+
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>$APPLE_TEAM_ID</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict>
+          </plist>
+          EOF
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/JConnect.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" -exportPath "$RUNNER_TEMP/export" "${auth[@]}" \
+            2>&1 | tee "$GITHUB_WORKSPACE/ci-logs/4-upload.log"
+          echo "Uploaded JConnect 0.1.0 ($build_number) to App Store Connect. TestFlight lists it once Apple has processed it." | tee -a "$GITHUB_WORKSPACE/ci-logs/4-upload.log"
+          rm -f "$key"
+
+      - name: Publish logs to the ci/ios-testflight branch
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATUS: ${{ job.status }}
+        run: |
+          mkdir -p ci-logs
+          {
+            echo "status: $STATUS"
+            echo "commit: $GITHUB_SHA"
+            echo "run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          } > ci-logs/summary.txt
+          cd ci-logs
+          git init -q -b ci/ios-testflight
+          git add -A
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "TestFlight upload $GITHUB_RUN_NUMBER: $STATUS"
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" ci/ios-testflight

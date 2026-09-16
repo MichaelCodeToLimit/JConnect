@@ -1,8 +1,10 @@
-// JConnect for Android, on phones, tablets and TVs. Adds what a web page can't do by itself: finding the computers on
-// the network, scanning the code a computer shows, adding a computer by its address, and the Android Back button.
-// Loads before the web client scripts.
+// JConnect for Android (phones, tablets and TVs) and for iPhone and iPad. Adds what a web page can't do by itself:
+// finding the computers on the network, scanning the code a computer shows, adding a computer by its address, the
+// Android Back button, and on iOS, WebSockets a JConnect computer accepts. Loads before the web client scripts.
 (function () {
   const plugin = (name) => (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins[name]) || null;
+  const platform = window.Capacitor && window.Capacitor.getPlatform ? window.Capacitor.getPlatform() : 'android';
+  const ios = platform === 'ios';
   const DEFAULT_PORT = 47801;
   const QR_CODE = 0;
   const LISTEN_MS = 4500;
@@ -12,6 +14,113 @@
 
   const PHONE_HINT = 'On the computer, open JConnect and go to <strong>Settings → Use this computer from a phone</strong>.';
   const TV_HINT = 'Choose a computer on this network, or type the address JConnect shows on the computer under <strong>Settings → Use this computer from a phone</strong>.';
+
+  // ---------- iOS WebSockets ----------
+  // The iOS web view's own WebSocket sends "Origin: capacitor://localhost", which JConnect computers turn away. The
+  // app's SocketPlugin opens native sockets that send no Origin, like any other app, and this class gives them the
+  // browser WebSocket interface that connection.js and secure-channel.js use.
+  function installNativeWebSocket() {
+    const native = plugin('JConnectSocket');
+    if (!native) return;
+    const sockets = new Map();
+    let nextId = 1;
+    const listening = native.addListener('socket', (e) => {
+      const ws = sockets.get(e.id);
+      if (ws) ws._event(e);
+    });
+
+    const toBase64 = (bytes) => {
+      let text = '';
+      for (let i = 0; i < bytes.length; i += 0x8000) text += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+      return btoa(text);
+    };
+    const fromBase64 = (text) => {
+      const raw = atob(text);
+      const bytes = new Uint8Array(raw.length);
+      for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+      return bytes.buffer;
+    };
+
+    class NativeWebSocket {
+      constructor(url) {
+        this.url = String(url);
+        this.readyState = NativeWebSocket.CONNECTING;
+        this.binaryType = 'blob';
+        this.bufferedAmount = 0;
+        this.protocol = '';
+        this.extensions = '';
+        this.onopen = null;
+        this.onmessage = null;
+        this.onclose = null;
+        this.onerror = null;
+        this._listeners = { open: [], message: [], close: [], error: [] };
+        this._id = nextId++;
+        sockets.set(this._id, this);
+        Promise.resolve(listening)
+          .then(() => native.open({ id: this._id, url: this.url }))
+          .catch(() => this._event({ type: 'close', code: 1006, reason: '', clean: false }));
+      }
+
+      addEventListener(type, fn, options) {
+        if (!this._listeners[type] || typeof fn !== 'function') return;
+        this._listeners[type].push({ fn, once: !!(options && options.once) });
+      }
+
+      removeEventListener(type, fn) {
+        if (this._listeners[type]) this._listeners[type] = this._listeners[type].filter((l) => l.fn !== fn);
+      }
+
+      _dispatch(type, event) {
+        const handler = this['on' + type];
+        if (typeof handler === 'function') handler.call(this, event);
+        for (const l of this._listeners[type].slice()) {
+          if (l.once) this.removeEventListener(type, l.fn);
+          l.fn.call(this, event);
+        }
+      }
+
+      _event(e) {
+        if (this.readyState === NativeWebSocket.CLOSED) return;
+        if (e.type === 'open') {
+          this.readyState = NativeWebSocket.OPEN;
+          this._dispatch('open', { type: 'open', target: this });
+        } else if (e.type === 'text') {
+          this._dispatch('message', { type: 'message', data: e.data, target: this });
+        } else if (e.type === 'binary') {
+          const data = fromBase64(e.data);
+          this._dispatch('message', { type: 'message', data: this.binaryType === 'arraybuffer' ? data : new Blob([data]), target: this });
+        } else if (e.type === 'close') {
+          this.readyState = NativeWebSocket.CLOSED;
+          sockets.delete(this._id);
+          if (!e.clean) this._dispatch('error', { type: 'error', target: this });
+          this._dispatch('close', { type: 'close', code: e.code || 1006, reason: e.reason || '', wasClean: !!e.clean, target: this });
+        }
+      }
+
+      send(data) {
+        if (this.readyState === NativeWebSocket.CONNECTING) throw new DOMException('The socket is still connecting', 'InvalidStateError');
+        if (this.readyState !== NativeWebSocket.OPEN) return;
+        let message;
+        if (typeof data === 'string') message = { text: data };
+        else if (data instanceof ArrayBuffer) message = { data: toBase64(new Uint8Array(data)) };
+        else if (ArrayBuffer.isView(data)) message = { data: toBase64(new Uint8Array(data.buffer, data.byteOffset, data.byteLength)) };
+        else throw new TypeError('JConnect sockets send text or bytes');
+        native.send({ id: this._id, ...message }).catch(() => {});
+      }
+
+      close(code = 1000, reason = '') {
+        if (this.readyState === NativeWebSocket.CLOSING || this.readyState === NativeWebSocket.CLOSED) return;
+        this.readyState = NativeWebSocket.CLOSING;
+        native.close({ id: this._id, code, reason: String(reason) }).catch(() => {});
+      }
+    }
+    NativeWebSocket.CONNECTING = 0;
+    NativeWebSocket.OPEN = 1;
+    NativeWebSocket.CLOSING = 2;
+    NativeWebSocket.CLOSED = 3;
+    window.WebSocket = NativeWebSocket;
+  }
+  if (ios) installNativeWebSocket();
 
   // "192.168.1.20", "office-pc:47801", "[fd7a::1]:47801" or a pasted http:// address.
   function parseAddress(text) {
@@ -80,7 +189,8 @@
       return { text: result && result.ScanResult ? result.ScanResult : '' };
     } catch (err) {
       if (/permission|denied/i.test(String(err && err.message))) {
-        return { error: 'JConnect needs the camera to scan the code. Allow it in Android Settings, or type the address instead.' };
+        const where = ios ? 'Settings → JConnect' : 'Android Settings';
+        return { error: `JConnect needs the camera to scan the code. Allow it in ${where}, or type the address instead.` };
       }
       return { text: '' }; // closed the scanner
     }
@@ -307,9 +417,41 @@
         ? 'Press Add Computer to find the computers on this network. JConnect needs to be open on them.'
         : 'Tap Add Computer, then scan the code JConnect shows on your computer under Settings → Use this computer from a phone.';
     }
-    setTimeout(checkForUpdate, 15000);
-    setInterval(checkForUpdate, UPDATE_EVERY_MS);
+    // On iPhone and iPad, TestFlight and the App Store update the app.
+    if (ios) {
+      runSelfTest();
+    } else {
+      setTimeout(checkForUpdate, 15000);
+      setInterval(checkForUpdate, UPDATE_EVERY_MS);
+    }
   });
 
-  window.JCNative = { platform: 'android', television, addComputer, parseAddress, parseAnnouncement, targetFromCode, onBack };
+  // CI starts the iOS app with a test computer's address and pairing code (mobile/scripts/ios-check.sh). The app pairs
+  // with it through the native sockets, checks that it's reachable, and reports each step on the console.
+  async function runSelfTest() {
+    const device = plugin('JConnectDevice');
+    if (!device) return;
+    let info;
+    try { info = await device.info(); } catch { return; }
+    if (!info || !info.selfTest) return;
+    const report = (text) => console.log(`jconnect-self-test: ${text}`);
+    try {
+      const [address, query] = String(info.selfTest).split('?');
+      const code = new URLSearchParams(query || '').get('code') || '';
+      const target = { ...parseAddress(address), code, id: '', publicKey: '' };
+      const conn = window.JCConnection;
+      const found = await conn.hostInfo(target);
+      report(`found ${found.name}`);
+      const computer = await conn.pair(target, found, code);
+      window.JCComputers.upsert(computer);
+      report(`paired ${computer.id}`);
+      const status = await conn.status(computer);
+      report(`status ${status.state}`);
+      report(status.state === 'offline' ? 'failed' : 'passed');
+    } catch (err) {
+      report(`failed ${(err && (err.code || err.message)) || err}`);
+    }
+  }
+
+  window.JCNative = { platform, television, addComputer, parseAddress, parseAnnouncement, targetFromCode, onBack };
 })();
