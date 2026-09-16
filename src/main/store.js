@@ -23,6 +23,8 @@ const DEFAULT_SETTINGS = {
   hideFromNearby: false,
   allowBrowserClients: true,
   accountTrust: false,
+  // Keep JConnect accounts on this PC for the other devices (local-cloud.js)
+  hostAccounts: false,
   // JVPN and networks
   jvpnEnabled: true,
   defaultVia: 'jvpn',

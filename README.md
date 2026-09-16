@@ -96,7 +96,13 @@ JVPN is built into JConnect. It doesn't install a system-wide network adapter, s
 
 ## Account and sync (optional)
 
-Click the person icon at the top of JConnect to sign in or create an account.
+Click the person icon at the top of JConnect to sign in or create an account, and choose where the account is kept:
+
+- **JConnect Cloud:** JConnect's own server, so JVPN reaches your computers from anywhere. Signing in can take up to a minute when nobody has used it for a while.
+- **This PC:** JConnect on this computer keeps the account. On your other devices, choose **Another PC** and enter the address shown under **Settings → Account → Keep accounts on this PC**. They can sign in and sync while this PC is on and they're on the same network or Tailscale.
+- **Another PC:** an account kept on one of your other computers.
+
+Either way:
 
 - Your password stays on the device. It's turned into two keys: one the server checks, and one that encrypts your data before upload.
 - Computers, SSH hosts and your list of devices sync between your devices, stored on the server only as ciphertext.
@@ -141,10 +147,16 @@ npm start          # listens on port 47900
 - **TURN:** set `TURN_PUBLIC_HOST` (and optionally `TURN_PORT`) to relay remote-desktop media when two networks block direct connections.
 - **Data:** stored in an SQLite database at `server/cloud/data/cloud.db` unless Postgres is set up (below). Set `JCONNECT_CLOUD_DB` to keep it elsewhere. It needs Node.js 22.13 or later.
   - Accounts from an older `cloud.json` are imported the first time it starts, and the file is kept as `cloud.json.imported`.
-- **Postgres or Supabase:** apply `server/cloud/supabase/migrations` to the database, then set `DATABASE_URL` to its connection string. The server won't start until the tables are there.
-  - On Supabase, apply the file with `supabase db push` or in the SQL Editor. The tables go in a `jconnect` schema that Supabase's Data API doesn't expose, so the project's public API keys can't reach them.
-  - From a host without IPv6 (Render, for example), use Supabase's **Session pooler** connection string.
-  - A database on another machine is reached over TLS with its certificate checked. If Supabase's certificate is refused, set `DATABASE_CA_CERT` to the certificate from **Database Settings → SSL Configuration** (its text or a file path).
+- **Postgres:** set `DATABASE_URL` to a connection string, and the data is kept there instead. JConnect Cloud creates and updates its tables, in a `jconnect` schema, when it starts.
+  - A database on another machine is reached over TLS. On a private network, such as Render's internal addresses, the certificate isn't checked, because those certificates are self-signed. Everywhere else it is.
+  - To check against your own certificate, set `DATABASE_CA_CERT` to a PEM file's text or path. To turn TLS off on a private network, add `?sslmode=disable` to the connection string.
+
+**JConnect's hosted server** is the Render web service `jconnect-cloud` (https://jconnect-cloud.onrender.com). It deploys from the `app` branch and keeps its data in the Render Postgres database `jconnect-cloud-db`. Both are in Frankfurt.
+
+- **Build command:** `npm ci --omit=dev --ignore-scripts && npm ci --omit=dev --prefix server/cloud`
+- **Start command:** `node server/cloud/cloud.js`
+- **`DATABASE_URL`:** the database's Internal Database URL. On Render, JConnect Cloud won't start without it, because Render wipes a service's disk on every deploy.
+- **Free plan limits:** the service sleeps after 15 minutes without requests, and a free database expires 30 days after it's created unless it's upgraded.
 
 ## Development
 

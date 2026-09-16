@@ -11,6 +11,12 @@ const { EventEmitter } = require('events');
 const JCSecure = require('../shared/secure-channel');
 const { scrypt } = require('./kdf');
 
+// JConnect's hosted account server (server/cloud on Render). People can keep accounts on their own PC instead.
+const JCONNECT_CLOUD = 'https://jconnect-cloud.onrender.com';
+// The port JConnect listens on when it keeps accounts on a PC (local-cloud.js).
+const ACCOUNTS_PORT = 47900;
+// The hosted server sleeps when nobody has used it for a while and takes up to about a minute to start again.
+const WAKE_TIMEOUT_MS = 100000;
 const MIN_KDF = { N: 32768, r: 8, p: 1 };
 const SYNC_DEBOUNCE_MS = 3000;
 const SYNC_INTERVAL_MS = 60000;
@@ -29,14 +35,33 @@ function reauthError(res) {
   return fail(res.data.error || 'server');
 }
 
+const LOCAL_HOST = /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|100\.)/;
+
+// A bare address on a private network is a PC keeping accounts, reached over http on JConnect's accounts port.
+// Anything else must use https.
 function normalizeServer(value) {
-  let text = String(value || '').trim();
+  const text = String(value || '').trim();
   if (!text) throw fail('server');
-  if (!/^https?:\/\//i.test(text)) text = `https://${text}`;
-  const url = new URL(text);
-  const local = /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|100\.)/.test(url.hostname);
+  let url;
+  try {
+    url = new URL(/^https?:\/\//i.test(text) ? text : `http://${text}`);
+  } catch {
+    throw fail('bad-address');
+  }
+  const local = LOCAL_HOST.test(url.hostname);
+  if (!/^https?:\/\//i.test(text)) {
+    if (!local) url = new URL(`https://${text}`);
+    else if (!url.port) url.port = String(ACCOUNTS_PORT);
+  }
   if (url.protocol === 'http:' && !local) throw fail('insecure-server');
   return url.origin;
+}
+
+// Makes sure the address is a JConnect account server before a password is used with it, waking the hosted one.
+async function checkServer(base) {
+  const res = await request(base, 'GET', '/v1/health', { timeout: WAKE_TIMEOUT_MS }).catch(() => null);
+  if (!res) throw fail('cloud-unreachable');
+  if (res.status !== 200 || res.data.app !== 'jconnect-cloud') throw fail('not-cloud');
 }
 
 function request(base, method, pathname, { token, body, timeout = 15000 } = {}) {
@@ -165,6 +190,7 @@ class Account extends EventEmitter {
   async signUp({ server, email, password }) {
     const base = normalizeServer(server);
     if (String(password || '').length < 10) throw fail('weak-password');
+    await checkServer(base);
     const salt = crypto.randomBytes(16).toString('base64');
     const keys = await this._keys(password, salt, MIN_KDF);
     const res = await request(base, 'POST', '/v1/signup', { body: { email, salt, authKey: keys.authKey.toString('base64') } });
@@ -176,6 +202,7 @@ class Account extends EventEmitter {
 
   async signIn({ server, email, password, totp }) {
     const base = normalizeServer(server);
+    await checkServer(base);
     const cacheKey = `${base}|${email}|${password}`;
     let keys = this._pendingKeys && this._pendingKeys.key === cacheKey ? this._pendingKeys.keys : null;
     if (!keys) {
@@ -452,4 +479,4 @@ class Account extends EventEmitter {
   }
 }
 
-module.exports = { Account, mergeVaults, normalizeServer };
+module.exports = { Account, mergeVaults, normalizeServer, JCONNECT_CLOUD, ACCOUNTS_PORT };

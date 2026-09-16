@@ -1,7 +1,102 @@
-// JConnect Cloud storage in Postgres, such as a Supabase database, with the same methods as store.js except
-// that each one returns a promise. The tables come from supabase/migrations, which must be applied to the
-// database first; ready() checks for them. Times are milliseconds since 1970, like Date.now().
+// JConnect Cloud storage in Postgres (such as Render Postgres), with the same methods as store.js except that each
+// one returns a promise. ready() creates or updates the tables, in a "jconnect" schema, before the server takes
+// requests. Times are milliseconds since 1970, like Date.now().
 const fs = require('fs');
+const crypto = require('crypto');
+
+// Each entry upgrades the schema by one version, recorded in jconnect.migrations. Only ever append.
+const MIGRATIONS = [
+  `
+  create table jconnect.accounts (
+    id uuid primary key default gen_random_uuid(),
+    email text not null,
+    kdf_salt text not null,
+    auth_verifier text not null,
+    totp_secret text,
+    totp_enabled boolean not null default false,
+    vault_version integer not null default 0,
+    vault_blob text,
+    vault_updated_at timestamptz not null default now(),
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now(),
+    constraint accounts_email_lowercase check (email = lower(email)),
+    constraint accounts_email_format check (char_length(email) <= 254 and email ~ '^[^[:space:]@]+@[^[:space:]@]+[.][^[:space:]@]+$'),
+    constraint accounts_kdf_salt_format check (kdf_salt ~ '^[A-Za-z0-9+/]{22}==$'),
+    constraint accounts_auth_verifier_format check (auth_verifier ~ '^[A-Za-z0-9+/]{22}==:[A-Za-z0-9+/]{43}=$'),
+    constraint accounts_totp_needs_secret check (not totp_enabled or totp_secret is not null),
+    constraint accounts_vault_version_not_negative check (vault_version >= 0),
+    constraint accounts_vault_blob_size check (vault_blob is null or char_length(vault_blob) <= 2097152)
+  );
+  create unique index accounts_email_key on jconnect.accounts (email);
+
+  create table jconnect.devices (
+    account_id uuid not null references jconnect.accounts (id) on delete cascade,
+    device_id text not null,
+    public_key text not null,
+    name text not null default '',
+    os text not null default '',
+    last_seen timestamptz not null default now(),
+    created_at timestamptz not null default now(),
+    primary key (account_id, device_id),
+    constraint devices_id_format check (device_id ~ '^[0-9a-f]{20}$'),
+    constraint devices_public_key_format check (public_key ~ '^[A-Za-z0-9+/]{43}=$'),
+    constraint devices_name_length check (char_length(name) <= 64),
+    constraint devices_os_length check (char_length(os) <= 32)
+  );
+  create index devices_device_id_idx on jconnect.devices (device_id);
+
+  -- An account can register at most 50 devices, even when registrations arrive at once. Registering a device again is always allowed.
+  create function jconnect.enforce_device_limit() returns trigger
+  language plpgsql
+  set search_path = ''
+  as $$
+  begin
+    if not exists (select 1 from jconnect.devices d where d.account_id = new.account_id and d.device_id = new.device_id)
+      and (select count(*) from jconnect.devices d where d.account_id = new.account_id) >= 50 then
+      raise exception 'too-many-devices' using errcode = 'check_violation';
+    end if;
+    return new;
+  end;
+  $$;
+  create trigger devices_limit before insert on jconnect.devices
+    for each row execute function jconnect.enforce_device_limit();
+
+  -- Only a SHA-256 hash of each session token is kept.
+  create table jconnect.sessions (
+    token_hash text primary key,
+    account_id uuid not null references jconnect.accounts (id) on delete cascade,
+    created_at timestamptz not null default now(),
+    expires_at timestamptz not null,
+    constraint sessions_token_hash_format check (token_hash ~ '^[A-Za-z0-9+/]{43}=$'),
+    constraint sessions_expire_after_creation check (expires_at > created_at)
+  );
+  create index sessions_account_id_idx on jconnect.sessions (account_id);
+  create index sessions_expires_at_idx on jconnect.sessions (expires_at);
+
+  -- One row. prelogin_secret gives unknown email addresses a stable fake salt, so sign-in can't reveal which have accounts.
+  create table jconnect.settings (
+    id boolean primary key default true,
+    prelogin_secret text not null,
+    created_at timestamptz not null default now(),
+    constraint settings_single_row check (id)
+  );
+
+  create function jconnect.touch_updated_at() returns trigger
+  language plpgsql
+  set search_path = ''
+  as $$
+  begin
+    new.updated_at = now();
+    return new;
+  end;
+  $$;
+  create trigger accounts_touch_updated_at before update on jconnect.accounts
+    for each row execute function jconnect.touch_updated_at();
+  `,
+];
+
+// Any number will do, as long as nothing else sharing the database locks it.
+const MIGRATION_LOCK = 4790001;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const toDate = (ms) => new Date(ms);
@@ -21,22 +116,25 @@ const toUser = (row) => row && {
 
 const toDevice = (row) => row && { id: row.device_id, publicKey: row.public_key, name: row.name, os: row.os, lastSeen: toMs(row.last_seen) };
 
-// node-postgres settings for a connection string. A database on this computer is reached without TLS. Any
-// other uses TLS with its certificate checked, against DATABASE_CA_CERT when that's set (the path or text of a
-// PEM file, such as the certificate from Supabase's Database Settings) or else the system's certificates. Only
-// a database on a private network may turn TLS off, with sslmode=disable. SSL options in the string itself are
-// dropped, because node-postgres would let them replace these.
+// node-postgres settings for a connection string:
+//  - a database on this computer is reached without TLS.
+//  - one on a private network (a private address, or a name without dots such as Render's internal addresses)
+//    uses TLS without checking the certificate, because those are self-signed. sslmode=disable turns TLS off.
+//  - any other uses TLS with the certificate checked.
+// DATABASE_CA_CERT (the text or path of a PEM file) makes TLS check against that certificate everywhere. SSL
+// options in the string are dropped, because node-postgres would let them replace these.
 function poolConfig(connectionString, { ca = process.env.DATABASE_CA_CERT, max = 5 } = {}) {
   const url = new URL(connectionString);
   if (!/^postgres(ql)?:$/.test(url.protocol)) throw new Error('The database address must start with postgres:// or postgresql://');
   const disabled = url.searchParams.get('sslmode') === 'disable';
   for (const name of [...url.searchParams.keys()]) if (/^(ssl|uselibpqcompat)/i.test(name)) url.searchParams.delete(name);
   const loopback = /^(localhost|127\.\d+\.\d+\.\d+|\[::1\])$/i.test(url.hostname);
-  const privateNetwork = /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(url.hostname);
+  const privateNetwork = /^[a-z0-9-]+$/i.test(url.hostname) || /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(url.hostname);
   let ssl = false;
   if (!loopback && !(privateNetwork && disabled)) {
-    ssl = { rejectUnauthorized: true };
-    if (ca) ssl.ca = ca.includes('-----BEGIN') ? ca : fs.readFileSync(ca, 'utf8');
+    ssl = ca
+      ? { ca: ca.includes('-----BEGIN') ? ca : fs.readFileSync(ca, 'utf8'), rejectUnauthorized: true }
+      : { rejectUnauthorized: !privateNetwork };
   }
   return { connectionString: url.toString(), ssl, max, connectionTimeoutMillis: 10000, idleTimeoutMillis: 30000 };
 }
@@ -44,7 +142,7 @@ function poolConfig(connectionString, { ca = process.env.DATABASE_CA_CERT, max =
 function openPostgresStore(connectionString, options = {}) {
   const { Pool } = require('pg');
   const pool = new Pool(poolConfig(connectionString, options));
-  // The database may close idle connections (Supabase's pooler does). The pool reconnects, so the server carries on.
+  // The database may close idle connections. The pool opens new ones, so the server carries on.
   pool.on('error', (err) => {
     if (!process.env.JCONNECT_CLOUD_QUIET) console.error(new Date().toISOString(), '[cloud] database connection closed:', err.message);
   });
@@ -55,10 +153,29 @@ function openPostgresStore(connectionString, options = {}) {
   return {
     file: null,
 
+    // Creates or updates the tables. The lock stops two servers starting together from both doing it.
     async ready() {
-      const { ok } = await one("select to_regclass('jconnect.accounts') is not null as ok");
-      if (!ok) throw new Error('The database has no JConnect tables. Apply server/cloud/supabase/migrations to it first.');
-      secret = (await one('select prelogin_secret from jconnect.settings where id')).prelogin_secret;
+      const client = await pool.connect();
+      try {
+        await client.query('begin');
+        await client.query('select pg_advisory_xact_lock($1)', [MIGRATION_LOCK]);
+        await client.query('create schema if not exists jconnect');
+        await client.query('create table if not exists jconnect.migrations (version integer primary key, applied_at timestamptz not null default now())');
+        const { rows: [{ version }] } = await client.query('select coalesce(max(version), 0)::int as version from jconnect.migrations');
+        for (let v = version; v < MIGRATIONS.length; v++) {
+          await client.query(MIGRATIONS[v]);
+          await client.query('insert into jconnect.migrations (version) values ($1)', [v + 1]);
+        }
+        await client.query('insert into jconnect.settings (id, prelogin_secret) values (true, $1) on conflict (id) do nothing', [crypto.randomBytes(32).toString('base64')]);
+        const { rows: [settings] } = await client.query('select prelogin_secret from jconnect.settings where id');
+        await client.query('commit');
+        secret = settings.prelogin_secret;
+      } catch (err) {
+        await client.query('rollback').catch(() => {});
+        throw err;
+      } finally {
+        client.release();
+      }
     },
 
     // The prelogin secret never changes, so it's read once.
@@ -126,7 +243,6 @@ function openPostgresStore(connectionString, options = {}) {
           on conflict (account_id, device_id) do update set public_key = excluded.public_key, name = excluded.name, os = excluded.os, last_seen = excluded.last_seen`,
         [userId, id, publicKey, name, os, toDate(lastSeen)]);
       } catch (err) {
-        // The database allows 50 devices an account, even when two registrations arrive at once.
         if (/too-many-devices/.test(err.message)) throw Object.assign(new Error('too-many-devices'), { status: 429 });
         throw err;
       }

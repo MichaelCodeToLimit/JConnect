@@ -31,7 +31,7 @@ const PRELOAD = path.join(__dirname, 'preload.js');
 const ICON = path.join(ASSETS, 'icon.png');
 
 let store; let security; let input; let capture; let host; let discovery; let resources; let selftest;
-let account; let relayLink; let vpn; let router; let jvpnClient; let ssh; let updater;
+let account; let relayLink; let vpn; let router; let jvpnClient; let ssh; let updater; let localCloud;
 let mainWin = null;
 let tray = null;
 let quitting = false;
@@ -180,6 +180,12 @@ async function boot() {
   });
   updater.events.on('change', scheduleUpdate);
 
+  // Accounts kept on this PC start before this device's own account syncs with them.
+  const { LocalCloud } = require('./local-cloud');
+  localCloud = new LocalCloud({ dataDir: path.join(app.getPath('userData'), 'accounts') });
+  localCloud.on('change', scheduleUpdate);
+  if (store.settings.hostAccounts) await localCloud.apply(true).catch(() => {});
+
   registerIpc();
   createTray();
   applyLoginItem();
@@ -219,6 +225,7 @@ app.on('will-quit', () => {
   for (const forward of forwards) forward.close();
   if (input) input.close();
   if (updater) updater.stop();
+  if (localCloud) localCloud.apply(false);
 });
 app.on('window-all-closed', () => { /* JConnect stays ready in the background */ });
 app.on('activate', () => showMain());
@@ -472,6 +479,7 @@ function snapshot() {
       sshPort: s.sshPort,
       shareRdp: s.shareRdp,
       autoUpdate: s.autoUpdate,
+      hostAccounts: s.hostAccounts,
     },
     computers: store.data.computers.map(computerView),
     sshHosts: ssh.hosts().filter((h) => !h.id.startsWith('ssh-host-')),
@@ -489,6 +497,8 @@ function snapshot() {
     securityLog: store.data.securityLog.slice(0, 60),
     account: account.snapshot(),
     cloudServer: store.data.cloudServer || '',
+    defaultCloud: require('./account').JCONNECT_CLOUD,
+    localCloud: localCloud.status(),
     jvpn: relayLink.status(),
     networks,
     update: updater ? updater.snapshot() : null,
@@ -841,13 +851,14 @@ function registerIpc() {
     const email = text(payload.email, 254);
     switch (action) {
       case 'sign-up':
-        store.update((d) => { d.cloudServer = server; });
-        await account.signUp({ server, email, password: String(payload.password || '') });
+      case 'sign-in': {
+        // "this-pc" keeps the account in JConnect on this computer, which starts keeping accounts if it wasn't.
+        const where = server === 'this-pc' ? await keepAccountsHere() : server;
+        store.update((d) => { d.cloudServer = where; });
+        if (action === 'sign-up') await account.signUp({ server: where, email, password: String(payload.password || '') });
+        else await account.signIn({ server: where, email, password: String(payload.password || ''), totp: text(payload.totp, 8) });
         break;
-      case 'sign-in':
-        store.update((d) => { d.cloudServer = server; });
-        await account.signIn({ server, email, password: String(payload.password || ''), totp: text(payload.totp, 8) });
-        break;
+      }
       case 'sign-out':
         await account.signOut();
         break;
@@ -947,8 +958,14 @@ function registerIpc() {
   });
 }
 
+async function keepAccountsHere() {
+  if (!store.settings.hostAccounts) setSetting('hostAccounts', true);
+  await localCloud.apply(true);
+  return localCloud.url;
+}
+
 function setSetting(key, value) {
-  const booleans = ['remoteAccess', 'startAtLogin', 'travelMode', 'travelOwnerOnly', 'emergencyShutdown', 'hideFromNearby', 'allowBrowserClients', 'accountTrust', 'jvpnEnabled', 'shareSsh', 'shareRdp', 'autoUpdate'];
+  const booleans = ['remoteAccess', 'startAtLogin', 'travelMode', 'travelOwnerOnly', 'emergencyShutdown', 'hideFromNearby', 'allowBrowserClients', 'accountTrust', 'jvpnEnabled', 'shareSsh', 'shareRdp', 'autoUpdate', 'hostAccounts'];
   if (key === 'deviceName') {
     const name = String(value ?? '').replace(/\p{Cc}/gu, '').trim().slice(0, 64);
     store.setSetting('deviceName', name || null);
@@ -989,6 +1006,11 @@ function setSetting(key, value) {
   if (key === 'travelOwnerOnly') host.applyTravelMode();
   if (key === 'startAtLogin') applyLoginItem();
   if (key === 'autoUpdate' && updater) updater.settingsChanged();
+  if (key === 'hostAccounts') {
+    store.log({ kind: 'account', level: 'info', message: value ? 'This PC now keeps JConnect accounts for your other devices.' : 'This PC no longer keeps JConnect accounts.' });
+    // If it can't start (another program has the port), the setting goes back off and Settings says why.
+    localCloud.apply(!!value).catch(() => store.setSetting('hostAccounts', false));
+  }
   if (key === 'hideFromNearby') discovery.announce();
   if (key === 'jvpnEnabled') {
     relayLink.refresh();

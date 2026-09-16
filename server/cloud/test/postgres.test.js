@@ -1,4 +1,4 @@
-// JConnect Cloud's Postgres storage (store-postgres.js), on a local Postgres set up like a Supabase database.
+// JConnect Cloud's Postgres storage (store-postgres.js), on a local, empty Postgres.
 const test = require('node:test');
 const assert = require('node:assert');
 const crypto = require('crypto');
@@ -12,13 +12,14 @@ const b64 = (bytes) => crypto.randomBytes(bytes).toString('base64');
 const deviceId = () => crypto.randomBytes(10).toString('hex');
 const verifier = () => `${b64(16)}:${b64(32)}`;
 
-async function open(t, options) {
-  const pg = await startPostgres(options);
+async function open(t) {
+  const pg = await startPostgres();
   const store = openPostgresStore(pg.url, { max: 1 });
   t.after(async () => {
     await store.close();
     await pg.stop();
   });
+  await store.ready();
   return store;
 }
 
@@ -28,9 +29,27 @@ async function newUser(store, email) {
   return id;
 }
 
+test('JConnect Cloud creates its tables in an empty database, and starting again keeps the data', { skip }, async (t) => {
+  const pg = await startPostgres();
+  t.after(() => pg.stop());
+  const first = openPostgresStore(pg.url, { max: 1 });
+  await first.ready();
+  const id = await newUser(first, 'kept@example.com');
+  const secret = await first.secret();
+  await first.close();
+
+  const second = openPostgresStore(pg.url, { max: 1 });
+  try {
+    await second.ready();
+    assert.strictEqual((await second.userById(id)).email, 'kept@example.com');
+    assert.strictEqual(await second.secret(), secret, 'the prelogin secret is kept');
+  } finally {
+    await second.close();
+  }
+});
+
 test('accounts, the vault, two-step sign-in and sessions', { skip }, async (t) => {
   const store = await open(t);
-  await store.ready();
   const at = Date.now();
   const id = await newUser(store, 'a@example.com');
   assert.strictEqual(await store.createUser({ id: crypto.randomUUID(), email: 'a@example.com', salt: b64(16), auth: verifier(), createdAt: at }), false, 'one account per email');
@@ -41,7 +60,7 @@ test('accounts, the vault, two-step sign-in and sessions', { skip }, async (t) =
   const user = await store.userByEmail('a@example.com');
   assert.deepStrictEqual([user.id, user.vault.version, user.vault.blob, user.totp], [id, 1, 'cipher-1', { secret: 'ABC', enabled: true }]);
   assert.strictEqual(await store.userById('not-an-account-id'), undefined);
-  assert.match(await store.secret(), /^[A-Za-z0-9+/]{43}=$/, 'the migration made a prelogin secret');
+  assert.match(await store.secret(), /^[A-Za-z0-9+/]{43}=$/);
 
   const live = b64(32);
   const old = b64(32);
@@ -100,20 +119,19 @@ test('a password change swaps the keys and the vault together and signs out ever
   assert.deepStrictEqual([rows.accounts.length, rows.devices.length, rows.sessions.length, rows.settings.length], [1, 0, 1, 1]);
 });
 
-test('JConnect Cloud won’t start on a database without its tables', { skip }, async (t) => {
-  const store = await open(t, { migrate: false });
-  await assert.rejects(store.ready(), /Apply server\/cloud\/supabase\/migrations/);
-});
+test('TLS: none on this computer, unchecked on a private network, checked everywhere else', () => {
+  const opts = { ca: '' };
+  const external = poolConfig('postgresql://user:p%40ss@dpg-abc123-a.frankfurt-postgres.render.com/jconnect?sslmode=require', opts);
+  assert.deepStrictEqual(external.ssl, { rejectUnauthorized: true });
+  assert.strictEqual(external.connectionString, 'postgresql://user:p%40ss@dpg-abc123-a.frankfurt-postgres.render.com/jconnect', 'SSL settings in the address are dropped');
+  assert.deepStrictEqual(poolConfig('postgresql://user:pw@db.example.com/jconnect?sslmode=disable', opts).ssl, { rejectUnauthorized: true }, 'only a private network can turn TLS off');
 
-test('databases away from this computer are reached over TLS with the certificate checked', () => {
-  const supabase = poolConfig('postgresql://postgres.abcdefghijklmnopqrst:p%40ss@aws-0-eu-central-1.pooler.supabase.com:5432/postgres?sslmode=require', { ca: '' });
-  assert.deepStrictEqual(supabase.ssl, { rejectUnauthorized: true });
-  assert.strictEqual(supabase.connectionString, 'postgresql://postgres.abcdefghijklmnopqrst:p%40ss@aws-0-eu-central-1.pooler.supabase.com:5432/postgres', 'SSL settings in the address are dropped');
+  assert.deepStrictEqual(poolConfig('postgresql://user:pw@dpg-abc123-a/jconnect', opts).ssl, { rejectUnauthorized: false }, 'Render internal address');
+  assert.strictEqual(poolConfig('postgresql://user:pw@dpg-abc123-a/jconnect?sslmode=disable', opts).ssl, false);
+  assert.deepStrictEqual(poolConfig('postgres://u:p@192.168.1.5/jconnect', opts).ssl, { rejectUnauthorized: false });
+  assert.strictEqual(poolConfig('postgres://u:p@127.0.0.1:5432/jconnect', opts).ssl, false);
 
   const pem = '-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----\n';
-  assert.strictEqual(poolConfig('postgres://u:p@db.example.com/postgres', { ca: pem }).ssl.ca, pem);
-  assert.deepStrictEqual(poolConfig('postgres://u:p@db.example.com/postgres?sslmode=disable', { ca: '' }).ssl, { rejectUnauthorized: true }, 'only a private network can turn TLS off');
-  assert.strictEqual(poolConfig('postgres://u:p@192.168.1.5/postgres?sslmode=disable', { ca: '' }).ssl, false);
-  assert.strictEqual(poolConfig('postgres://u:p@127.0.0.1:5432/postgres', { ca: '' }).ssl, false);
-  assert.throws(() => poolConfig('mysql://u:p@db.example.com/jconnect', { ca: '' }), /postgres:\/\//);
+  assert.deepStrictEqual(poolConfig('postgres://u:p@dpg-abc123-a/jconnect', { ca: pem }).ssl, { ca: pem, rejectUnauthorized: true });
+  assert.throws(() => poolConfig('mysql://u:p@db.example.com/jconnect', opts), /postgres:\/\//);
 });

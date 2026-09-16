@@ -9,9 +9,13 @@ on:
     paths:
       - server/**
       - src/main/account.js
+      - src/main/local-cloud.js
+      - src/main/discovery.js
       - src/main/kdf.js
       - src/shared/secure-channel.js
       - test/account.test.js
+      - test/local-cloud.test.js
+      - test/fake-store.js
       - .github/workflows/cloud.yml
   workflow_dispatch:
 
@@ -54,7 +58,7 @@ jobs:
       - name: Account tests
         run: |
           set -o pipefail
-          node --test test/account.test.js server/relay/test/relay.test.js 2>&1 | tee ci-logs/3-account-tests.log
+          node --test test/account.test.js test/local-cloud.test.js server/relay/test/relay.test.js 2>&1 | tee ci-logs/3-account-tests.log
 
       # Logs go to a branch too, so they can be read with plain git.
       - name: Publish logs to the ci/cloud branch

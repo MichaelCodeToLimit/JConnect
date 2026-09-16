@@ -1,35 +1,14 @@
 // Account sync between two devices through a real JConnect Cloud server.
 const test = require('node:test');
 const assert = require('node:assert');
-const { EventEmitter } = require('events');
-const nacl = require('tweetnacl');
+const http = require('http');
 
 process.env.JCONNECT_CLOUD_QUIET = '1';
 process.env.JCONNECT_RELAY_QUIET = '1';
 
-const { Account, normalizeServer } = require('../src/main/account');
+const { Account, normalizeServer, JCONNECT_CLOUD } = require('../src/main/account');
 const { createCloud } = require('../server/cloud/cloud');
-const JCSecure = require('../src/shared/secure-channel');
-
-const b64 = (u8) => Buffer.from(u8).toString('base64');
-
-class FakeStore extends EventEmitter {
-  constructor(name) {
-    super();
-    this.keyPair = nacl.sign.keyPair();
-    this.publicKey = b64(this.keyPair.publicKey);
-    this.id = JCSecure.deviceIdFromKey(this.publicKey);
-    this.name = name;
-    this.data = { settings: {}, computers: [], ssh: { hosts: [], keys: [], knownHosts: {} }, tombstones: { computers: {}, sshHosts: {} }, account: null, securityLog: [] };
-  }
-  device() { return { id: this.id, name: this.name, os: 'Windows 11', publicKey: this.publicKey }; }
-  sign(text) { return b64(nacl.sign.detached(Buffer.from(String(text), 'utf8'), this.keyPair.secretKey)); }
-  update(fn) { fn(this.data); this.emit('change'); }
-  seal(text) { return text == null ? null : `test:${text}`; }
-  unseal(value) { return typeof value === 'string' && value.startsWith('test:') ? value.slice(5) : null; }
-  log(entry) { this.data.securityLog.unshift(entry); }
-  addComputer(computer) { this.update((d) => { d.computers.push({ addedAt: Date.now(), updatedAt: Date.now(), ...computer }); }); }
-}
+const { FakeStore } = require('./fake-store');
 
 async function startCloud(t) {
   const cloud = createCloud({ port: 0, host: '127.0.0.1', dataFile: null, stun: [] });
@@ -98,9 +77,31 @@ test('wrong passwords are refused and the server address must be secure', async 
   assert.throws(() => normalizeServer('http://cloud.example.com'), { code: 'insecure-server' });
   assert.strictEqual(normalizeServer('cloud.example.com'), 'https://cloud.example.com');
   assert.strictEqual(normalizeServer('http://192.168.1.10:47900'), 'http://192.168.1.10:47900');
+  assert.strictEqual(normalizeServer('192.168.1.20'), 'http://192.168.1.20:47900', 'a PC on the network that keeps accounts');
+  assert.strictEqual(normalizeServer('192.168.1.20:48000'), 'http://192.168.1.20:48000');
+  assert.throws(() => normalizeServer('http://[not an address'), { code: 'bad-address' });
+  assert.match(JCONNECT_CLOUD, /^https:\/\//);
 
   await account.signOut();
   assert.strictEqual(store.data.account, null);
+});
+
+test('an address that isn’t a JConnect account server is refused before the password is used', async (t) => {
+  const website = http.createServer((req, res) => {
+    res.writeHead(404, { 'content-type': 'text/html' });
+    res.end('<h1>Not here</h1>');
+  });
+  await new Promise((resolve) => website.listen(0, '127.0.0.1', resolve));
+  t.after(() => website.close());
+  const account = new Account({ store: new FakeStore('Laptop') });
+  const credentials = { email: 'me@example.com', password: 'correct horse battery staple' };
+  await assert.rejects(account.signIn({ ...credentials, server: `http://127.0.0.1:${website.address().port}` }), { code: 'not-cloud' });
+
+  const closed = http.createServer();
+  await new Promise((resolve) => closed.listen(0, '127.0.0.1', resolve));
+  const { port } = closed.address();
+  await new Promise((resolve) => closed.close(resolve));
+  await assert.rejects(account.signUp({ ...credentials, server: `http://127.0.0.1:${port}` }), { code: 'cloud-unreachable' });
 });
 
 test('a password change keeps this device syncing, and other devices sign in again with the new password', async (t) => {

@@ -74,6 +74,11 @@
       protocol: `${name} uses a different version of JConnect. Update JConnect on both computers.`,
       credentials: "That email and password don't match.",
       'wrong-password': "That password isn't right.",
+      'cloud-unreachable': 'The account server isn’t answering. Check the internet connection, or that the PC keeping your account is on.',
+      'not-cloud': 'That address isn’t a JConnect account server.',
+      'bad-address': 'That doesn’t look like an address.',
+      'accounts-port': 'Another program is using port 47900, so this PC can’t keep accounts.',
+      'accounts-start': 'This PC couldn’t start keeping accounts. Try again.',
       totp: "That code didn't work. Check your authenticator app.",
       'totp-required': 'Enter the 6-digit code from your authenticator app.',
       exists: 'An account with this email already exists. Sign in instead.',
@@ -821,7 +826,20 @@
     let working = false;
     let needTotp = false;
     let totpSetup = null;
-    const server = h('input', { class: 'text-input', placeholder: 'https://cloud.example.com', value: state.cloudServer || '' });
+    // Where the account is kept: JConnect Cloud, this PC, or another PC on the network that keeps accounts.
+    const onThisPc = (url) => /^http:\/\/127\.0\.0\.1:/.test(url || '');
+    let where = !state.cloudServer || state.cloudServer === state.defaultCloud ? 'cloud' : onThisPc(state.cloudServer) ? 'this-pc' : 'other-pc';
+    const server = h('input', {
+      class: 'text-input',
+      placeholder: '192.168.1.20',
+      value: where === 'other-pc' ? state.cloudServer.replace(/^http:\/\//, '').replace(/:47900$/, '') : '',
+    });
+    const thisPcAddresses = () => (state.localCloud.addresses.length ? state.localCloud.addresses.join(' or ') : 'this PC’s address');
+    const whereHint = () => {
+      if (where === 'cloud') return 'JConnect’s server, so JVPN reaches your computers from anywhere. Signing in can take up to a minute when nobody has used it for a while.';
+      if (where === 'this-pc') return `Kept on this computer. On your other devices, choose Another PC and enter ${thisPcAddresses()}. They can sign in while this PC is on and on the same network.`;
+      return 'The PC that keeps your account must be on and on the same network. Its address is in Settings → Account on that PC.';
+    };
     const email = h('input', { class: 'text-input', type: 'email', autocomplete: 'username', placeholder: 'you@example.com' });
     const password = h('input', { class: 'text-input', type: 'password', autocomplete: 'current-password' });
     const confirm = h('input', { class: 'text-input', type: 'password', autocomplete: 'new-password' });
@@ -880,7 +898,8 @@
       working = true;
       current.rerender(true);
       try {
-        await jc.invoke('jc:account', mode, { server: server.value, email: email.value, password: password.value, totp: needTotp ? totp.value : undefined });
+        const address = where === 'cloud' ? state.defaultCloud : where === 'this-pc' ? 'this-pc' : server.value;
+        await jc.invoke('jc:account', mode, { server: address, email: email.value, password: password.value, totp: needTotp ? totp.value : undefined });
         password.value = '';
         confirm.value = '';
         needTotp = false;
@@ -901,7 +920,7 @@
         return [
           h('div', { class: 'account-card' },
             h('div', { class: 'avatar' }, a.email.slice(0, 1).toUpperCase()),
-            h('div', {}, h('div', { class: 'card-title' }, a.email), h('div', { class: 'card-sub' }, a.server))),
+            h('div', {}, h('div', { class: 'card-title' }, a.email), h('div', { class: 'card-sub' }, a.server === state.defaultCloud ? 'JConnect Cloud' : onThisPc(a.server) ? 'Kept on this PC' : a.server))),
           h('div', { class: 'sync-row' },
             h('span', { class: `dot ${a.state === 'error' || a.state === 'expired' ? 'bad' : a.state === 'syncing' ? 'warn' : 'ok'}` }),
             h('span', { class: 'row-main' },
@@ -941,7 +960,7 @@
           h('button', { class: 'btn wide danger', type: 'button', onclick: () => call('jc:account', 'sign-out') }, 'Sign out'),
           form === 'delete'
             ? [h('h3', { class: 'sub-title' }, 'Delete account'),
-              h('p', { class: 'muted' }, 'This deletes your account, its encrypted synced data and its device list from JConnect Cloud. Computers stay on this device. It can’t be undone.'),
+              h('p', { class: 'muted' }, 'This deletes your account, its encrypted synced data and its device list from the server that keeps them. Computers stay on this device. It can’t be undone.'),
               field('Password', currentPassword),
               a.totp && field('Authenticator code', reauthCode),
               formError && h('p', { class: 'error' }, formError),
@@ -955,8 +974,21 @@
         h('div', { class: 'tabs' },
           h('button', { class: `tab${mode === 'sign-in' ? ' active' : ''}`, type: 'button', onclick: () => { mode = 'sign-in'; error = ''; current.rerender(true); } }, 'Sign in'),
           h('button', { class: `tab${mode === 'sign-up' ? ' active' : ''}`, type: 'button', onclick: () => { mode = 'sign-up'; error = ''; current.rerender(true); } }, 'Create account')),
-        h('p', { class: 'muted' }, 'An account is optional. It syncs your computers and lets JVPN reach them from anywhere. Your password never leaves this device, and synced data is encrypted before upload.'),
-        field('JConnect Cloud address', server, 'Your own JConnect Cloud server (see server/cloud in the project).'),
+        h('p', { class: 'muted' }, 'An account is optional. It syncs your computers between your devices. Your password never leaves this device, and synced data is encrypted before upload.'),
+        h('div', { class: 'field' },
+          h('span', { class: 'field-label' }, 'Keep my account on'),
+          h('div', { class: 'tabs' }, ...[['cloud', 'JConnect Cloud'], ['this-pc', 'This PC'], ['other-pc', 'Another PC']].map(([id, label]) => h('button', {
+            class: `tab${where === id ? ' active' : ''}`,
+            type: 'button',
+            onclick: () => {
+              where = id;
+              error = '';
+              current.rerender(true);
+              if (id === 'other-pc') setTimeout(() => server.focus(), 30);
+            },
+          }, label))),
+          h('span', { class: 'field-hint' }, whereHint())),
+        where === 'other-pc' && field('Address of that PC', server),
         field('Email', email),
         field('Password', password, mode === 'sign-up' ? 'At least 10 characters. It can’t be recovered, so keep it somewhere safe.' : null),
         mode === 'sign-up' && field('Confirm password', confirm),
@@ -965,7 +997,7 @@
         h('button', { class: 'btn primary wide', type: 'button', disabled: working, onclick: submit }, working ? 'Please wait…' : mode === 'sign-in' ? 'Sign in' : 'Create account'),
       ];
     }, { live: true });
-    setTimeout(() => (server.value ? email : server).focus(), 60);
+    setTimeout(() => (where === 'other-pc' && !server.value ? server : email).focus(), 60);
   }
 
   // ---- settings ----
@@ -1148,6 +1180,12 @@
               h('span', { class: 'row-title' }, state.account.signedIn ? state.account.email : 'Not signed in'),
               h('span', { class: 'row-sub' }, state.account.signedIn ? `Synced ${ago(state.account.lastSync)} · end-to-end encrypted` : 'Optional. Sign in to sync computers and use JVPN from anywhere.')),
             h('button', { class: 'btn small', type: 'button', onclick: openAccount }, state.account.signedIn ? 'Manage' : 'Sign in')),
+          toggle('Keep accounts on this PC', !s.hostAccounts
+            ? 'Lets your other devices sign in to this PC instead of JConnect Cloud, on the same network.'
+            : state.localCloud.error || (state.localCloud.addresses.length
+              ? `On your other devices, choose Another PC and enter ${state.localCloud.addresses.join(' or ')}.`
+              : 'On. Connect this PC to a network so your other devices can reach it.'),
+          s.hostAccounts, setBool('hostAccounts')),
         ]),
         group('jvpn', 'JVPN', [
           toggle('Use JVPN', 'JConnect’s built-in encrypted network. No other VPN needed.', s.jvpnEnabled, setBool('jvpnEnabled')),

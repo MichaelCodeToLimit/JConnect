@@ -38,6 +38,10 @@
     "files": [
       "src/**/*",
       "!src/web/test{,/**/*}",
+      "server/cloud/cloud.js",
+      "server/cloud/store.js",
+      "server/cloud/store-postgres.js",
+      "server/relay/relay.js",
       "assets/**/*",
       "package.json",
       "!**/node_modules/cpu-features{,/**/*}"

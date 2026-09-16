@@ -11,8 +11,8 @@
 //    uses one-minute tickets instead of long-lived tokens in URLs.
 //  - Two-step sign-in with authenticator codes (TOTP).
 //  - ICE servers (STUN, and TURN when configured) for remote desktop media across the internet.
-//  - Data lives in an SQLite database (store.js), or in Postgres such as Supabase (store-postgres.js) when
-//    DATABASE_URL is set. Accounts from the older JSON file are imported into SQLite.
+//  - Data lives in an SQLite database (store.js), or in Postgres (store-postgres.js) when DATABASE_URL is set.
+//    Accounts from the older JSON file are imported into SQLite.
 
 const http = require('http');
 const https = require('https');
@@ -458,7 +458,13 @@ function createCloud({ port = Number(process.env.PORT || 47900), host, database,
     // Checks the database before taking requests.
     async listen() {
       await db.ready();
-      return new Promise((resolve) => server.listen(port, host, () => resolve(server.address().port)));
+      return new Promise((resolve, reject) => {
+        server.once('error', reject);
+        server.listen(port, host, () => {
+          server.off('error', reject);
+          resolve(server.address().port);
+        });
+      });
     },
     close() {
       clearInterval(sweeper);
@@ -476,6 +482,11 @@ function createCloud({ port = Number(process.env.PORT || 47900), host, database,
 module.exports = { createCloud, totpCode, base32Encode };
 
 if (require.main === module) {
+  // Render wipes a service's disk on every deploy and restart, so accounts there must be kept in Postgres.
+  if (process.env.RENDER && !process.env.DATABASE_URL) {
+    console.error(new Date().toISOString(), '[cloud] could not start: set DATABASE_URL to the Internal Database URL of the Render Postgres database.');
+    process.exit(1);
+  }
   createCloud().listen().then((p) => log(`JConnect Cloud listening on port ${p}`), (err) => {
     console.error(new Date().toISOString(), '[cloud] could not start:', err.message);
     process.exit(1);
