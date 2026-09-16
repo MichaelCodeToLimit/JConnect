@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "jconnect-website",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "5180", "--directory", "C:/Users/micha/Jconnect/jconnect-website/public"],
+      "port": 5180
+    },
+    {
+      "name": "jconnect-website-5181",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "5181", "--directory", "C:/Users/micha/Jconnect/jconnect-website/public"],
+      "port": 5181
+    },
+    {
+      "name": "jconnect-mobile-www",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "5190", "--directory", "C:/Users/micha/Jconnect/mobile/www"],
+      "port": 5190
+    }
+  ]
+}
