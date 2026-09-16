@@ -422,7 +422,7 @@
       linux: ['Download for Linux', 'JConnect-Linux.deb', 'Version 0.1.0 beta · .deb for Ubuntu, Debian and Linux Mint · 96 MB', true],
       'raspberry-pi': ['Raspberry Pi is coming soon', '#raspberry-pi', '64-bit Raspberry Pi OS. Windows and Linux are available now.'],
       android: ['Download for Android', 'JConnect-Android.apk', 'Version 0.1.0 beta · Android 8.0 or later · 34 MB', true],
-      ios: ['Open JConnect in Safari', '#how', 'Nothing to install on iPhone or iPad. Set up JConnect on your computer first.'],
+      ios: ['Open JConnect in Safari', '#how', 'Nothing to install on iPhone or iPad, and an app is coming soon. Set up JConnect on your computer first.'],
       tv: ['Open JConnect in the TV’s browser', '#how', 'Type the address your JConnect computer shows.'],
       'apple-tv': ['Apple TV is coming soon', '#apple-tv', 'Apple TV has no web browser, so it needs its own app.'],
     };
