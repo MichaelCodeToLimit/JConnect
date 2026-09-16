@@ -32,6 +32,12 @@ Tap **Add Computer**, then choose a computer JConnect found on the network, scan
 
 The Android app connects to your computers. It doesn't share the phone's or TV's own screen.
 
+## iPhone and iPad
+
+iPhone and iPad use JConnect in Safari today: open **Settings → Use this computer from a phone** on your computer and scan the code with the Camera app.
+
+A JConnect app for iPhone and iPad (iOS 15 or later) is coming through TestFlight and the App Store. It works like the Android app: tap **Add Computer**, then scan the code or type the computer's address. It connects to your computers and doesn't share the iPhone's own screen.
+
 ## Updates
 
 JConnect checks its website for a new version every few hours. **Settings → Updates** shows the version you have, and **Check now** checks straight away.
@@ -40,6 +46,7 @@ JConnect checks its website for a new version every few hours. **Settings → Up
 - **Mac:** JConnect downloads the update, and **Update** installs it. Afterwards, macOS asks you to allow Screen Recording and Accessibility for JConnect again.
 - **Linux (.deb):** JConnect downloads the update, and **Update** installs it after your system asks for an administrator password.
 - **Android, including TVs:** the home screen shows **Update** when there's a new version. The first time, Android asks you to allow JConnect to install apps.
+- **iPhone and iPad:** TestFlight and the App Store update the app.
 - **Portable Windows app and AppImage:** JConnect tells you about the new version, and you download it from the website.
 
 Before installing anything, JConnect checks that the download has exactly the size and SHA-256 that the website publishes for it.
@@ -149,6 +156,7 @@ npm run dist:win             # build dist/JConnect-Setup-*.exe and the portable 
 npm run dist:mac             # on a Mac: build dist/JConnect-*-arm64.dmg and dist/JConnect-*-x64.dmg
 npm run dist:linux           # on Linux: build dist/JConnect-*-x86_64.AppImage and dist/JConnect-*-amd64.deb
 cd mobile && npm install && npm run sync && cd android && ./gradlew assembleDebug   # Android APK (needs JDK 17–21)
+cd mobile && npm install && npm run sync:ios && open ios/App/App.xcodeproj           # on a Mac: the iOS app in Xcode 26 or later
 node --test test/*.test.js src/web/test/connection.test.js server/relay/test/relay.test.js server/cloud/test/cloud.test.js
 cd server/cloud && npm install && npm test   # JConnect Cloud with SQLite and with Postgres (PGlite)
 ```
@@ -156,6 +164,8 @@ cd server/cloud && npm install && npm test   # JConnect Cloud with SQLite and wi
 **Releases and updates.** Build a release with the version it's published as, so the updater can tell versions apart, for example `npm run dist:win -- -c.extraMetadata.version=0.1.0-beta.2`. The Linux and Mac workflows do this from their `TAG`. When a download on the website changes, write the description the updater reads next to it: `node scripts/update-info.js ../jconnect-website/public/download/JConnect-Setup.exe 0.1.0-beta.2`. An APK also needs `--version-code`, the `versionCode` from `mobile/android/app/build.gradle`. The Linux and Mac release jobs write their own.
 
 DMGs can only be built on a Mac, because they need Apple's tools. `.github/workflows/mac.yml` builds and checks both DMGs on a GitHub-hosted Mac whenever the `app` branch is pushed. Download them from the run's **Artifacts**.
+
+The iOS app can only be built on a Mac too. `.github/workflows/ios.yml` builds it whenever the `app` or `ios` branch is pushed, runs it in the iOS Simulator, and has it pair with a test computer (`mobile/scripts/test-host.js`, the real host agent without a screen). On `app`, a build that passes is signed and uploaded to TestFlight once these repository secrets exist: `APPLE_TEAM_ID`, and an App Store Connect API key with the App Manager role as `ASC_KEY_ID`, `ASC_ISSUER_ID` and `ASC_KEY_P8` (the contents of its .p8 file). The app's bundle ID is `app.jconnect.ios`, and it needs an app record in App Store Connect first.
 
 The Linux packages include an input helper written in C, which needs a compiler and the X11 and XTest headers (`sudo apt install build-essential libx11-dev libxtst-dev`). `.github/workflows/linux.yml` builds both packages whenever the `app` or `linux` branch is pushed. It builds the helper on Ubuntu 20.04 so it also runs on older distributions, then installs and checks the packages on Ubuntu under Xvfb, including remote control (`scripts/linux-input-check.js`) and screen sharing. On `app`, a build that passes is published as the release named in the workflow.
 
@@ -177,7 +187,7 @@ Project layout:
 - `server/cloud`: JConnect Cloud (accounts, sync, relay, TURN)
 - `server/relay`: the standalone relay
 - `native`: the input helpers for macOS (Swift) and Linux (C)
-- `mobile`: the Android app for phones, tablets and TVs. It's a Capacitor wrapper around the browser client in `src/web`, adding QR scanning, finding computers on the network, adding computers by address, TV detection and the back button.
+- `mobile`: the Android app for phones, tablets and TVs, and the iOS app for iPhone and iPad. Both are Capacitor wrappers around the browser client in `src/web`, adding QR scanning, finding computers on the network and adding computers by address. Android adds TV detection, the back button and its updater (`mobile/android`). iOS adds native WebSockets, because the iOS web view's own sockets send an Origin JConnect computers refuse (`mobile/ios`).
 
 ## Known limits
 
@@ -186,4 +196,5 @@ Project layout:
 - The phone web page is served over plain http on your local network. The connection itself is still end-to-end encrypted, but use the desktop app on networks you don't trust.
 - Linux computers can be controlled only in X11 sessions. On Wayland, paired devices can't control them yet, and screen sharing hasn't been tested there.
 - A Mac can't be controlled at its lock screen or login window, and its sound isn't shared yet. ⌘Tab, ⌘Space and other system shortcuts stay on the Mac you're using.
+- On a real iPhone or iPad, the iOS app can't list the computers on the network until Apple grants the app the multicast networking entitlement. Scanning the code or typing the address works without it.
 - Camera sharing is described in the product vision as a future feature and isn't built yet.
