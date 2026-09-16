@@ -6,6 +6,10 @@
     "androidScheme": "http",
     "cleartext": true
   },
+  "ios": {
+    "backgroundColor": "#0f1115",
+    "contentInset": "never"
+  },
   "android": {
     "allowMixedContent": true,
     "backgroundColor": "#0f1115"
