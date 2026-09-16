@@ -1,0 +1,77 @@
+name: JConnect Cloud tests
+
+# Runs JConnect Cloud's tests with SQLite and with Postgres (PGlite, set up like a Supabase database), and the app's
+# account tests against a real server. Linux only, so it's cheap. The cloud branch is for trying server changes
+# without starting the app builds.
+on:
+  push:
+    branches: [app, cloud]
+    paths:
+      - server/**
+      - src/main/account.js
+      - src/main/kdf.js
+      - src/shared/secure-channel.js
+      - test/account.test.js
+      - .github/workflows/cloud.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cloud-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  test:
+    name: Test JConnect Cloud and accounts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      # The app's own packages (no Electron) for the account tests and the relay, then the server's.
+      - name: Install
+        run: |
+          mkdir -p ci-logs
+          set -o pipefail
+          npm ci --omit=dev --ignore-scripts --no-audit --no-fund 2>&1 | tee ci-logs/1-install.log
+          (cd server/cloud && npm ci --no-audit --no-fund) 2>&1 | tee -a ci-logs/1-install.log
+
+      - name: Server tests (SQLite and Postgres)
+        run: |
+          set -o pipefail
+          (cd server/cloud && npm test) 2>&1 | tee ci-logs/2-cloud-tests.log
+
+      - name: Account tests
+        run: |
+          set -o pipefail
+          node --test test/account.test.js server/relay/test/relay.test.js 2>&1 | tee ci-logs/3-account-tests.log
+
+      # Logs go to a branch too, so they can be read with plain git.
+      - name: Publish logs to the ci/cloud branch
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATUS: ${{ job.status }}
+        run: |
+          mkdir -p ci-logs
+          {
+            echo "status: $STATUS"
+            echo "branch: $GITHUB_REF_NAME"
+            echo "commit: $GITHUB_SHA"
+            echo "run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          } > ci-logs/summary.txt
+          cd ci-logs
+          git init -q -b ci/cloud
+          git add -A
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "Cloud tests $GITHUB_RUN_NUMBER: $STATUS"
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" ci/cloud

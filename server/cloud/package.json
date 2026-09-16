@@ -6,16 +6,21 @@
   "main": "cloud.js",
   "scripts": {
     "start": "node cloud.js",
-    "test": "node --test test/cloud.test.js test/store.test.js"
+    "test": "node --test test/cloud.test.js test/store.test.js test/postgres.test.js"
   },
   "engines": {
     "node": ">=22.13"
   },
   "dependencies": {
+    "pg": "^8.23.0",
     "tweetnacl": "^1.0.3",
     "ws": "^8.18.0"
   },
   "optionalDependencies": {
     "node-turn": "^0.0.6"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
+    "@electric-sql/pglite-socket": "^0.2.11"
   }
 }

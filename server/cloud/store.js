@@ -1,6 +1,6 @@
 // JConnect Cloud storage: accounts, devices, sessions and settings in SQLite, through Node's built-in
-// node:sqlite (Node.js 22.13 or later). The tables mirror supabase/migrations, so the data can move to
-// Postgres later. Times are milliseconds since 1970, like Date.now().
+// node:sqlite (Node.js 22.13 or later). store-postgres.js keeps the same data in Postgres (Supabase), with
+// the same methods. Times are milliseconds since 1970, like Date.now().
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
@@ -108,6 +108,8 @@ function openStore(file) {
     insertUser: db.prepare('insert into accounts (id, email, kdf_salt, auth_verifier, vault_updated_at, created_at, updated_at) values (?, ?, ?, ?, ?, ?, ?)'),
     setVault: db.prepare('update accounts set vault_version = ?, vault_blob = ?, vault_updated_at = ? where id = ?'),
     putVault: db.prepare('update accounts set vault_version = vault_version + 1, vault_blob = ?, vault_updated_at = ?, updated_at = ? where id = ? and vault_version = ?'),
+    changePassword: db.prepare('update accounts set kdf_salt = ?, auth_verifier = ?, vault_version = vault_version + 1, vault_blob = ?, vault_updated_at = ?, updated_at = ? where id = ? and vault_version = ?'),
+    deleteUser: db.prepare('delete from accounts where id = ?'),
     setTotp: db.prepare('update accounts set totp_secret = ?, totp_enabled = ?, updated_at = ? where id = ?'),
     devices: db.prepare('select * from devices where account_id = ? order by created_at, device_id'),
     device: db.prepare('select * from devices where account_id = ? and device_id = ?'),
@@ -118,6 +120,7 @@ function openStore(file) {
     insertSession: db.prepare('insert into sessions (token_hash, account_id, created_at, expires_at) values (?, ?, ?, ?)'),
     session: db.prepare('select * from sessions where token_hash = ?'),
     deleteSession: db.prepare('delete from sessions where token_hash = ?'),
+    deleteSessions: db.prepare('delete from sessions where account_id = ?'),
     purgeSessions: db.prepare('delete from sessions where expires_at < ?'),
   };
 
@@ -125,6 +128,9 @@ function openStore(file) {
 
   const store = {
     file: memory ? null : file,
+
+    // Nothing to wait for: the database is open and up to date. (store-postgres.js checks its tables here.)
+    ready() {},
 
     secret: () => q.secret.get().prelogin_secret,
 
@@ -148,6 +154,21 @@ function openStore(file) {
       const row = q.userById.get(userId);
       return { ok: changes === 1, version: row.vault_version, blob: row.vault_blob };
     },
+
+    // A new password brings a new salt, verifier and vault key, so the vault encrypted with the new key is
+    // written in the same step, and every session is signed out. Nothing changes unless the vault is still at
+    // baseVersion.
+    changePassword(userId, { salt, auth, baseVersion, blob, at }) {
+      return transaction(db, () => {
+        const { changes } = q.changePassword.run(salt, auth, blob, at, at, userId, baseVersion);
+        if (changes === 1) q.deleteSessions.run(userId);
+        const row = q.userById.get(userId);
+        return { ok: changes === 1, version: row.vault_version, blob: row.vault_blob };
+      });
+    },
+
+    // The account's devices and sessions go with it.
+    deleteUser: (userId) => q.deleteUser.run(String(userId)).changes > 0,
 
     setTotp(userId, totp, at) {
       q.setTotp.run(totp ? totp.secret : null, totp && totp.enabled ? 1 : 0, at, userId);
