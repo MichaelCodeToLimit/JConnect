@@ -3,5 +3,7 @@ dist/
 build/native/
 # The website is its own repository (branch main, deployed by Render).
 jconnect-website/
+# So is the public repository that publishes the downloads (MichaelCodeToLimit/JConnect-releases).
+jconnect-releases/
 server/cloud/data/
 server/cloud/node_modules/

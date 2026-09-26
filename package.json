@@ -16,6 +16,7 @@
     "linux-helper": "node scripts/build-linux-input.js",
     "dist": "node scripts/make-icons.js && node scripts/build-mac-input.js && node scripts/build-linux-input.js && electron-builder",
     "dist:win": "node scripts/make-icons.js && electron-builder --win --x64",
+    "dist:win:signed": "node scripts/make-icons.js && electron-builder --win --x64 -c.win.signtoolOptions.certificateSubjectName=\"Michael Davies\"",
     "dist:store": "node scripts/dist-store.js",
     "dist:mac": "node scripts/dist-mac.js",
     "dist:linux": "node scripts/make-icons.js && node scripts/build-linux-input.js && electron-builder --linux"
@@ -78,7 +79,13 @@
           ]
         }
       ],
-      "icon": "assets/icon.png"
+      "icon": "assets/icon.png",
+      "signtoolOptions": {
+        "signingHashAlgorithms": [
+          "sha256"
+        ],
+        "rfc3161TimeStampServer": "http://time.certum.pl"
+      }
     },
     "nsis": {
       "oneClick": true,
