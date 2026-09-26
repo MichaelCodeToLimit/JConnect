@@ -23,15 +23,15 @@ function chunk(type, data) {
   return Buffer.concat([len, body, crc]);
 }
 
-function encodePng(size, rgba) {
-  const raw = Buffer.alloc((size * 4 + 1) * size);
-  for (let y = 0; y < size; y++) {
+function encodePng(size, rgba, height = size) {
+  const raw = Buffer.alloc((size * 4 + 1) * height);
+  for (let y = 0; y < height; y++) {
     raw[y * (size * 4 + 1)] = 0;
     rgba.copy(raw, y * (size * 4 + 1) + 1, y * size * 4, (y + 1) * size * 4);
   }
   const ihdr = Buffer.alloc(13);
   ihdr.writeUInt32BE(size, 0);
-  ihdr.writeUInt32BE(size, 4);
+  ihdr.writeUInt32BE(height, 4);
   ihdr[8] = 8;
   ihdr[9] = 6;
   return Buffer.concat([
@@ -44,7 +44,11 @@ function encodePng(size, rgba) {
 
 // Sizes are in 512-unit design space. zoom scales the rings around the centre (below 1 leaves room
 // around them, above 1 fills small icons); margin and radius shape the tile; shadow adds a soft drop shadow.
-function render(size, { tile = true, template = false, zoom = 1, margin = 16, radius = 112, shadow = false } = {}) {
+function render(size, options) {
+  return encodePng(size, renderPixels(size, options));
+}
+
+function renderPixels(size, { tile = true, template = false, zoom = 1, margin = 16, radius = 112, shadow = false } = {}) {
   const px = Buffer.alloc(size * size * 4);
   const s = size / 512;
   const coverage = (fn, x, y) => {
@@ -92,7 +96,7 @@ function render(size, { tile = true, template = false, zoom = 1, margin = 16, ra
       px[i + 3] = Math.round(alpha * 255);
     }
   }
-  return encodePng(size, px);
+  return px;
 }
 
 const out = path.join(__dirname, '..', 'assets');
@@ -106,3 +110,21 @@ fs.writeFileSync(path.join(out, 'icon-mac.png'), render(1024, { margin: 50, radi
 fs.writeFileSync(path.join(out, 'trayTemplate.png'), render(18, { tile: false, template: true, zoom: 1.45 }));
 fs.writeFileSync(path.join(out, 'trayTemplate@2x.png'), render(36, { tile: false, template: true, zoom: 1.45 }));
 console.log('icons written to', out);
+
+// Microsoft Store (MSIX) images for electron-builder's appx target, which falls back to sample images for any that
+// are missing. The taskbar and Start use the targetsize images; altform-unplated has Windows draw them as they are
+// instead of on a coloured plate. Windows 11 doesn't show wide tiles, but the package still has to have one.
+const appx = path.join(__dirname, '..', 'build', 'appx');
+fs.mkdirSync(appx, { recursive: true });
+fs.writeFileSync(path.join(appx, 'StoreLogo.png'), render(50));
+fs.writeFileSync(path.join(appx, 'Square150x150Logo.png'), render(150));
+fs.writeFileSync(path.join(appx, 'Square44x44Logo.png'), render(44));
+for (const size of [16, 24, 32, 48, 256]) {
+  fs.writeFileSync(path.join(appx, `Square44x44Logo.targetsize-${size}.png`), render(size));
+  fs.writeFileSync(path.join(appx, `Square44x44Logo.targetsize-${size}_altform-unplated.png`), render(size));
+}
+const wide = Buffer.alloc(310 * 150 * 4);
+const mark = renderPixels(150);
+for (let y = 0; y < 150; y++) mark.copy(wide, (y * 310 + 80) * 4, y * 150 * 4, (y + 1) * 150 * 4);
+fs.writeFileSync(path.join(appx, 'Wide310x150Logo.png'), encodePng(310, wide, 150));
+console.log('Microsoft Store images written to', appx);

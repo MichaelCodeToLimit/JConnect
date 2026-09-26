@@ -1,6 +1,7 @@
 const path = require('path');
 const crypto = require('crypto');
 const { exec } = require('child_process');
+const msix = require('./msix');
 const {
   app, BrowserWindow, Tray, Menu, ipcMain, dialog, nativeImage, nativeTheme, powerMonitor, Notification, shell,
   desktopCapturer, systemPreferences, session: electronSession,
@@ -17,6 +18,8 @@ function parseArgs(argv) {
 }
 
 const args = parseArgs(process.argv);
+// A Store copy is started at sign-in by the package's startup task, which can't pass --hidden. See msix.js.
+const startedAtSignIn = msix.isStorePackage() ? msix.startedAtSignIn() : Promise.resolve(false);
 if (args.profile && /^[\w-]{1,32}$/.test(args.profile)) {
   app.setPath('userData', path.join(app.getPath('appData'), `JConnect-${args.profile}`));
 }
@@ -75,6 +78,11 @@ async function boot() {
   hardenSessions();
 
   store = new Store();
+  // The startup task starts a Store copy at every sign-in, so Start with this computer decides whether it stays.
+  if (msix.isStorePackage() && !store.settings.startAtLogin && await startedAtSignIn) {
+    app.quit();
+    return;
+  }
   if (store.identityLocked) {
     const message = 'JConnect couldn’t unlock this computer’s identity from the system keychain, so paired devices won’t recognize it. Unlock the keychain, then restart JConnect.';
     store.log({ kind: 'identity', level: 'high', message });
@@ -198,7 +206,7 @@ async function boot() {
   // Started again by an update: stay in the background if JConnect was before.
   const relaunch = require('./updater').takeRelaunchMarker(app.getPath('userData'));
   if (relaunch && relaunch.hidden) args.hidden = true;
-  if (!args.hidden && !openedAtLogin()) showMain();
+  if (!args.hidden && !(await openedAtLogin())) showMain();
   if (args.connect) openSession(args.connect);
   statusLoop();
   refreshNetworks();
@@ -1191,6 +1199,8 @@ function applyLoginItem() {
   // Named profiles are for trying things out side by side; never register those at login.
   if (!app.isPackaged || args.profile) return;
   if (process.platform === 'linux') setLinuxAutostart(!!store.settings.startAtLogin);
+  // Windows starts a Store copy through the package's startup task instead.
+  else if (msix.isStorePackage()) return;
   else app.setLoginItemSettings({ openAtLogin: !!store.settings.startAtLogin, args: ['--hidden'] });
 }
 
@@ -1213,9 +1223,11 @@ function setLinuxAutostart(enabled) {
   }
 }
 
-// macOS ignores login item arguments, so ask it whether this launch came from logging in.
-function openedAtLogin() {
-  return process.platform === 'darwin' && app.isPackaged && !!app.getLoginItemSettings().wasOpenedAtLogin;
+// macOS ignores login item arguments, so ask it whether this launch came from logging in. A Store copy on
+// Windows can't be given arguments at sign-in either.
+async function openedAtLogin() {
+  if (process.platform === 'darwin') return app.isPackaged && !!app.getLoginItemSettings().wasOpenedAtLogin;
+  return startedAtSignIn;
 }
 
 function macPermissions() {

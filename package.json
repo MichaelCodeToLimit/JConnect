@@ -16,6 +16,7 @@
     "linux-helper": "node scripts/build-linux-input.js",
     "dist": "node scripts/make-icons.js && node scripts/build-mac-input.js && node scripts/build-linux-input.js && electron-builder",
     "dist:win": "node scripts/make-icons.js && electron-builder --win --x64",
+    "dist:store": "node scripts/dist-store.js",
     "dist:mac": "node scripts/dist-mac.js",
     "dist:linux": "node scripts/make-icons.js && node scripts/build-linux-input.js && electron-builder --linux"
   },
@@ -90,6 +91,18 @@
     },
     "portable": {
       "artifactName": "JConnect-${version}-Portable.exe"
+    },
+    "appx": {
+      "artifactName": "JConnect-${version}-Store.${ext}",
+      "applicationId": "JConnect",
+      "displayName": "JConnect",
+      "publisherDisplayName": "Michael Davies",
+      "backgroundColor": "#2f6bff",
+      "languages": [
+        "en-US"
+      ],
+      "minVersion": "10.0.17763.0",
+      "maxVersionTested": "10.0.26100.0"
     },
     "mac": {
       "target": [

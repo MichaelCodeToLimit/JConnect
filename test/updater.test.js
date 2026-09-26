@@ -51,6 +51,9 @@ test('each kind of install gets its own download and way of updating', () => {
   assert.deepStrictEqual(updateTarget({ platform: 'win32', arch: 'x64', env: {}, execPath: win, exists: (p) => p.endsWith('Uninstall JConnect.exe') }), { file: 'JConnect-Setup.exe', method: 'nsis' });
   assert.strictEqual(updateTarget({ platform: 'win32', arch: 'x64', env: { PORTABLE_EXECUTABLE_FILE: 'D:\\JConnect.exe' }, execPath: win, exists: all }).method, 'manual');
   assert.strictEqual(updateTarget({ platform: 'win32', arch: 'x64', env: {}, execPath: 'C:\\build\\win-unpacked\\JConnect.exe', exists: none }).method, 'manual');
+  // The Microsoft Store updates its own copy, so it never downloads from the website.
+  const store = 'C:\\Program Files\\WindowsApps\\MichaelDavies.JConnect_0.1.3.0_x64__abc\\app\\JConnect.exe';
+  assert.deepStrictEqual(updateTarget({ platform: 'win32', arch: 'x64', env: {}, execPath: store, exists: all, windowsStore: true }), { file: null, method: 'store' });
 
   const mac = '/Applications/JConnect.app/Contents/MacOS/JConnect';
   assert.deepStrictEqual(updateTarget({ platform: 'darwin', arch: 'arm64', execPath: mac }), { file: 'JConnect-Mac-AppleSilicon.dmg', method: 'dmg', bundle: '/Applications/JConnect.app' });

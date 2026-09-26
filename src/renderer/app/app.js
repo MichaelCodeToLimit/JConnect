@@ -1072,7 +1072,7 @@
     let action = null;
     switch (u.state) {
       case 'unavailable':
-        status = 'This copy of JConnect doesn’t update itself.';
+        status = u.method === 'store' ? 'The Microsoft Store keeps JConnect up to date.' : 'This copy of JConnect doesn’t update itself.';
         break;
       case 'checking':
         status = 'Checking for updates…';

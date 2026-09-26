@@ -70,7 +70,9 @@ function parseUpdateInfo(text, file) {
 }
 
 // Which download updates this copy of JConnect, and how it can be installed.
-function updateTarget({ platform, arch, env = {}, execPath, exists = fs.existsSync }) {
+function updateTarget({ platform, arch, env = {}, execPath, exists = fs.existsSync, windowsStore = false }) {
+  // The Microsoft Store updates its own copy.
+  if (windowsStore) return { file: null, method: 'store' };
   if (platform === 'win32') {
     const installed = !env.PORTABLE_EXECUTABLE_FILE && exists(path.win32.join(path.win32.dirname(execPath), 'Uninstall JConnect.exe'));
     return { file: 'JConnect-Setup.exe', method: installed ? 'nsis' : 'manual' };
@@ -237,8 +239,8 @@ function startRelaunch(exe, hidden) {
 function createUpdater({ app, store, isIdle, beforeInstall, quit, notify, openExternal }) {
   const events = new EventEmitter();
   const base = updateBase(process.env, app.isPackaged);
-  const target = updateTarget({ platform: process.platform, arch: process.arch, env: process.env, execPath: process.execPath });
-  const canCheck = !!target && (app.isPackaged || base !== UPDATE_BASE);
+  const target = updateTarget({ platform: process.platform, arch: process.arch, env: process.env, execPath: process.execPath, windowsStore: !!process.windowsStore });
+  const canCheck = !!target && !!target.file && (app.isPackaged || base !== UPDATE_BASE);
   const dir = path.join(app.getPath('userData'), 'updates');
   const s = { state: canCheck ? 'idle' : 'unavailable', available: null, progress: 0, error: null, checkedAt: 0 };
   let downloaded = null;

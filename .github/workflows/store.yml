@@ -1,0 +1,68 @@
+name: Microsoft Store package
+
+# Builds the MSIX package with a test identity, installs it on the runner, starts it and runs Microsoft's Windows App
+# Certification Kit. The package for Partner Center is built the same way without --test, once package.json has the
+# app's identity from Partner Center: npm run dist:store -- <version>
+on:
+  push:
+    branches: [store]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: store-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  VERSION: 0.1.0-beta.3
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  msix:
+    name: Build, install and certify the Store package
+    runs-on: windows-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Build the package
+        run: |
+          mkdir -p ci-logs
+          npm ci > ci-logs/1-install.log 2>&1
+          node --test test/updater.test.js test/msix.test.js 2>&1 | tee ci-logs/2-tests.log
+          node scripts/dist-store.js "$VERSION" --test > ci-logs/3-build.log 2>&1 || { tail -40 ci-logs/3-build.log; exit 1; }
+          ls -l dist/*.appx | tee -a ci-logs/3-build.log
+
+      - name: Install, start and certify it
+        timeout-minutes: 30
+        shell: powershell
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows-store-check.ps1 -Package "dist/JConnect-$env:VERSION-Store.appx" -Logs ci-logs
+
+      # Logs go to a branch too, so they can be read with plain git.
+      - name: Publish logs to the ci/store branch
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATUS: ${{ job.status }}
+        run: |
+          mkdir -p ci-logs
+          {
+            echo "status: $STATUS"
+            echo "commit: $GITHUB_SHA"
+            echo "run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            ls -l dist/*.appx 2> /dev/null || echo "no package was built"
+          } > ci-logs/summary.txt
+          cd ci-logs
+          git init -q -b ci/store
+          git add -A
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "Store package check $GITHUB_RUN_NUMBER: $STATUS"
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" ci/store
