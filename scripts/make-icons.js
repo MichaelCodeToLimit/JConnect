@@ -67,7 +67,11 @@ function render(size, { tile = true, template = false, zoom = 1, margin = 16, ra
   };
   const left = ring(196, 256);
   const right = ring(316, 256);
-  const mark = (x, y) => left(x, y) || right(x, y);
+  // The rings' holes overlap slightly and would leave a thin sliver of tile between them, so fill it.
+  const hole = (cx, cy) => (x, y) => Math.hypot(toMark(x) - cx * s, toMark(y) - cy * s) <= 64 * s;
+  const leftHole = hole(196, 256);
+  const rightHole = hole(316, 256);
+  const mark = (x, y) => left(x, y) || right(x, y) || (leftHole(x, y) && rightHole(x, y));
 
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {

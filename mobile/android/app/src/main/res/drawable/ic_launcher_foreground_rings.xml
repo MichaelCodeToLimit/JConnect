@@ -15,4 +15,8 @@
         android:pathData="M49.79,54a15.19,15.19 0,1 0,30.38 0a15.19,15.19 0,1 0,-30.38 0"
         android:strokeWidth="7.7"
         android:strokeColor="#FFFFFFFF" />
+    <!-- Fills the sliver where the rings' holes overlap. -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M54,49.68A11.8,11.8 0,0 1,54 58.32A11.8,11.8 0,0 1,54 49.68Z" />
 </vector>
