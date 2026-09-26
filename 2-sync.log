@@ -1,0 +1,14 @@
+
+> jconnect-android@0.1.0 sync
+> node scripts/build-www.js && cap sync android
+
+www built from src/web in /home/runner/work/JConnect/JConnect/mobile/www
+✔ Copying web assets from www to android/app/src/main/assets/public in 5.73ms
+✔ Creating capacitor.config.json in android/app/src/main/assets in 614.48μs
+✔ copy android in 13.00ms
+✔ Updating Android plugins in 757.04μs
+[info] Found 2 Capacitor plugins for android:
+       @capacitor/app@8.1.1
+       @capacitor/barcode-scanner@3.1.2
+✔ update android in 23.44ms
+[info] Sync finished in 0.051s

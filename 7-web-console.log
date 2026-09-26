@@ -1,0 +1,41 @@
+09-26 15:47:04.565   522   553 I ActivityManager: Start proc 3237:com.google.android.webview:webview_service/u0a134 for service {com.google.android.webview/org.chromium.android_webview.services.VariationsSeedServer}
+09-26 15:47:07.936   522   553 I ActivityManager: Start proc 3466:com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0ai9000 for  {app.jconnect.android/org.chromium.content.app.SandboxedProcessService0:0}
+09-26 15:47:08.330  3251  3460 E chromium: [ERROR:simple_file_enumerator.cc(21)] opendir /data/user/0/app.jconnect.android/cache/WebView/Default/HTTP Cache/Code Cache/js: No such file or directory (2)
+09-26 15:47:08.330  3251  3460 E chromium: [ERROR:simple_index_file.cc(614)] Could not reconstruct index from disk
+09-26 15:47:08.330  3251  3460 E chromium: [ERROR:simple_file_enumerator.cc(21)] opendir /data/user/0/app.jconnect.android/cache/WebView/Default/HTTP Cache/Code Cache/wasm: No such file or directory (2)
+09-26 15:47:08.330  3251  3460 E chromium: [ERROR:simple_index_file.cc(614)] Could not reconstruct index from disk
+09-26 15:47:08.624   522   553 I ActivityManager: Start proc 3519:com.google.android.webview:webview_apk/u0a134 for service {com.google.android.webview/org.chromium.android_webview.nonembedded.AwComponentUpdateService}
+09-26 15:47:08.742  3466  3466 I cr_WebViewApkApp: Launched version=113.0.5672.136 minSdkVersion=29 isBundle=false processName=com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0
+09-26 15:47:09.024  3251  3251 D Capacitor: Starting BridgeActivity
+09-26 15:47:09.097  3251  3251 D Capacitor: Registering plugin instance: CapacitorCookies
+09-26 15:47:09.107  3251  3251 D Capacitor: Registering plugin instance: WebView
+09-26 15:47:09.110  3251  3251 D Capacitor: Registering plugin instance: CapacitorHttp
+09-26 15:47:09.115  3251  3251 D Capacitor: Registering plugin instance: SystemBars
+09-26 15:47:09.128  3251  3251 D Capacitor: Registering plugin instance: JConnectDevice
+09-26 15:47:09.152  3251  3251 D Capacitor: Registering plugin instance: App
+09-26 15:47:09.154  3251  3251 D Capacitor: Registering plugin instance: CapacitorBarcodeScanner
+09-26 15:47:09.211  3251  3251 W Capacitor: Unable to read file at path public/plugins
+09-26 15:47:09.219  3251  3251 D Capacitor: Loading app at http://localhost
+09-26 15:47:09.270  3251  3251 D Capacitor: App started
+09-26 15:47:09.284  3251  3251 D Capacitor: App resumed
+09-26 15:47:09.373  3251  3444 D Capacitor: Handling local request: http://localhost/
+09-26 15:47:09.641  3251  3444 D Capacitor: Handling local request: http://localhost/web.css
+09-26 15:47:09.643  3251  3458 D Capacitor: Handling local request: http://localhost/native.css
+09-26 15:47:09.655  3519  3573 W cr_AWNetworkFetcherTask: 	at org.chromium.android_webview.nonembedded.NetworkFetcherTask.download(chromium-TrichromeWebViewGoogle6432.apk-stable-567263637:48)
+09-26 15:47:09.664  3251  3460 D Capacitor: Handling local request: http://localhost/native.js
+09-26 15:47:09.670  3251  3491 D Capacitor: Handling local request: http://localhost/vendor/nacl-fast.min.js
+09-26 15:47:09.694  3251  3496 D Capacitor: Handling local request: http://localhost/vendor/scrypt.js
+09-26 15:47:10.584  3251  3458 D Capacitor: Handling local request: http://localhost/secure-channel.js
+09-26 15:47:10.586  3251  3460 D Capacitor: Handling local request: http://localhost/identity.js
+09-26 15:47:10.588  3251  3460 D Capacitor: Handling local request: http://localhost/input.js
+09-26 15:47:10.603  3251  3458 D Capacitor: Handling local request: http://localhost/tv.js
+09-26 15:47:10.620  3251  3496 D Capacitor: Handling local request: http://localhost/connection.js
+09-26 15:47:10.626  3251  3491 D Capacitor: Handling local request: http://localhost/app.js
+09-26 15:47:10.737  3251  3251 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+09-26 15:47:10.740  3251  3251 V Capacitor: callback: 24844729, pluginId: App, methodName: addListener, methodData: {"eventName":"backButton"}
+09-26 15:47:11.315  3251  3444 D Capacitor: Handling local request: http://localhost/favicon.ico
+09-26 15:47:25.962  3251  3251 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+09-26 15:47:25.964  3251  3251 V Capacitor: callback: 24844730, pluginId: JConnectDevice, methodName: checkUpdate, methodData: {}
+09-26 15:47:26.374  3251  4588 D Capacitor: Sending plugin error: {"save":false,"callbackId":"24844730","pluginId":"JConnectDevice","methodName":"checkUpdate","success":false,"error":{"message":"Couldn't check for updates: HTTP 404"}}
+09-26 15:47:26.383  3251  3251 E Capacitor/Console: File:  - Line 330 - Msg: [object Object]
+09-26 15:47:31.227  4745  4745 D nativeloader: InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so

@@ -1,0 +1,14 @@
+Serving...
+All files should be loaded. Notifying the device.
+Performing Incremental Install
+Success
+Install command complete in 1772 ms
+Starting: Intent { cmp=app.jconnect.android/.MainActivity }
+Status: ok
+LaunchState: COLD
+Activity: app.jconnect.android/.MainActivity
+TotalTime: 1881
+WaitTime: 1883
+Complete
+JConnect is running
+::warning::Couldn't find Add Computer on screen. Check android-home.png.

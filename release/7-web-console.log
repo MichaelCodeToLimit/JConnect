@@ -1,0 +1,10 @@
+09-26 15:47:39.787   522   553 I ActivityManager: Start proc 4961:com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0i1 for  {app.jconnect.android/org.chromium.content.app.SandboxedProcessService0:0}
+09-26 15:47:39.813  4961  4961 I cr_WebViewApkApp: Launched version=113.0.5672.136 minSdkVersion=29 isBundle=false processName=com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0
+09-26 15:47:39.868  4911  4982 E chromium: [ERROR:simple_version_upgrade.cc(152)] Failed to write a new fake index.
+09-26 15:47:39.868  4911  4984 E chromium: [ERROR:simple_version_upgrade.cc(152)] Failed to write a new fake index.
+09-26 15:47:39.945  4911  4911 D Capacitor: Starting BridgeActivity
+09-26 15:47:41.511  4394  5016 I cr_CronetUrlRequestContext: destroyNativeStreamLocked org.chromium.net.impl.CronetBidirectionalStream@7f3e946
+09-26 15:47:47.341  4911  4911 W cr_AwContents: 	at org.chromium.android_webview.AwContents.m(chromium-TrichromeWebViewGoogle6432.apk-stable-567263637:10)
+09-26 15:47:47.341  4911  4911 W cr_AwContents: 	at org.chromium.android_webview.AwContents.h(chromium-TrichromeWebViewGoogle6432.apk-stable-567263637:2)
+09-26 15:47:47.341  4911  4911 W cr_AwContents: 	at com.android.webview.chromium.WebViewChromium.evaluateJavaScript(chromium-TrichromeWebViewGoogle6432.apk-stable-567263637:37)
+09-26 15:48:01.196  5453  5453 D nativeloader: InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so

@@ -1,0 +1,7 @@
+Starting: Intent { cmp=app.jconnect.android/.MainActivity }
+Status: ok
+LaunchState: COLD
+Activity: app.jconnect.android/.MainActivity
+TotalTime: 6021
+WaitTime: 6123
+Complete
