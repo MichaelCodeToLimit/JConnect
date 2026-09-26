@@ -1,0 +1,9 @@
+[15:18:47] signtool: C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe
+[15:18:58] installed JConnect.Test_0.1.3.0_x64__f5pwgbqt5rarc at C:\Program Files\WindowsApps\JConnect.Test_0.1.3.0_x64__f5pwgbqt5rarc
+[15:18:59] JConnect is running from the package: C:\Program Files\WindowsApps\JConnect.Test_0.1.3.0_x64__f5pwgbqt5rarc\app\JConnect.exe
+[15:19:01] port 47801 is open, by C:\Program Files\WindowsApps\JConnect.Test_0.1.3.0_x64__f5pwgbqt5rarc\app\JConnect.exe
+[15:19:07] saved a screenshot
+[15:19:07] startup task: 2
+[15:19:10] running the Windows App Certification Kit
+[15:22:13] certification kit result: PASS
+[15:22:13] done

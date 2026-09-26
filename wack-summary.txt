@@ -1,0 +1,24 @@
+  PASS: Install signed driver and executable files
+  PASS: User account control run level
+  PASS: Application count
+  PASS: App manifest
+  PASS: File association verbs
+  PASS: Registry checks
+  PASS: Enterprise Features
+  PASS: Resource Packages
+  PASS: Banned file analyzer
+  PASS: Private code signing
+  PASS: App resources
+  PASS: Branding
+  PASS: Debug configuration
+  PASS: Special use capabilities
+  PASS: ExclusiveTo attribute
+  PASS: Type location
+  PASS: Type name case-sensitivity
+  PASS: Type name correctness
+  PASS: General metadata correctness
+  PASS: Properties
+  PASS: Archive files usage
+  FAIL: Blocked executables
+  PASS: Platform appropriate files
+  PASS: DPIAwarenessValidation
