@@ -17,7 +17,11 @@ yes | "$bin/sdkmanager" --install "$image" "emulator" "platform-tools" > sdkmana
 tail -3 sdkmanager.log
 
 echo "== creating the emulator"
+# Newer command-line tools can keep emulators somewhere the emulator doesn't look, so name one folder for both.
+export ANDROID_AVD_HOME="${ANDROID_AVD_HOME:-$HOME/.android/avd}"
+mkdir -p "$ANDROID_AVD_HOME"
 echo no | "$bin/avdmanager" create avd --force -n ci -k "$image" -d pixel_6
+"$sdk/emulator/emulator" -list-avds
 
 echo "== starting it"
 nohup "$sdk/emulator/emulator" -avd ci -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot -camera-back none > emulator.log 2>&1 &
