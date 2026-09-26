@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Privacy policy — JConnect</title>
+  <meta name="description" content="What JConnect collects, what it can't see, and how to get your data deleted. No ads, no analytics, no tracking.">
+  <meta name="theme-color" content="#000000">
+  <link rel="icon" type="image/png" href="../assets/img/icon.png">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="JConnect privacy policy">
+  <meta property="og:description" content="What JConnect collects, what it can't see, and how to get your data deleted.">
+  <meta property="og:image" content="../assets/img/og.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/site.css">
+</head>
+<body>
+  <div class="noise" aria-hidden="true"></div>
+
+  <header class="nav" id="nav">
+    <div class="container nav-inner">
+      <a class="brand" href="../" aria-label="JConnect home">
+        <img src="../assets/img/icon.png" alt="" width="26" height="26">
+        <span>JConnect</span>
+      </a>
+      <nav class="nav-links" id="nav-links" aria-label="Primary">
+        <a href="../#features">Features</a>
+        <a href="../#jvpn">JVPN</a>
+        <a href="../#security">Security</a>
+        <a href="../docs/">Docs</a>
+        <a href="../about/">About</a>
+        <a href="../press/">Press</a>
+      </nav>
+      <div class="nav-cta">
+        <a class="btn btn-ghost btn-sm hide-sm" href="../press/">Press kit</a>
+        <a class="btn btn-light btn-sm" href="../download/">Download</a>
+        <button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="nav-links"><span></span><span></span></button>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="docs-hero">
+      <div class="hero-media" aria-hidden="true">
+        <div class="hero-glow"></div>
+        <div class="grid-lines"></div>
+        <div class="beam beam-1"></div>
+      </div>
+      <div class="container docs-hero-inner">
+        <span class="eyebrow reveal"><i class="eyebrow-dot"></i>Privacy</span>
+        <h1 class="reveal" style="--d: 60ms">Privacy <span class="gradient-text">policy</span></h1>
+        <p class="reveal" style="--d: 120ms">What JConnect collects, what it can&rsquo;t see, and how to have your data deleted. In effect from 26 September 2026.</p>
+      </div>
+    </section>
+
+    <div class="container" style="padding-top: 44px; padding-bottom: 110px;">
+      <article class="docs-content">
+
+        <section class="doc" id="summary" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Summary</span>
+          <h2>The short version</h2>
+          <ul>
+            <li>Without an account, JConnect sends nothing to us. Your computers find and reach each other directly.</li>
+            <li>With an account, JConnect Cloud keeps your email address, the list of your devices, and synced data that is encrypted on your device before upload. We can&rsquo;t read that synced data or your password.</li>
+            <li>We can&rsquo;t see or record your remote sessions. Every session is encrypted from one device to the other.</li>
+            <li>No ads, no analytics, no tracking, and we don&rsquo;t sell or share your data.</li>
+            <li><b>Account → Delete account</b> in the app deletes your account and everything it stores, straight away.</li>
+          </ul>
+        </section>
+
+        <section class="doc" id="who" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Who we are</span>
+          <h2>Who is responsible</h2>
+          <p>JConnect is made by <b>Michael Davies</b>, an independent developer, who is responsible for the personal data described here. &ldquo;We&rdquo; on this page means him. For anything about privacy, write to <a href="mailto:press.jconnect@proton.me">press.jconnect@proton.me</a>.</p>
+        </section>
+
+        <section class="doc" id="devices" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>On your devices</span>
+          <h2>What stays on your devices</h2>
+          <p>These never leave your devices, except to the other devices you connect to:</p>
+          <ul>
+            <li>Device identity keys, the list of paired devices, computers and SSH hosts, and your settings. On computers, keys, API keys, sign-in tokens and SSH keys are encrypted with the system&rsquo;s key store wherever one is available.</li>
+            <li>Session recordings, which are saved as files on the computer that made them.</li>
+            <li>The content of every session: the screen, sound, keyboard and mouse input, SSH and Remote Desktop traffic. It&rsquo;s end-to-end encrypted between your two devices.</li>
+          </ul>
+          <p>To find each other, JConnect computers announce a name and a public key on your local network. You can turn this off in Settings.</p>
+        </section>
+
+        <section class="doc" id="account" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Account</span>
+          <h2>JConnect Cloud accounts</h2>
+          <p>An account is optional. You need one only for JVPN away from home and to sync your devices. When you create one on JConnect Cloud, we store:</p>
+          <ul>
+            <li>Your <b>email address</b>, which you sign in with.</li>
+            <li>A <b>password verifier</b> and salt. Your password never leaves your device: it&rsquo;s turned into one key the server checks and another that encrypts your data, so we can&rsquo;t recover it.</li>
+            <li>Your <b>synced data</b> (computers, SSH hosts and your device list), encrypted on your device before upload. We store only ciphertext we can&rsquo;t open.</li>
+            <li>Each <b>device</b> signed in to the account: its device ID, public key, name, operating system, and when it was last seen.</li>
+            <li><b>Sign-in sessions</b>, stored only as hashes. They expire after 30 days.</li>
+            <li>If you turn on two-step sign-in, the <b>authenticator secret</b>, so the server can check your codes.</li>
+          </ul>
+          <p>We use this only to run your account, JVPN and sync. The legal basis is that it&rsquo;s needed to provide the service you asked for.</p>
+          <p>JConnect Cloud runs on <a href="https://render.com/privacy" rel="noopener">Render</a>, in its Frankfurt, Germany region.</p>
+          <p>If you keep your account on your own PC, or run JConnect Cloud yourself, none of this reaches us.</p>
+        </section>
+
+        <section class="doc" id="relay" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>JVPN</span>
+          <h2>JVPN, the relay and connection data</h2>
+          <p>Away from home, JVPN carries your sessions through JConnect Cloud&rsquo;s relay, and screen sharing can go through its TURN server when two networks block a direct connection. Both pass encrypted traffic they can&rsquo;t read or alter.</p>
+          <p>To route traffic, they have to process your IP address and your devices&rsquo; IDs. They don&rsquo;t keep a history of your connections. The server&rsquo;s logs record events such as a device coming online, account sign-ups and errors, with device IDs, and the IP address of a rejected connection. Render keeps those logs for a short period, and we use them only to keep the service running and to stop abuse, which is our legitimate interest. Sign-up and sign-in attempts are also counted by IP address, only in memory, to slow down password guessing.</p>
+        </section>
+
+        <section class="doc" id="updates" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Updates</span>
+          <h2>Update checks</h2>
+          <p>Every few hours, JConnect asks this website whether a new version exists. The request carries no identifier. Like any web request, it reveals your IP address to the host of this website.</p>
+        </section>
+
+        <section class="doc" id="services" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Other services</span>
+          <h2>Services you choose to connect</h2>
+          <p>If you connect JConnect to Tailscale, Twingate, ZeroTier, WireGuard, FortiClient or a Windows VPN, JConnect talks to that service with the keys you give it, and that service&rsquo;s own privacy policy applies. Your API keys stay encrypted on your device.</p>
+          <p>On Android, the QR code scanner is Google&rsquo;s ML Kit, which reads the code on your phone. Google says ML Kit may send it metrics about how the scanner performs and is used. The camera image isn&rsquo;t sent anywhere.</p>
+        </section>
+
+        <section class="doc" id="website" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Website</span>
+          <h2>This website</h2>
+          <p>This website is hosted on Render and sets no cookies. It has no analytics and no ads. Its fonts come from Google Fonts, so your browser sends your IP address to Google when it loads them.</p>
+        </section>
+
+        <section class="doc" id="never" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Never</span>
+          <h2>What we don&rsquo;t do</h2>
+          <ul>
+            <li>We don&rsquo;t sell, rent or share your personal data. The only companies that process it are the hosts named on this page.</li>
+            <li>No advertising, analytics, crash reporting or tracking, in the apps or on this website.</li>
+            <li>We don&rsquo;t read, record or store your remote sessions, and we can&rsquo;t.</li>
+          </ul>
+        </section>
+
+        <section class="doc" id="keep" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Retention</span>
+          <h2>How long we keep it</h2>
+          <ul>
+            <li><b>Account data</b> stays until you delete the account. <b>Account → Delete account</b> removes the account, its devices, sessions and synced data at once.</li>
+            <li><b>Signing out a device</b> removes that device&rsquo;s session.</li>
+            <li><b>Sign-in sessions</b> expire after 30 days and are then removed.</li>
+            <li><b>Server logs</b> are kept for a short period by Render.</li>
+          </ul>
+        </section>
+
+        <section class="doc" id="rights" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Your rights</span>
+          <h2>Your rights</h2>
+          <p>Depending on where you live, including under the GDPR in the EU and the UK, you can ask for a copy of the personal data we hold about you. You can also ask us to correct it, delete it, or stop using it. Write to <a href="mailto:press.jconnect@proton.me">press.jconnect@proton.me</a> and we&rsquo;ll answer within a month. You can also complain to your data protection authority.</p>
+          <p>Render is a US company, and Google may process font requests in the United States. JConnect Cloud&rsquo;s data is stored in Germany.</p>
+        </section>
+
+        <section class="doc" id="children" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Children</span>
+          <h2>Children</h2>
+          <p>JConnect isn&rsquo;t directed at children under 13, and we don&rsquo;t knowingly hold accounts for them. If you think a child has created one, write to us and we&rsquo;ll delete it.</p>
+        </section>
+
+        <section class="doc" id="changes" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Changes</span>
+          <h2>Changes to this policy</h2>
+          <p>If JConnect starts collecting anything new, this page will say so before it does, and the date at the top will change.</p>
+        </section>
+
+      </article>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <a class="brand" href="../"><img src="../assets/img/icon.png" alt="" width="22" height="22"><span>JConnect</span></a>
+        <p>Open. Connect. Work.</p>
+      </div>
+      <div class="footer-cols">
+        <div><h5>Product</h5><a href="../#features">Features</a><a href="../#jvpn">JVPN</a><a href="../#networks">Networks</a><a href="../#ssh">SSH</a></div>
+        <div><h5>Project</h5><a href="../about/">About</a><a href="../press/">Press kit</a><a href="../about/#status">Status</a><a href="./">Privacy</a></div>
+        <div><h5>Get started</h5><a href="../download/">Download</a><a href="../docs/">Docs</a><a href="../docs/#troubleshooting">Troubleshooting</a></div>
+      </div>
+    </div>
+    <div class="container footer-base">
+      <span>&copy; 2026 JConnect</span>
+      <span class="footer-status"><i class="dot ok pulse"></i> All systems ready</span>
+    </div>
+  </footer>
+
+  <script src="../assets/js/site.js" defer></script>
+</body>
+</html>
