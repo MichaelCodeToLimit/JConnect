@@ -47,8 +47,11 @@ jobs:
           npm run sync 2>&1 | tee ../ci-logs/2-sync.log
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon 2>&1 | tee ../../ci-logs/3-build.log
+          ./gradlew assembleDebug assembleRelease --no-daemon 2>&1 | tee ../../ci-logs/3-build.log
           cp app/build/outputs/apk/debug/app-debug.apk ../../JConnect-android.apk
+          # The release APK comes out unsigned. scripts/sign-android.js signs it with the release key, which never
+          # leaves the owner's PC, so it's published unsigned on the ci/android branch.
+          cp app/build/outputs/apk/release/app-release-unsigned.apk ../../JConnect-android-release-unsigned.apk
 
       # One APK for phones, tablets and TVs. Android TV only offers apps that have a TV home screen activity and
       # don't require a touchscreen, a camera or Wi-Fi (many TV boxes only have Ethernet).
@@ -87,6 +90,25 @@ jobs:
           export PATH="$ANDROID_HOME/platform-tools:$PATH"
           bash mobile/scripts/emulator-check.sh JConnect-android.apk ci-logs 2>&1 | tee ci-logs/8-check.log
 
+      # The release build isn't debuggable and logs less, so check that it installs and starts too. It's signed
+      # here with a throwaway key, which is why the debug build has to be uninstalled first.
+      - name: Check the release build on the emulator
+        timeout-minutes: 5
+        run: |
+          export PATH="$ANDROID_HOME/platform-tools:$PATH"
+          tools="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -n 1)"
+          "$tools/aapt2" dump xmltree --file AndroidManifest.xml JConnect-android-release-unsigned.apk > ci-logs/9-release-manifest.log
+          if grep -q "android:debuggable" ci-logs/9-release-manifest.log; then
+            echo "::error::The release APK is debuggable"
+            exit 1
+          fi
+          keytool -genkeypair -keystore ci-throwaway.p12 -storetype PKCS12 -alias ci -keyalg RSA -keysize 2048 \
+            -validity 2 -dname "CN=JConnect CI" -storepass throwaway -keypass throwaway > /dev/null 2>&1
+          "$tools/zipalign" -f -P 16 4 JConnect-android-release-unsigned.apk release-aligned.apk
+          "$tools/apksigner" sign --ks ci-throwaway.p12 --ks-pass pass:throwaway --out JConnect-android-release-ci.apk release-aligned.apk
+          adb uninstall app.jconnect.android > /dev/null 2>&1 || true
+          bash mobile/scripts/emulator-check.sh JConnect-android-release-ci.apk ci-logs/release 2>&1 | tee ci-logs/9-release-check.log
+
       # Logs go to a branch too, so they can be read with plain git.
       - name: Publish logs to the ci/android branch
         if: always()
@@ -101,8 +123,11 @@ jobs:
             echo "run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
             ls -l JConnect-android.apk 2> /dev/null || echo "no APK was built"
             sha256sum JConnect-android.apk 2> /dev/null || true
+            ls -l JConnect-android-release-unsigned.apk 2> /dev/null || echo "no release APK was built"
+            sha256sum JConnect-android-release-unsigned.apk 2> /dev/null || true
           } > ci-logs/summary.txt
           cp emulator.log sdkmanager.log ci-logs/ 2> /dev/null || true
+          cp JConnect-android-release-unsigned.apk ci-logs/ 2> /dev/null || true
           cd ci-logs
           git init -q -b ci/android
           git add -A
