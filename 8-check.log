@@ -1,0 +1,10 @@
+    iPhone 17 (8EBAA496-5654-45BF-897F-3C4FD73935F1) (Shutdown) 
+test computer on port 47811
+⚡️  [log] - jconnect-self-test: found Test PC
+⚡️  [log] - jconnect-self-test: paired 3dd21eae8d38119364e6
+⚡️  [log] - jconnect-self-test: status ready
+⚡️  [log] - jconnect-self-test: passed
+The app paired with the test computer and reached it again
+The test computer trusts the app: paired eecdd618ecf2c00fae31 iPhone
+JConnect is still running
+mobile/scripts/ios-check.sh: line 79:  8079 Terminated: 15          node mobile/scripts/test-host.js "$port" > "$out/6-test-computer.log" 2>&1

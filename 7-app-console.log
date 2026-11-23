@@ -1,0 +1,68 @@
+2026-11-23 19:56:57.034 App[8339:26374] DiskCookieStorage changing policy from 2 to 0, cookie file: file:///Users/runner/Library/Developer/CoreSimulator/Devices/8EBAA496-5654-45BF-897F-3C4FD73935F1/data/Containers/Data/Application/5DAA0592-C1F8-4D96-B572-BDF024E7AC8E/Library/Cookies/app.jconnect.ios.binarycookies
+⚡️  Loading app at capacitor://localhost...
+⚡️  To Native ->  JConnectSocket addListener 105117044
+⚡️  To Native ->  App addListener 105117045
+⚡️  To Native ->  JConnectDevice info 105117046
+⚡️  TO JS {"platform":"ios","selfTest":"127.0.0.1:47811?code=419123","camera":false,"television":false}
+⚡️  WebView loaded
+⚡️  To Native ->  JConnectSocket open 105117047
+⚡️  TO JS undefined
+⚡️  TO JS {"type":"open","id":1}
+⚡️  To Native ->  JConnectSocket send 105117048
+⚡️  TO JS undefined
+⚡️  TO JS {"id":1,"type":"text","data":"{\"name\":\"Test PC\",\"os\":\"Test\",\"port\":47811,\"type\":\"server-hello\",\"v\":2,\"id\":\"3dd21eae8d38119364e6\",\"publicKey\":\"ZekbOr\/\/pNBT\/DwLrnWBdfALz6RDcxkfpsTID0NaTyY=\",\"eph\":\"W9304B7QOhUrb4PDZ9fX+Nmgcxo3BJN
+⚡️  TO JS {"id":1,"type":"binary","data":"AAAAAAAAAAAV5MseNkB0M4Fm8U+rM7d4\/gf0xll7U4mNx3vyt+86Lm\/27hTIQdq\/ngzIx4HDIHMuTc+mWT\/exrJb1WJq\/qFfZ7NrS77tFzQe9R8YoG6XFjehLbtH0Y\/AKuc="}
+⚡️  To Native ->  JConnectSocket close 105117049
+⚡️  To Native ->  JConnectSocket open 105117050
+⚡️  [log] - jconnect-self-test: found Test PC
+⚡️  TO JS undefined
+⚡️  TO JS undefined
+⚡️  TO JS {"id":1,"reason":"","type":"close","code":1000,"clean":true}
+⚡️  TO JS {"type":"open","id":2}
+⚡️  To Native ->  JConnectSocket send 105117051
+⚡️  TO JS undefined
+⚡️  TO JS {"type":"text","id":2,"data":"{\"name\":\"Test PC\",\"os\":\"Test\",\"port\":47811,\"type\":\"server-hello\",\"v\":2,\"id\":\"3dd21eae8d38119364e6\",\"publicKey\":\"ZekbOr\/\/pNBT\/DwLrnWBdfALz6RDcxkfpsTID0NaTyY=\",\"eph\":\"tzjnVg0OvlHCbzPOVFbs6Jqac\/l3Kk
+⚡️  TO JS {"type":"binary","data":"AAAAAAAAAABL9OF3EV8zo2SH9Lm32fgnKHtH2Jb8KUg+E+Ld+Vt+OzWSu2MnYpWYfNBGJmh\/y5AXckJONyyVoMVYjEW8jr2cRRbPlpdgoY9BxdMFAvV9UuTeBXCqJOydvXY=","id":2}
+⚡️  To Native ->  JConnectSocket send 105117052
+⚡️  TO JS undefined
+⚡️  TO JS {"type":"binary","data":"AAAAAAAAAAFJiETaLb2P+hoKg0p34WBK3XmxE+Wtqc5BQsxAd0BNJdEcGkw3BND8KHnoh6UmnzMFx+OMLUYhtM17LAj12rR6Z04Qk6zN92wc","id":2}
+⚡️  To Native ->  JConnectSocket send 105117053
+⚡️  TO JS undefined
+⚡️  TO JS {"type":"binary","id":2,"data":"AAAAAAAAAAJgWsf9gClVVtBDJdywJbnp70BDIsX8iP1sG7dCkQ\/tvg\/mdsncErc09oJpvX7e\/LT2nB8+jwsGxDpW7OulQzD5UXUg8Un6upIBUYcHDVpuJ3xsbI0mCc1CAjMZ4OY9ztgITTlq74CxSk3WN7x73522ijhd+pwGspIAWPSR7\/olEzW9+FF8v8pHEvYU1FcMf1m\/NiS9o9dnRhUYrv2
+⚡️  To Native ->  JConnectSocket close 105117054
+⚡️  TO JS undefined
+⚡️  TO JS {"id":2,"reason":"","code":1000,"type":"close","clean":true}
+⚡️  [log] - jconnect-self-test: paired 3dd21eae8d38119364e6
+⚡️  To Native ->  JConnectSocket open 105117055
+⚡️  TO JS undefined
+⚡️  TO JS {"type":"open","id":3}
+⚡️  To Native ->  JConnectSocket send 105117056
+⚡️  TO JS undefined
+⚡️  TO JS {"type":"text","id":3,"data":"{\"name\":\"Test PC\",\"os\":\"Test\",\"port\":47811,\"type\":\"server-hello\",\"v\":2,\"id\":\"3dd21eae8d38119364e6\",\"publicKey\":\"ZekbOr\/\/pNBT\/DwLrnWBdfALz6RDcxkfpsTID0NaTyY=\",\"eph\":\"ZBPpbuhP9gyC0QcOXdn87EN7UiPSRu7
+⚡️  TO JS {"type":"binary","id":3,"data":"AAAAAAAAAAB7Z242Mi2h1bY4e7tNiLsrni457R5NIXrIyMA4DSazAhAs\/NilpwjMmKtSmaK7m6NKcppMFstK9inYbDJ6WfExUJeBuAvg8AfuN93XVZml\/U5Ym2DhDNLdpW0="}
+⚡️  To Native ->  JConnectSocket close 105117057
+⚡️  TO JS undefined
+⚡️  TO JS {"id":3,"reason":"","type":"close","code":1000,"clean":true}
+⚡️  [log] - jconnect-self-test: status ready
+⚡️  [log] - jconnect-self-test: passed
+⚡️  To Native ->  JConnectSocket open 105117058
+⚡️  TO JS undefined
+⚡️  TO JS {"type":"open","id":4}
+⚡️  To Native ->  JConnectSocket send 105117059
+⚡️  TO JS undefined
+⚡️  TO JS {"id":4,"type":"text","data":"{\"name\":\"Test PC\",\"os\":\"Test\",\"port\":47811,\"type\":\"server-hello\",\"v\":2,\"id\":\"3dd21eae8d38119364e6\",\"publicKey\":\"ZekbOr\/\/pNBT\/DwLrnWBdfALz6RDcxkfpsTID0NaTyY=\",\"eph\":\"5jtttxWD7rq9vKCDTdPBV4kcu+M46Fx
+⚡️  TO JS {"type":"binary","id":4,"data":"AAAAAAAAAADWJzmOd\/oUceg23SLCAeOOkfJ6qXOalMNB9p0albImC88bmoWfpWz71LMdTY7XdxW07aWQq8FaH0M4D2od5jVw+TE6+5wQUwlA7vfN6y04SoDkRqQA2NIL57g="}
+⚡️  To Native ->  JConnectSocket close 105117060
+⚡️  TO JS undefined
+⚡️  TO JS {"id":4,"reason":"","code":1000,"type":"close","clean":true}
+⚡️  To Native ->  JConnectSocket open 105117061
+⚡️  TO JS undefined
+⚡️  TO JS {"type":"open","id":5}
+⚡️  To Native ->  JConnectSocket send 105117062
+⚡️  TO JS undefined
+⚡️  TO JS {"type":"text","id":5,"data":"{\"name\":\"Test PC\",\"os\":\"Test\",\"port\":47811,\"type\":\"server-hello\",\"v\":2,\"id\":\"3dd21eae8d38119364e6\",\"publicKey\":\"ZekbOr\/\/pNBT\/DwLrnWBdfALz6RDcxkfpsTID0NaTyY=\",\"eph\":\"YkOnB3hgS\/yg3DlBeQKC4TDp\/mVqs
+⚡️  TO JS {"id":5,"type":"binary","data":"AAAAAAAAAABwoyyi7WZpzkDo73tQ4bL9f0e65V9CWmCFU7RRqmsYfjvXFGnE+A0LupBCxKVLRRhlBEDXXTDc1h4Pgpz25hoquOIbvFe4Sj84\/WdAzR+El5AShJhVtip0zZg="}
+⚡️  To Native ->  JConnectSocket close 105117063
+⚡️  TO JS undefined
+⚡️  TO JS {"id":5,"reason":"","type":"close","code":1000,"clean":true}
+app.jconnect.ios: 8339

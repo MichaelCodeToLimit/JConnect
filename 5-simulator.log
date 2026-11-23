@@ -1,0 +1,31 @@
+    iPhone 17 (8EBAA496-5654-45BF-897F-3C4FD73935F1) (Shutdown) 
+Monitoring boot status for iPhone 17 (8EBAA496-5654-45BF-897F-3C4FD73935F1).
+[2026-11-23 19:55:08 +0000] Status=2, isTerminal=NO, Elapsed=01:28.
+	Waiting on Data Migration
+		Reason:Running plugin com.apple.MobileSafari.migrator (MobileSafari.migrator)
+		Migration Elapsed:01:09 seconds
+
+[2026-11-23 19:55:09 +0000] Status=4, isTerminal=NO, Elapsed=01:29.
+	Waiting on System App
+
+[2026-11-23 19:55:10 +0000] Status=4, isTerminal=NO, Elapsed=01:30.
+	Waiting on System App
+
+[2026-11-23 19:55:10 +0000] Status=4, isTerminal=NO, Elapsed=01:30.
+	Waiting on System App
+
+[2026-11-23 19:55:12 +0000] Status=4, isTerminal=NO, Elapsed=01:32.
+	Waiting on System App
+
+[2026-11-23 19:55:13 +0000] Status=4, isTerminal=NO, Elapsed=01:32.
+	Waiting on System App
+
+[2026-11-23 19:55:14 +0000] Status=4, isTerminal=NO, Elapsed=01:33.
+	Waiting on System App
+
+[2026-11-23 19:55:15 +0000] Status=4, isTerminal=NO, Elapsed=01:35.
+	Waiting on System App
+
+[2026-11-23 19:55:28 +0000] Status=4294967295, isTerminal=YES, Elapsed=01:48.
+	Finished
+
