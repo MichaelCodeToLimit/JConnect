@@ -1,0 +1,16 @@
+
+> jconnect-android@0.1.0 sync:ios
+> node scripts/build-www.js && cap sync ios
+
+www built from src/web in /Users/runner/work/JConnect/JConnect/mobile/www
+✔ Copying web assets from www to ios/App/App/public in 10.03ms
+✔ Creating capacitor.config.json in ios/App/App in 1.57ms
+✔ copy ios in 30.18ms
+✔ Updating iOS plugins in 412.63μs
+[info] All Capacitor plugins have a Package.swift file and will be included in Package.swift
+[info] Writing Package.swift
+[info] Found 2 Capacitor plugins for ios:
+       @capacitor/app@8.1.1
+       @capacitor/barcode-scanner@3.1.2
+✔ update ios in 22.61ms
+[info] Sync finished in 0.075s
