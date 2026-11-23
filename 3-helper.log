@@ -1,0 +1,10 @@
+Unable to find image 'ubuntu:20.04' locally
+20.04: Pulling from library/ubuntu
+13b7e930469f: Pulling fs layer
+13b7e930469f: Verifying Checksum
+13b7e930469f: Download complete
+13b7e930469f: Pull complete
+Digest: sha256:8feb4d8ca5354def3d8fce243717141ce31e2c428701f6682bd2fafe15388214
+Status: Downloaded newer image for ubuntu:20.04
+debconf: delaying package configuration, since apt-utils is not installed
+linux input helper written to /src/build/native/jconnect-input

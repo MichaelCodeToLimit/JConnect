@@ -1,0 +1,8 @@
+status: success
+branch: app
+commit: e2bc252351b256e0b0a6b291c0b9f1c595eae494
+run: https://github.com/MichaelCodeToLimit/JConnect/actions/runs/45253601354
+-rw-r--r-- 1 runner runner 100677548 Nov 23 19:57 dist/JConnect-0.1.0-beta.2-amd64.deb
+-rwxr-xr-x 1 runner runner 119148731 Nov 23 19:56 dist/JConnect-0.1.0-beta.2-x86_64.AppImage
+5555f368216f0e8ef8c5b2868d797087fb1bd7afb8929b8a977adb4d38b5d051  dist/JConnect-0.1.0-beta.2-x86_64.AppImage
+c4ac20e19551d9a097bde70bfa85b87d5992c4d51595623bb8863c2e9b04e591  dist/JConnect-0.1.0-beta.2-amd64.deb

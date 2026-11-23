@@ -1,0 +1,28 @@
+[6391:1123/195808.572826:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[6391:1123/195808.657416:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[jconnect] ip-10-0-134-181 ready on port 47912 · pairing code 777371
+[6391:1123/195808.690493:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[6391:1123/195808.690548:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[6391:1123/195808.702556:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[6391:1123/195808.702665:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[selftest] pair {"ok":true,"computerId":"d818566a7e5afff61282","name":"ip-10-0-134-181"}
+[selftest] overlay {"title":"Connecting to ip-10-0-134-181…","text":""}
+[selftest] route {"kind":"local"}
+[6391:1123/195809.920692:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[6391:1123/195809.920712:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[6391:1123/195809.921365:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[6391:1123/195809.921385:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[6391:1123/195810.048832:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[6391:1123/195810.048856:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[6391:1123/195810.048880:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[6391:1123/195810.048890:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[selftest] live {"quality":"auto"}
+[6391:1123/195810.173562:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[6391:1123/195810.173612:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[6391:1123/195810.173650:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[6391:1123/195810.173675:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[selftest] stats {"framesDecoded":55,"fps":30,"width":1920,"height":1080,"rtt":0}
+[selftest] stats {"framesDecoded":115,"fps":30,"width":1920,"height":1080,"rtt":0.001}
+[selftest] stats {"framesDecoded":175,"fps":30,"width":1920,"height":1080,"rtt":0}
+[selftest] screenshot /home/runner/work/JConnect/JConnect/ci-logs/stream.png
+[selftest] stats {"framesDecoded":235,"fps":30,"width":1920,"height":1080,"rtt":0}
