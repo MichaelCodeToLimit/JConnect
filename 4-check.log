@@ -1,0 +1,26 @@
+== dist/JConnect-0.1.0-beta.1-arm64.dmg ( 96M)
+Applications shortcut: yes
+signature: valid
+Identifier=app.jconnect.desktop
+Format=app bundle with Mach-O thin (arm64)
+Signature=adhoc
+app architectures: arm64
+helper architectures: x86_64 arm64
+0.1.0-beta.1
+13.0
+input helper: ready
+app answered on port 47922: {"app":"jconnect","v":2,"id":"2a5773db971486c57b1c","name":"sjc22-be106-f83c6ec6-a3d2-4ae4-93f4-ce3ebb36b8b9-8EA3735B9C16.local","os":"macOS","publicKey":"5uLO9+kzFlg3taExIETBvX2gPU6N4uLimtyP1X/0j6g=","port":47922}
+  app: [12552:1123/195904.710576:ERROR:content/browser/network_service_instance_impl.cc:650] Network service crashed or was terminated, restarting service.
+== dist/JConnect-0.1.0-beta.1-x64.dmg ( 97M)
+Applications shortcut: yes
+signature: valid
+Identifier=app.jconnect.desktop
+Format=app bundle with Mach-O thin (x86_64)
+Signature=adhoc
+app architectures: x86_64
+helper architectures: x86_64 arm64
+0.1.0-beta.1
+13.0
+input helper: ready
+::warning::The Intel app didn't answer within 240 seconds under Rosetta. It was built and signed, but couldn't be started on this runner.
+scripts/mac-smoke-test.sh: line 15: 14457 Killed: 9               "$exe" --profile="smoke-$arch" --port="$port" > "$log" 2>&1
