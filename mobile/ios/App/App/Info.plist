@@ -30,10 +30,11 @@
 	<string>JConnect finds your computers on this network and connects to them.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
-		<!-- JConnect computers listen on plain ws:// on your network, Tailscale or JVPN. Every connection runs
-		     JConnect's own end-to-end encrypted channel, which authenticates the computer by its key. -->
-		<key>NSAllowsLocalNetworking</key>
-		<true/>
+		<!-- JConnect computers listen on plain ws:// at an address the person pairs with: one on their own
+		     network, on Tailscale or on JVPN. Every connection still runs JConnect's own end-to-end encrypted
+		     channel, which authenticates the computer by its key, so the transport is never trusted on its own.
+		     NSAllowsLocalNetworking can't be used here: adding it makes iOS 10 and later disregard
+		     NSAllowsArbitraryLoads, and connecting to a bare address needs arbitrary loads. -->
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>

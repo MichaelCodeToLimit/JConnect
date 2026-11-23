@@ -138,7 +138,10 @@ public class SocketPlugin: CAPPlugin, CAPBridgedPlugin, URLSessionWebSocketDeleg
 
     public func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
         guard let id = socketId(task) else { return }
-        let reason = (task as? URLSessionWebSocketTask).flatMap { $0.closeReason }.flatMap { String(data: $0, encoding: .utf8) } ?? ""
+        // Pass on what actually went wrong (refused, timed out, blocked by App Transport Security), because a bare
+        // 1006 leaves nothing to go on.
+        let sent = (task as? URLSessionWebSocketTask).flatMap { $0.closeReason }.flatMap { String(data: $0, encoding: .utf8) }
+        let reason = sent ?? error?.localizedDescription ?? ""
         finish(id, code: 1006, reason: reason, clean: false)
     }
 }

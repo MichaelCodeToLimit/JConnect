@@ -449,7 +449,8 @@
       report(`status ${status.state}`);
       report(status.state === 'offline' ? 'failed' : 'passed');
     } catch (err) {
-      report(`failed ${(err && (err.code || err.message)) || err}`);
+      const why = err && err.code ? `${err.code} ${err.detail || err.message || ''}`.trim() : String((err && err.message) || err);
+      report(`failed ${why}`);
     }
   }
 
