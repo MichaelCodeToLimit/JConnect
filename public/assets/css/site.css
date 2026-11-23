@@ -735,3 +735,178 @@ button { font: inherit; color: inherit; }
   *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
   .reveal { opacity: 1; transform: none; filter: none; }
 }
+
+/* =====================================================================
+   Light theme. A plain, bright layout: white page, soft cards, one blue
+   accent. Product mock-ups, code and the JVPN band stay dark on purpose.
+   ===================================================================== */
+
+:root {
+  --bg: #ffffff;
+  --bg-2: #f6f8fb;
+  --panel: #ffffff;
+  --panel-2: #f6f8fb;
+  --line: #e6e9ef;
+  --line-2: #d5dae3;
+  --text: #0e1626;
+  --muted: #536074;
+  --dim: #7a8699;
+  --blue: #2f5fe8;
+  --blue-2: #4f7cf5;
+  --blue-3: #2350d4;
+  --green: #12875a;
+  --warn: #b7730b;
+  --red: #d43f3f;
+  --shadow-sm: 0 1px 2px rgba(14, 22, 38, 0.05), 0 1px 3px rgba(14, 22, 38, 0.06);
+  --shadow-md: 0 8px 30px -12px rgba(14, 22, 38, 0.18);
+  --shadow-lg: 0 30px 80px -30px rgba(14, 22, 38, 0.35);
+  color-scheme: light;
+}
+::selection { background: rgba(47, 95, 232, 0.2); }
+
+/* Dark surfaces keep the dark palette inside the light page. */
+.session-window, .app-window, .phone-frame, .terminal, .code-panel, .doc-code, .mini-screen,
+.jvpn, .network, .sync-media, .desk-window {
+  --line: rgba(255, 255, 255, 0.09);
+  --line-2: rgba(255, 255, 255, 0.15);
+  --text: #ededef;
+  --muted: #9aa0ab;
+  --dim: #6c717c;
+  --blue-2: #5b8cff;
+  --blue-3: #9db8ff;
+  --green: #3ecf8e;
+  --warn: #f5a524;
+  color: var(--text);
+}
+
+/* Remove the decorative effects. */
+.noise, .hero-media, .hero-glow, .grid-lines, .beam, .stage-glow, .cta-media, .cta-glow,
+.jvpn-media, .jvpn-fade, .spot::before, .spot::after { display: none !important; }
+.stage { transform: none !important; }
+.stage, .app-window, .desk-window, .phone-frame, .dl-devices a, .cta-icon { animation: none !important; }
+
+.gradient-text { background: none; color: var(--blue); -webkit-background-clip: initial; background-clip: initial; }
+.jvpn .gradient-text { color: var(--blue-2); }
+
+.reveal { filter: none; transform: translateY(10px); transition: opacity 0.6s ease, transform 0.6s ease; transition-delay: var(--d, 0ms); }
+.reveal.in { transform: none; }
+
+/* Buttons and pills */
+.btn { border-radius: 10px; }
+.btn-light { background: var(--blue); color: #fff; box-shadow: var(--shadow-sm); }
+.btn-light:hover { background: #2450cf; transform: none; box-shadow: var(--shadow-md); }
+.btn-ghost { background: #fff; border-color: var(--line-2); color: var(--text); }
+.btn-ghost:hover { background: var(--bg-2); border-color: #b9c1ce; }
+.jvpn .btn-ghost { background: transparent; color: #ededef; }
+.pill { background: #fff; backdrop-filter: none; box-shadow: var(--shadow-sm); }
+.pill:hover { border-color: #b9c1ce; color: var(--text); }
+.pill-tag { background: var(--blue); }
+
+.dot.ok { box-shadow: none; }
+
+/* Navigation */
+.nav.scrolled { background: rgba(255, 255, 255, 0.92); border-color: var(--line); backdrop-filter: blur(8px); }
+.nav-toggle { background: #fff; }
+.nav-toggle span { background: var(--text); }
+
+/* Hero */
+.hero { padding: 140px 0 40px; background: linear-gradient(180deg, #f4f7fd 0%, #ffffff 70%); }
+.hero-title { letter-spacing: -0.035em; }
+.hero-stage { perspective: none; margin-top: 60px; }
+.session-window { border-color: #1c2333; box-shadow: var(--shadow-lg); }
+.app-window { box-shadow: var(--shadow-lg); transform: none; }
+.desk-window { box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.6); }
+
+/* Logo strip */
+.marquee-section { padding: 60px 0 20px; }
+.marquee-track span { color: var(--muted); opacity: 0.8; }
+.marquee-track span:hover { color: var(--text); opacity: 1; }
+
+/* Sections and headings */
+.section { padding: 100px 0; }
+.eyebrow { color: var(--blue); font: 600 13px var(--font); letter-spacing: 0; }
+.eyebrow-dot { background: var(--blue); box-shadow: none; }
+.jvpn .eyebrow { color: var(--blue-3); }
+.jvpn .eyebrow-dot { background: var(--blue-2); }
+
+/* Cards */
+.card { background: #fff; border-color: var(--line); box-shadow: var(--shadow-sm); transition: box-shadow 0.25s ease, border-color 0.25s ease; }
+.card:hover { border-color: var(--line-2); box-shadow: var(--shadow-md); }
+.code-panel, .terminal { border-color: #1c2333; }
+.code-panel { background: #0b0f1a; }
+.terminal { background: #0b0f1a; box-shadow: var(--shadow-lg); }
+.code-panel:hover, .terminal:hover { border-color: #1c2333; }
+
+/* Three steps */
+.step-visual { background: var(--bg-2); border-top-color: var(--line); }
+.radar { box-shadow: none; }
+.found { background: #fff; border-color: var(--line-2); box-shadow: var(--shadow-sm); color: var(--text); }
+.pair-code { background: #eef3ff; border-color: #c9d8ff; color: var(--text); box-shadow: none; }
+.pair-line { background: var(--line-2); }
+.mini-screen { border-color: #1c2333; }
+
+/* Feature cards */
+.meter-bar { background: #e9edf4; }
+.meter-bar i { background: var(--blue); box-shadow: none; }
+.r-step.ok { color: #0e6b45; }
+.r-step.ok::before { box-shadow: none; }
+.travel .shield { background: #eef3ff; border-color: #c9d8ff; box-shadow: none; animation: none; }
+.phone-frame { box-shadow: var(--shadow-lg); }
+
+/* JVPN band stays dark */
+.jvpn { background: #0b1020; }
+.jvpn h2 { color: #fff; }
+.checks li { color: #c9ccd4; }
+
+/* Security, networks, sync */
+.mini-icon { background: #eef3ff; border-color: #c9d8ff; color: var(--blue-3); }
+.net-logo { box-shadow: none; }
+.n-jvpn { box-shadow: none; }
+.net-state.on { border-color: #bfe6d3; background: #f1fbf6; }
+.sync-media { background: #0b1020; }
+.sync-media::after { background: none; }
+
+/* Call to action */
+.cta { background: var(--bg-2); border-top: 1px solid var(--line); }
+.cta-icon { box-shadow: var(--shadow-md); }
+.download-hash code { background: #fff; color: var(--muted); }
+
+/* Download page */
+.dl-devices a { background: #fff; backdrop-filter: none; box-shadow: var(--shadow-sm); }
+.dl-devices a .icon { color: var(--blue); }
+.dl-devices a:hover { background: var(--bg-2); border-color: var(--line-2); box-shadow: var(--shadow-sm); }
+.dl-devices a.is-current { border-color: var(--blue); color: var(--text); box-shadow: 0 0 0 3px rgba(47, 95, 232, 0.12); }
+.platform-icon { background: var(--bg-2); color: var(--blue); }
+.platform.available .platform-icon { background: var(--blue); border-color: var(--blue); color: #fff; box-shadow: none; }
+.status.on { border-color: #bfe6d3; background: #f1fbf6; }
+.status.web { border-color: #c9d8ff; background: #eef3ff; color: var(--blue-3); }
+.platform.is-current { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(47, 95, 232, 0.12); }
+.you { background: var(--blue); }
+.dl-cta { background: #fff; border-top: 0; }
+
+/* Docs */
+.docs-hero { background: linear-gradient(180deg, #f4f7fd, #fff); }
+.docs-search input { background: #fff; backdrop-filter: none; }
+.docs-search input:focus { border-color: var(--blue); box-shadow: 0 0 0 4px rgba(47, 95, 232, 0.12); }
+.kbd { background: var(--bg-2); }
+.docs-nav a.active { background: linear-gradient(90deg, rgba(47, 95, 232, 0.1), transparent); color: var(--text); border-color: var(--blue); }
+.doc p, .doc li { color: #3d4859; }
+.doc a:not(.btn) { text-decoration-color: rgba(35, 80, 212, 0.35); }
+.doc :not(pre) > code { background: var(--bg-2); color: #1a2438; }
+.doc-code { border-color: #1c2333; background: #0b0f1a; }
+.callout { background: #f1f5ff; border-color: #cfdcff; }
+.callout p { color: #2c3748; }
+.callout.warn { background: #fff8eb; border-color: #f0d9a8; }
+.doc-table th { background: var(--bg-2); }
+.doc-table td { color: #3d4859; }
+.doc-table tr.group th { background: #eef3ff; }
+.doc-steps li::before { background: #eef3ff; border-color: #c9d8ff; }
+.docs-menu { background: #fff; }
+.docs-nav { background: #fff; }
+
+/* Footer */
+.footer { background: #fff; }
+
+@media (max-width: 980px) {
+  .nav-links { background: rgba(255, 255, 255, 0.98); }
+}
