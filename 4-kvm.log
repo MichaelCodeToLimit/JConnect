@@ -1,0 +1,2 @@
+KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"
+crw-rw-rw- 1 root kvm 10, 232 Nov 23 19:57 /dev/kvm

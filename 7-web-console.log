@@ -1,0 +1,37 @@
+11-23 19:58:44.340   518   549 I ActivityManager: Start proc 3594:com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0ai9000 for  {app.jconnect.android/org.chromium.content.app.SandboxedProcessService0:0}
+11-23 19:58:44.483  3594  3594 I cr_WebViewApkApp: Launched version=113.0.5672.136 minSdkVersion=29 isBundle=false processName=com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0
+11-23 19:58:44.803   518   549 I ActivityManager: Start proc 3683:com.google.android.webview:webview_apk/u0a135 for service {com.google.android.webview/org.chromium.android_webview.nonembedded.AwComponentUpdateService}
+11-23 19:58:44.881  3451  3451 D Capacitor: Starting BridgeActivity
+11-23 19:58:44.966  3451  3451 D Capacitor: Registering plugin instance: CapacitorCookies
+11-23 19:58:44.975  3451  3451 D Capacitor: Registering plugin instance: WebView
+11-23 19:58:44.976  3451  3451 D Capacitor: Registering plugin instance: CapacitorHttp
+11-23 19:58:44.998  3451  3451 D Capacitor: Registering plugin instance: SystemBars
+11-23 19:58:45.012  3451  3451 D Capacitor: Registering plugin instance: JConnectDevice
+11-23 19:58:45.020  3451  3451 D Capacitor: Registering plugin instance: App
+11-23 19:58:45.022  3451  3451 D Capacitor: Registering plugin instance: CapacitorBarcodeScanner
+11-23 19:58:45.087  3451  3451 W Capacitor: Unable to read file at path public/plugins
+11-23 19:58:45.092  3451  3451 D Capacitor: Loading app at http://localhost
+11-23 19:58:45.211  3451  3451 D Capacitor: App started
+11-23 19:58:45.214  3451  3451 D Capacitor: App resumed
+11-23 19:58:45.287  3451  3609 D Capacitor: Handling local request: http://localhost/
+11-23 19:58:46.224  3451  3630 D Capacitor: Handling local request: http://localhost/web.css
+11-23 19:58:46.233  3451  3631 D Capacitor: Handling local request: http://localhost/native.css
+11-23 19:58:46.249  3451  3666 D Capacitor: Handling local request: http://localhost/native.js
+11-23 19:58:46.257  3451  3667 D Capacitor: Handling local request: http://localhost/vendor/nacl-fast.min.js
+11-23 19:58:46.345  3451  3451 E Capacitor/Console: File:  - Line 6 - Msg: Error injecting safe area CSS: TypeError: Cannot read properties of null (reading 'style')
+11-23 19:58:46.381  3683  3781 W cr_AWNetworkFetcherTask: 	at org.chromium.android_webview.nonembedded.NetworkFetcherTask.download(chromium-TrichromeWebViewGoogle6432.apk-stable-567263637:48)
+11-23 19:58:46.384  3451  3630 D Capacitor: Handling local request: http://localhost/vendor/scrypt.js
+11-23 19:58:46.385  3451  3630 D Capacitor: Handling local request: http://localhost/secure-channel.js
+11-23 19:58:46.386  3451  3630 D Capacitor: Handling local request: http://localhost/identity.js
+11-23 19:58:46.387  3451  3630 D Capacitor: Handling local request: http://localhost/input.js
+11-23 19:58:46.388  3451  3630 D Capacitor: Handling local request: http://localhost/tv.js
+11-23 19:58:46.389  3451  3631 D Capacitor: Handling local request: http://localhost/connection.js
+11-23 19:58:46.398  3451  3666 D Capacitor: Handling local request: http://localhost/app.js
+11-23 19:58:46.592  3451  3451 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+11-23 19:58:46.601  3451  3451 V Capacitor: callback: 10255594, pluginId: App, methodName: addListener, methodData: {"eventName":"backButton"}
+11-23 19:58:47.634  3451  3630 D Capacitor: Handling local request: http://localhost/favicon.ico
+11-23 19:59:02.285  3451  3451 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+11-23 19:59:02.289  3451  3451 V Capacitor: callback: 10255595, pluginId: JConnectDevice, methodName: checkUpdate, methodData: {}
+11-23 19:59:02.662  3451  4593 D Capacitor: Sending plugin error: {"save":false,"callbackId":"10255595","pluginId":"JConnectDevice","methodName":"checkUpdate","success":false,"error":{"message":"Couldn't check for updates: HTTP 404"}}
+11-23 19:59:02.669  3451  3451 E Capacitor/Console: File:  - Line 330 - Msg: [object Object]
+11-23 19:59:06.949  4645  4645 D nativeloader: InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so

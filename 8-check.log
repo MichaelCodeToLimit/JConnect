@@ -1,0 +1,13 @@
+Performing Streamed Install
+Success
+Starting: Intent { cmp=app.jconnect.android/.MainActivity }
+Status: ok
+LaunchState: COLD
+Activity: app.jconnect.android/.MainActivity
+TotalTime: 5027
+WaitTime: 5034
+Complete
+JConnect is running
+::error::The web app reported a JavaScript error
+11-23 19:58:46.345  3451  3451 E Capacitor/Console: File:  - Line 6 - Msg: Error injecting safe area CSS: TypeError: Cannot read properties of null (reading 'style')
+::warning::Couldn't find Add Computer on screen. Check android-home.png.

@@ -1,0 +1,7 @@
+status: failure
+commit: e2bc252351b256e0b0a6b291c0b9f1c595eae494
+run: https://github.com/MichaelCodeToLimit/JConnect/actions/runs/45253601363
+-rw-r--r-- 1 runner runner 35476522 Nov 23 19:56 JConnect-android.apk
+a621c430fbbf485b218b637956497a85257825ca93860607f5280edf9c2c9795  JConnect-android.apk
+-rw-r--r-- 1 runner runner 32058173 Nov 23 19:56 JConnect-android-release-unsigned.apk
+fe9775508a387ab6ceafadd297c4d8cc2b7c8e2cfda50cb71c04f88eda67cdfe  JConnect-android-release-unsigned.apk
