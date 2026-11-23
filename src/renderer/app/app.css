@@ -94,6 +94,7 @@ body {
 .card-main { flex: 1; min-width: 0; }
 .card-title { display: flex; align-items: center; gap: 8px; overflow: hidden; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; }
 .card-sub { overflow: hidden; color: var(--muted); font-size: 13px; white-space: nowrap; text-overflow: ellipsis; }
+.card-sub.recording { color: var(--bad); font-weight: 600; }
 
 .add-row {
   width: 100%;

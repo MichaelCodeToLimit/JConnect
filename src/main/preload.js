@@ -12,6 +12,7 @@ const INVOKE = new Set([
   'jc:account',
   'jc:ssh-hosts', 'jc:ssh-save', 'jc:ssh-remove', 'jc:ssh-import-config', 'jc:ssh-public-key',
   'jc:mac-permission', 'jc:terminate', 'jc:shutdown', 'jc:update',
+  'jc:record-start', 'jc:record-write', 'jc:record-stop', 'jc:record-folder',
 ]);
 const EVENTS = new Set(['jc:state', 'jc:navigate', 'jc:progress', 'ssh:event']);
 const SEND = new Set(['ssh:input', 'ssh:resize', 'ssh:answer', 'ssh:start', 'ssh:disconnect']);

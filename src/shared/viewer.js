@@ -11,6 +11,8 @@
   // Browsers on a Mac never report a key's release while ⌘ is held, so those keys are sent as a quick press.
   const MAC_KEYBOARD = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || '');
   const MODIFIER_CODES = new Set(['ShiftLeft', 'ShiftRight', 'ControlLeft', 'ControlRight', 'AltLeft', 'AltRight', 'MetaLeft', 'MetaRight', 'CapsLock', 'Fn']);
+  // WebM, because it keeps working when the remote screen changes size (another display, a slower network).
+  const RECORDING_TYPES = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
 
   const storage = {
     get(key) { try { return localStorage.getItem(key); } catch { return null; } },
@@ -24,12 +26,15 @@
         <button class="jv-btn jv-back" data-act="back" type="button"><span aria-hidden="true">←</span><span class="jv-name"></span></button>
         <button class="jv-btn" data-act="display" type="button">Display</button>
         <button class="jv-btn" data-act="devices" type="button">Devices</button>
+        <button class="jv-btn" data-act="people" type="button" hidden></button>
+        <button class="jv-btn jv-rec" data-act="stop-recording" type="button" title="Stop recording" hidden><span class="jv-rec-dot" aria-hidden="true"></span><span class="jv-rec-time">0:00</span></button>
         <button class="jv-btn" data-act="more" type="button" aria-label="More">⋯</button>
         <div class="jv-drag"></div>
         <button class="jv-btn jv-win" data-act="minimize" type="button" aria-label="Minimize">–</button>
         <button class="jv-btn jv-win" data-act="fullscreen" type="button" aria-label="Full screen">⛶</button>
         <button class="jv-btn jv-win" data-act="close" type="button" aria-label="Disconnect">✕</button>
       </div>
+      <div class="jv-rec-badge" aria-hidden="true" hidden><span class="jv-rec-dot"></span>REC</div>
       <div class="jv-menu" hidden></div>
       <div class="jv-overlay" hidden>
         <div class="jv-card" role="dialog" aria-live="polite">
@@ -70,6 +75,10 @@
       this.wasLive = false;
       this.hostDown = null;
       this.permission = 'control';
+      // Everyone else using the remote computer right now, from its last participants notice.
+      this.others = null;
+      this.recording = null;
+      this.keepRecording = false;
       this.pressedKeys = new Set();
       this.wheel = { dx: 0, dy: 0 };
       this.touches = new Map();
@@ -88,7 +97,8 @@
         app: q('.jv'), video: q('.jv-video'), bar: q('.jv-bar'), name: q('.jv-name'), menu: q('.jv-menu'),
         overlay: q('.jv-overlay'), spinner: q('.jv-spinner'), title: q('.jv-title'), text: q('.jv-text'),
         form: q('.jv-form'), input: q('.jv-input'), actions: q('.jv-actions'), toast: q('.jv-toast'),
-        pill: q('.jv-pill'), kbd: q('.jv-kbd'),
+        pill: q('.jv-pill'), kbd: q('.jv-kbd'), people: q('[data-act="people"]'), rec: q('.jv-rec'),
+        recTime: q('.jv-rec-time'), recBadge: q('.jv-rec-badge'),
       };
       this.dom.video.muted = !this.adapter.electron;
       if (!this.adapter.electron) {
@@ -320,7 +330,10 @@
       this.hostDown = null;
       this.hideOverlay();
       this.showBar(2500);
+      if (this.pendingToast) this.toast(this.pendingToast);
+      this.pendingToast = null;
       this.statsTimer = setInterval(() => this.collectStats(), 2000);
+      if (this.keepRecording && this.startRecording()) this.toast('Reconnected. Recording continues in a new file.');
       this.watchdog = setInterval(() => {
         if (Date.now() - conn.lastMessageAt > 16000) this.drop();
       }, 4000);
@@ -342,6 +355,7 @@
 
     drop() {
       if (!this.live) return;
+      this.stopRecording();
       this.teardown();
       if (this.stopped) return;
       this.overlay({ title: 'Connection interrupted', text: 'Reconnecting…', spinner: true });
@@ -349,6 +363,7 @@
     }
 
     teardown() {
+      this.stopRecording('notify');
       clearInterval(this.statsTimer);
       clearInterval(this.watchdog);
       clearTimeout(this.disconnectTimer);
@@ -385,6 +400,7 @@
           this.toast(m.permission === 'view' ? 'You can view this computer, but not control it.' : 'You can control this computer again.');
           break;
         case 'display-changed': this.displayId = m.displayId; break;
+        case 'participants': this.onParticipants(m.people); break;
         case 'security-alert':
           if (m.lockdown) {
             const { conn } = this;
@@ -412,6 +428,7 @@
     }
 
     fatal(code) {
+      this.keepRecording = false;
       const name = this.target ? this.target.name : 'This computer';
       const messages = {
         untrusted: [`This device isn't paired with ${name}.`, 'Pair it again from the JConnect home screen.'],
@@ -439,6 +456,7 @@
     }
 
     lockdownCard(conn, lockdown) {
+      this.keepRecording = false;
       const { name } = this.target;
       this.conn = conn;
       this.overlay({
@@ -479,11 +497,26 @@
     exit() {
       if (this.stopped) return;
       this.stopped = true;
+      this.keepRecording = false;
+      const saving = this.stopRecording('notify');
       if (this.conn && this.live) this.conn.send('session-end');
       this.teardown();
       if (this._resume) this._resume();
       for (const off of this.cleanups.splice(0)) off();
-      this.adapter.exit();
+      this.afterSaving(saving, () => this.adapter.exit());
+    }
+
+    // Closing the window mid-write would lose the end of a recording, so wait for it, but not for long.
+    afterSaving(saving, fn) {
+      if (!saving) {
+        fn();
+        return;
+      }
+      const timer = setTimeout(fn, 5000);
+      saving.then(() => {
+        clearTimeout(timer);
+        fn();
+      });
     }
 
     // ---- overlay, toast ----
@@ -864,6 +897,12 @@
         case 'devices':
           this.openDevices(button);
           break;
+        case 'people':
+          this.openPeople(button);
+          break;
+        case 'stop-recording':
+          this.stopRecording('toast');
+          break;
         case 'more':
           this.openMore(button);
           break;
@@ -886,9 +925,11 @@
         disabled: c.id === this.target.id,
         run: () => {
           this.stopped = true;
+          this.keepRecording = false;
+          const saving = this.stopRecording('notify');
           if (this.conn && this.live) this.conn.send('session-end');
           this.teardown();
-          this.adapter.switchTo(c.id);
+          this.afterSaving(saving, () => this.adapter.switchTo(c.id));
         },
       }));
       this.openMenu(button, items.length ? items : [{ label: 'No other computers', disabled: true }]);
@@ -900,6 +941,13 @@
         items.push({ label, checked: this.quality === value, run: () => this.setQuality(value) });
       }
       items.push({ separator: true });
+      if (this.canRecord()) {
+        items.push(this.recording
+          ? { label: 'Stop recording', run: () => this.stopRecording('toast') }
+          : { label: 'Record session', disabled: !this.live, run: () => this.startRecording() });
+        items.push({ label: 'Show recordings', run: () => this.adapter.recording.showFolder().catch(() => this.toast('JConnect couldn’t open the recordings folder.')) });
+        items.push({ separator: true });
+      }
       if (this.touchMode) items.push({ label: 'Keyboard', run: () => this.openKeyboard() });
       if (this.zoom.scale > 1) items.push({ label: 'Reset zoom', run: () => this.setZoom(1, 0, 0) });
       items.push({ label: 'Full screen', run: () => this.toggleFullscreen() });
@@ -907,6 +955,143 @@
       items.push({ separator: true });
       items.push({ label: 'Disconnect', danger: true, run: () => this.exit() });
       this.openMenu(button, items);
+    }
+
+    openPeople(button) {
+      const others = this.others || [];
+      const role = (p) => [p.recording && 'Recording', p.permission === 'control' ? 'Can control' : 'Viewing'].filter(Boolean).join(' · ');
+      this.openMenu(button, [
+        { label: 'You', sub: role({ permission: this.permission, recording: !!this.recording }), info: true },
+        ...others.map((p) => ({ label: p.name, sub: role(p), info: true })),
+        { separator: true },
+        { label: 'Everyone sees the same screen, and everyone who can control it shares one pointer and keyboard.', disabled: true, small: true, wrap: true },
+      ]);
+    }
+
+    onParticipants(people) {
+      if (!Array.isArray(people)) return;
+      const others = people.filter((p) => p && !p.you && typeof p.name === 'string').map((p) => ({
+        id: String(p.id), name: p.name.slice(0, 64), permission: p.permission === 'control' ? 'control' : 'view', recording: !!p.recording,
+      }));
+      const before = this.others;
+      this.others = others;
+      this.renderPeople();
+      if (!before) {
+        const recording = others.find((p) => p.recording);
+        if (recording) this.announce(`${recording.name} is recording this session.`);
+        else if (others.length) this.announce(`${others.map((p) => p.name).join(', ')} ${others.length === 1 ? 'is' : 'are'} also using this computer.`);
+        return;
+      }
+      const was = new Map(before.map((p) => [p.id, p]));
+      const now = new Set(others.map((p) => p.id));
+      const messages = [
+        ...others.filter((p) => !was.has(p.id)).map((p) => `${p.name} joined.`),
+        ...before.filter((p) => !now.has(p.id)).map((p) => `${p.name} left.`),
+        ...others.filter((p) => was.has(p.id) && p.recording !== was.get(p.id).recording)
+          .map((p) => (p.recording ? `${p.name} is recording this session.` : `${p.name} stopped recording.`)),
+      ];
+      if (messages.length) this.announce(messages.join(' '));
+    }
+
+    // Toasts sit under the connecting card, so news that arrives before the screen does waits for it.
+    announce(message) {
+      if (this.live && this.dom.overlay.hidden) this.toast(message);
+      else this.pendingToast = message;
+    }
+
+    renderPeople() {
+      const count = this.others ? this.others.length : 0;
+      this.dom.people.hidden = count === 0;
+      this.dom.people.textContent = `${count + 1} people`;
+    }
+
+    // ---- recording ----
+
+    canRecord() {
+      return !!(this.adapter.recording && global.MediaRecorder);
+    }
+
+    // Records the remote screen and its sound as they arrive, into a file on this device a second at a time.
+    startRecording() {
+      const stream = this.dom.video.srcObject;
+      if (!this.canRecord() || this.recording || !this.live || !stream) return false;
+      const api = this.adapter.recording;
+      const type = RECORDING_TYPES.find((t) => global.MediaRecorder.isTypeSupported(t));
+      let recorder;
+      try {
+        recorder = new global.MediaRecorder(stream, { mimeType: type, videoBitsPerSecond: 8000000 });
+        recorder.start(1000);
+      } catch {
+        this.keepRecording = false;
+        this.toast('JConnect can’t record sessions on this computer.');
+        return false;
+      }
+      const rec = { recorder, startedAt: Date.now(), fileId: null, announce: 'quiet', failed: false };
+      const failed = () => {
+        if (rec.failed) return;
+        rec.failed = true;
+        if (this.recording !== rec) return;
+        this.keepRecording = false;
+        this.stopRecording();
+        this.toast('Recording stopped: JConnect couldn’t save it. Check there’s space on this computer.');
+      };
+      let chain = api.start().then((file) => { rec.fileId = file.id; });
+      chain.catch(failed);
+      recorder.ondataavailable = (e) => {
+        if (!e.data || !e.data.size || rec.failed) return;
+        chain = chain.then(async () => api.write(rec.fileId, new Uint8Array(await e.data.arrayBuffer())));
+        chain.catch(failed);
+      };
+      rec.saved = new Promise((resolve) => {
+        recorder.onstop = () => {
+          const durationMs = Date.now() - rec.startedAt;
+          resolve(chain.catch(() => {})
+            .then(() => (rec.fileId ? api.stop(rec.fileId, durationMs, rec.announce === 'notify') : null))
+            .catch(() => null));
+          // The recording can stop by itself, when the remote screen's stream ends.
+          if (this.recording === rec) this.stopRecording();
+        };
+      });
+      rec.saved.then((saved) => {
+        if (saved && rec.announce === 'toast') this.toast(`Recording saved in ${saved.folder}.`);
+      });
+      recorder.onerror = failed;
+
+      this.recording = rec;
+      this.keepRecording = true;
+      if (this.conn) this.conn.send('recording', { on: true });
+      this.recTimer = setInterval(() => this.renderRecording(), 1000);
+      this.renderRecording();
+      return true;
+    }
+
+    // announce: 'toast' when someone pressed Stop, 'notify' when the window is going away, 'quiet' otherwise.
+    // Returns a promise for the saved file, or null when nothing was recording.
+    stopRecording(announce = 'quiet') {
+      const rec = this.recording;
+      if (!rec) return null;
+      this.recording = null;
+      if (announce === 'toast') this.keepRecording = false;
+      rec.announce = announce;
+      clearInterval(this.recTimer);
+      try {
+        if (rec.recorder.state !== 'inactive') rec.recorder.stop();
+      } catch { /* already stopped */ }
+      if (this.conn && this.live) this.conn.send('recording', { on: false });
+      this.renderRecording();
+      return rec.saved;
+    }
+
+    renderRecording() {
+      const rec = this.recording;
+      this.dom.rec.hidden = !rec;
+      this.dom.recBadge.hidden = !rec;
+      if (!rec) return;
+      const seconds = Math.floor((Date.now() - rec.startedAt) / 1000);
+      const h = Math.floor(seconds / 3600);
+      const m = Math.floor(seconds / 60) % 60;
+      const s = String(seconds % 60).padStart(2, '0');
+      this.dom.recTime.textContent = h ? `${h}:${String(m).padStart(2, '0')}:${s}` : `${m}:${s}`;
     }
 
     openMenu(anchor, items) {
@@ -926,8 +1111,8 @@
         }
         const button = document.createElement('button');
         button.type = 'button';
-        button.className = `jv-item${item.danger ? ' danger' : ''}${item.small ? ' small' : ''}`;
-        button.disabled = !!item.disabled;
+        button.className = `jv-item${item.danger ? ' danger' : ''}${item.small ? ' small' : ''}${item.info ? ' info' : ''}${item.wrap ? ' wrap' : ''}`;
+        button.disabled = !!(item.disabled || item.info);
         button.dataset.index = String(index);
         const check = document.createElement('span');
         check.className = 'jv-check';

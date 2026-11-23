@@ -304,10 +304,48 @@
     if (!$('bar').contains(document.activeElement)) closeBar();
   }
 
+  // Several devices can use a computer at once; say who joins, leaves or records, once the screen is showing.
+  let toastTimer = 0;
+  let pendingToast = null;
+  function sessionToast(message) {
+    if (!$('overlay').hidden) {
+      pendingToast = message;
+      return;
+    }
+    const el = $('session-toast');
+    el.textContent = message;
+    el.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { el.hidden = true; }, 4000);
+  }
+
+  function participantsChanged(c, before, people) {
+    const others = people.filter((p) => p && !p.you && typeof p.name === 'string')
+      .map((p) => ({ id: String(p.id), name: p.name.slice(0, 64), recording: !!p.recording }));
+    $('bar-name').textContent = others.length ? `${c.name} · ${others.length + 1} people` : c.name;
+    if (!before) {
+      const recording = others.find((p) => p.recording);
+      if (recording) sessionToast(`${recording.name} is recording this session.`);
+      else if (others.length) sessionToast(`${others.map((p) => p.name).join(', ')} ${others.length === 1 ? 'is' : 'are'} also using this computer.`);
+      return others;
+    }
+    const was = new Map(before.map((p) => [p.id, p]));
+    const now = new Set(others.map((p) => p.id));
+    const messages = [
+      ...others.filter((p) => !was.has(p.id)).map((p) => `${p.name} joined.`),
+      ...before.filter((p) => !now.has(p.id)).map((p) => `${p.name} left.`),
+      ...others.filter((p) => was.has(p.id) && p.recording !== was.get(p.id).recording)
+        .map((p) => (p.recording ? `${p.name} is recording this session.` : `${p.name} stopped recording.`)),
+    ];
+    if (messages.length) sessionToast(messages.join(' '));
+    return others;
+  }
+
   function startSession(c) {
     endSession(false);
     show('screen-session');
     $('bar-name').textContent = c.name;
+    let others = null;
     overlay({ title: `Connecting to ${c.name}…` });
 
     const video = $('remote');
@@ -325,6 +363,9 @@
         video.srcObject = stream;
         video.play().catch(() => {});
       },
+      onParticipants(people) {
+        others = participantsChanged(c, others, people);
+      },
       onState(s) {
         switch (s.state) {
           case 'connecting':
@@ -341,6 +382,8 @@
             break;
           case 'connected':
             hideOverlay();
+            if (pendingToast) sessionToast(pendingToast);
+            pendingToast = null;
             input.setEnabled(!s.viewOnly);
             computers.upsert({ id: c.id, addresses: s.addresses || [] });
             openBar();
@@ -392,6 +435,9 @@
     const video = $('remote');
     video.srcObject = null;
     video.muted = true;
+    clearTimeout(toastTimer);
+    pendingToast = null;
+    $('session-toast').hidden = true;
     $('bar-sound').textContent = 'Sound off';
     hideOverlay();
     $('bar').classList.remove('open');

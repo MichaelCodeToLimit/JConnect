@@ -277,6 +277,61 @@ test('Connect negotiates a session with signed offer and answer', async (t) => {
   assert.strictEqual(FakePC.instances.at(-1).remoteDescription.sdp, FAKE_OFFER);
 });
 
+test('devices using the same computer at once see who else is connected and who is recording', async (t) => {
+  const host = await startHost(t);
+  const phone = loadClient(host.port);
+  phone.JCIdentity.rename('Anna’s phone');
+  const tablet = loadClient(host.port);
+  tablet.JCIdentity.rename('Kitchen tablet');
+  const phoneComputer = await pairWithCode(phone, host);
+  const tabletComputer = await pairWithCode(tablet, host);
+
+  const lists = { phone: [], tablet: [] };
+  const states = { phone: [], tablet: [] };
+  // The client runs in its own realm; copy its lists out so they compare as plain values.
+  const last = (who) => JSON.parse(JSON.stringify(lists[who].at(-1) || []));
+  const until = async (check) => {
+    const started = Date.now();
+    while (!check()) {
+      if (Date.now() - started > 5000) assert.fail(`waited too long; phone saw ${JSON.stringify(lists.phone)}`);
+      await new Promise((r) => setTimeout(r, 10));
+    }
+  };
+  const open = (who, client, computer) => client.JCConnection.connect(computer, {
+    onStream() {}, onState: (st) => states[who].push(st), onParticipants: (people) => lists[who].push(people),
+  });
+
+  const phoneSession = open('phone', phone, phoneComputer);
+  t.after(() => phoneSession.close());
+  await waitForState(states.phone, 'connected');
+  await until(() => last('phone').length === 1);
+  assert.deepStrictEqual(last('phone').map((p) => [p.name, p.you, p.permission, p.recording]), [['Anna’s phone', true, 'control', false]]);
+
+  const tabletSession = open('tablet', tablet, tabletComputer);
+  await waitForState(states.tablet, 'connected');
+  await until(() => last('phone').length === 2 && last('tablet').length === 2);
+  assert.deepStrictEqual(last('phone').filter((p) => !p.you).map((p) => p.name), ['Kitchen tablet']);
+  assert.deepStrictEqual(last('tablet').filter((p) => !p.you).map((p) => p.name), ['Anna’s phone']);
+  assert.strictEqual(host.agent.sessionList().length, 2);
+
+  // The tablet starts recording: the computer logs it and everyone connected is told.
+  const recorded = [];
+  host.agent.on('recording', (r) => recorded.push(r));
+  const tabletConn = [...host.agent.conns.values()].find((c) => c.device && c.device.name === 'Kitchen tablet');
+  await host.agent._onMessage(tabletConn, { type: 'recording', on: true });
+  await until(() => last('phone').some((p) => p.name === 'Kitchen tablet' && p.recording));
+  assert.deepStrictEqual(recorded, [{ name: 'Kitchen tablet', on: true }]);
+  assert.strictEqual(host.store.data.securityLog[0].kind, 'recording');
+  assert.strictEqual(host.agent.sessionList().find((x) => x.name === 'Kitchen tablet').recording, true);
+  // Saying it again changes nothing.
+  await host.agent._onMessage(tabletConn, { type: 'recording', on: true });
+  assert.strictEqual(recorded.length, 1);
+
+  tabletSession.close();
+  await until(() => last('phone').length === 1);
+  assert.strictEqual(last('phone')[0].you, true);
+});
+
 test('a password-protected computer accepts the right password proof and rejects a wrong one', async (t) => {
   const host = await startHost(t);
   const client = loadClient(host.port);

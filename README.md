@@ -69,6 +69,23 @@ Paired devices can see and control a Linux computer in an X11 session, such as L
 
 **From a phone, tablet or TV:** on the computer, open **Settings → Use this computer from a phone** and scan the QR code. The phone opens JConnect in its browser, with nothing to install.
 
+**Displays:** on a computer with more than one display, **Display** switches between them.
+
+**Several devices at once:** more than one paired device can use a computer at the same time, for example to work on something together or to help someone. Everyone sees the same screen, and everyone who can control it shares one pointer and keyboard.
+
+- The bar shows **2 people** (or more). Click it to see who's connected, whether they can control the computer, and whether they're recording.
+- JConnect tells you when someone joins, leaves, or starts or stops recording. Phones, tablets and TVs are told too.
+- On the computer itself, **Settings → Connected now** lists everyone, and **Disconnect** ends one person's session.
+
+**Recording a session:** in a session, open **⋯** and choose **Record session**. The time since you started shows at the top, with a small **REC** badge while the controls are hidden. Click the time, or choose **⋯ → Stop recording**, to stop.
+
+- Recordings are video with sound, saved as WebM files in **Videos › JConnect** (**Movies › JConnect** on a Mac) and named after the computer and the time. **⋯ → Show recordings** and **Settings → Recordings** open the folder.
+- Windows, Linux and web browsers play WebM files. On a Mac, QuickTime Player doesn't, so open them in Chrome or VLC.
+- Recording is never hidden. The computer you record shows a notification and marks you as recording under **Settings → Connected now**, and everyone else connected is told.
+- If the connection drops, what you recorded so far is kept, and recording carries on in a new file when JConnect reconnects. Closing the window keeps the recording too.
+
+**Appearance:** JConnect follows your system's light or dark mode. To choose one yourself, open **Settings → Appearance**.
+
 Closing the window keeps the computer available; JConnect stays in the system tray (the menu bar on macOS).
 
 To stop everything, press **⏻** at the top of the window, or use the tray menu. **Terminate JConnect** ends every connection and task, stops all of JConnect's background services and closes it. **Shut Down Computer** turns the computer off. Both ask first.
@@ -210,3 +227,5 @@ Project layout:
 - A Mac can't be controlled at its lock screen or login window, and its sound isn't shared yet. ⌘Tab, ⌘Space and other system shortcuts stay on the Mac you're using.
 - On a real iPhone or iPad, the iOS app can't list the computers on the network until Apple grants the app the multicast networking entitlement. Scanning the code or typing the address works without it.
 - Camera sharing is described in the product vision as a future feature and isn't built yet.
+- Sessions can be recorded only in the desktop app on Windows, macOS and Linux, not on phones, tablets or TVs. Recording has been tested on Windows.
+- A device that joins a session doesn't see anyone else's pointer, only the pointer on the remote screen that everyone shares.

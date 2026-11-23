@@ -253,6 +253,13 @@ dialog input {
 .tv-cursor.press::after { opacity: 0.85; }
 .tv-cursor.long { border-color: #ffb45b; }
 .tv-cursor.long::after { background: #ffb45b; }
+.session-toast {
+  position: absolute; left: 50%; top: calc(max(8px, env(safe-area-inset-top)) + 64px); z-index: 12; transform: translateX(-50%);
+  width: max-content; max-width: calc(100vw - 32px); padding: 10px 16px; border-radius: 12px;
+  background: rgba(22, 24, 30, 0.92); color: #fff; text-align: center; pointer-events: none;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+}
+.tv .session-toast { font-size: 18px; }
 .tv-hint {
   position: absolute; left: 50%; bottom: 36px; z-index: 9; transform: translateX(-50%);
   width: max-content; max-width: calc(100vw - 96px); padding: 12px 20px; border-radius: 14px;

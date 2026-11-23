@@ -1209,6 +1209,15 @@
               h('p', { class: 'muted small' }, 'The phone needs to be on the same network, or on the same private network such as Tailscale.'),
               qr && h('code', { class: 'url' }, qr.url))),
         ]),
+        group('appearance', 'Appearance', [
+          h('label', { class: 'field' }, h('span', { class: 'field-label' }, 'Theme'),
+            h('select', { class: 'select wide', onchange: (e) => call('jc:set-setting', 'appearance', e.target.value) },
+              [['system', 'Match system'], ['light', 'Light'], ['dark', 'Dark']].map(([value, label]) => h('option', { value, selected: (s.appearance || 'system') === value }, label)))),
+        ]),
+        group('recordings', 'Recordings', [
+          h('p', { class: 'hint tight' }, `To record a session, open ⋯ at the top of the remote computer and choose Record session. Recordings are saved in ${state.recordingsFolder}. The computer you record is told, and so is everyone else connected to it.`),
+          h('button', { class: 'btn small', type: 'button', onclick: () => call('jc:record-folder') }, 'Open recordings folder'),
+        ]),
         group('updates', 'Updates', updatesView()),
         group('travel', 'Travel Mode', [
           toggle('✈ Travel Mode', 'Use when you leave this computer unattended. New pairing is turned off and JConnect uses fewer resources.', s.travelMode, setBool('travelMode')),
@@ -1258,7 +1267,8 @@
         state.sessions.length > 0 && group('connected', 'Connected now', state.sessions.map((x) => h('div', { class: 'person' },
           h('div', { class: 'person-main' },
             h('div', { class: 'card-title' }, x.name),
-            h('div', { class: 'card-sub' }, `Connected ${ago(x.since)}${x.path === 'jvpn' ? ' · through JVPN' : ''}${x.permission === 'view' ? ' · View only' : ''}`)),
+            h('div', { class: 'card-sub' }, `Connected ${ago(x.since)}${x.path === 'jvpn' ? ' · through JVPN' : ''}${x.permission === 'view' ? ' · View only' : ''}`),
+            x.recording && h('div', { class: 'card-sub recording' }, '● Recording this screen')),
           h('button', { class: 'btn small danger', type: 'button', onclick: () => call('jc:session-disconnect', x.sid) }, 'Disconnect')))),
         h('details', { class: 'more', open: advancedOpen, ontoggle: (e) => { advancedOpen = e.target.open; } },
           h('summary', {}, 'Advanced'),

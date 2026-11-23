@@ -294,6 +294,20 @@ class HostAgent extends EventEmitter {
         if (!session || !['auto', ...QUALITIES].includes(msg.quality)) return undefined;
         session.requested = msg.quality;
         return this.capture.setQuality(session.sid, this._quality(session));
+      case 'recording':
+        // The device recording tells the computer, so the person at it and everyone else connected know.
+        if (!session || !!msg.on === !!session.recording) return undefined;
+        session.recording = !!msg.on;
+        this.store.log({
+          kind: 'recording',
+          level: 'info',
+          deviceName: session.name,
+          message: session.recording ? `${session.name} started recording this screen.` : `${session.name} stopped recording this screen.`,
+        });
+        this.emit('recording', { name: session.name, on: session.recording });
+        this._sendParticipants();
+        this.emit('change');
+        return undefined;
       case 'session-end':
         return this._endSession(conn);
       case 'owner-restore':
@@ -529,7 +543,20 @@ class HostAgent extends EventEmitter {
       return;
     }
     this.store.log({ kind: 'session', level: 'info', deviceName: session.name, message: `${session.name} connected${conn.path === 'jvpn' ? ' through JVPN' : ''}.` });
+    this._sendParticipants();
     this.emit('change');
+  }
+
+  // Several devices can use the computer at once. Each one is told who else is connected, what they may do
+  // and whether they're recording. Devices that don't know this notice ignore it.
+  _sendParticipants() {
+    const people = [...this.sessions.values()].map((s) => ({
+      id: s.sid, name: s.name, os: s.os || '', permission: s.permission, recording: !!s.recording,
+    }));
+    for (const session of this.sessions.values()) {
+      const conn = this.conns.get(session.cid);
+      if (conn) this._send(conn, 'notice', { kind: 'participants', people: people.map((p) => ({ ...p, you: p.id === session.sid })) });
+    }
   }
 
   _quality(session) {
@@ -556,6 +583,7 @@ class HostAgent extends EventEmitter {
     this.sessions.delete(sid);
     this.capture.stop(sid);
     this.input.release(sid);
+    this._sendParticipants();
     this.emit('change');
   }
 
@@ -662,7 +690,7 @@ class HostAgent extends EventEmitter {
   // ---- owner controls ----
 
   sessionList() {
-    return [...this.sessions.values()].map(({ sid, deviceId, name, os, path: kind, since, permission }) => ({ sid, deviceId, name, os, path: kind, since, permission }));
+    return [...this.sessions.values()].map(({ sid, deviceId, name, os, path: kind, since, permission, recording }) => ({ sid, deviceId, name, os, path: kind, since, permission, recording: !!recording }));
   }
 
   streamList() {
@@ -714,6 +742,7 @@ class HostAgent extends EventEmitter {
         session.permission = trusted.permission;
         this.input.release(session.sid);
         this._send(conn, 'notice', { kind: 'permission', permission: trusted.permission });
+        this._sendParticipants();
       }
     }
     this.applyTravelMode();

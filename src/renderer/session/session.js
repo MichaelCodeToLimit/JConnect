@@ -18,6 +18,12 @@
     computers: () => jc.invoke('jc:computers'),
     switchTo: (other) => jc.invoke('jc:switch', other),
     windowAction: (action) => jc.invoke('jc:window', action),
+    recording: {
+      start: () => jc.invoke('jc:record-start'),
+      write: (recordingId, bytes) => jc.invoke('jc:record-write', recordingId, bytes),
+      stop: (recordingId, durationMs, announce) => jc.invoke('jc:record-stop', recordingId, durationMs, announce),
+      showFolder: () => jc.invoke('jc:record-folder'),
+    },
     exit: () => jc.invoke('jc:window', 'home'),
     report: (state, info) => jc.invoke('jc:report', id, state, info).catch(() => {}),
   };

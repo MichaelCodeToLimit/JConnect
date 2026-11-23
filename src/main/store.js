@@ -19,6 +19,8 @@ const DEFAULT_SETTINGS = {
   travelOwnerOnly: true,
   emergencyShutdown: false,
   quality: 'auto',
+  // 'system', 'light' or 'dark'
+  appearance: 'system',
   // Security
   hideFromNearby: false,
   allowBrowserClients: true,

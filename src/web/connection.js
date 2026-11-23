@@ -280,7 +280,7 @@
   }
 
   // ---------- a live session ----------
-  function connect(computer, { onStream, onState }) {
+  function connect(computer, { onStream, onState, onParticipants }) {
     let closed = false;
     let sock = null;
     let pc = null;
@@ -488,6 +488,10 @@
         case 'permission':
           viewOnly = msg.permission !== 'control';
           state({ state: 'connected', viewOnly });
+          break;
+        // Everyone using the computer right now, this device included (you: true).
+        case 'participants':
+          if (!closed && onParticipants && Array.isArray(msg.people)) onParticipants(msg.people);
           break;
         default:
       }

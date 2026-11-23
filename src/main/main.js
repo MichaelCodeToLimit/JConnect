@@ -34,7 +34,7 @@ const PRELOAD = path.join(__dirname, 'preload.js');
 const ICON = path.join(ASSETS, 'icon.png');
 
 let store; let security; let input; let capture; let host; let discovery; let resources; let selftest;
-let account; let relayLink; let vpn; let router; let jvpnClient; let ssh; let updater; let localCloud;
+let account; let relayLink; let vpn; let router; let jvpnClient; let ssh; let updater; let localCloud; let recordings;
 let mainWin = null;
 let tray = null;
 let quitting = false;
@@ -83,6 +83,8 @@ async function boot() {
     app.quit();
     return;
   }
+  applyAppearance();
+  recordings = new (require('./recording').Recordings)({ dir: recordingsDir() });
   if (store.identityLocked) {
     const message = 'JConnect couldn’t unlock this computer’s identity from the system keychain, so paired devices won’t recognize it. Unlock the keychain, then restart JConnect.';
     store.log({ kind: 'identity', level: 'high', message });
@@ -100,6 +102,9 @@ async function boot() {
   });
   host = new HostAgent({ store, security, input, capture });
   host.askOwner = askOwner;
+  host.on('recording', ({ name, on }) => {
+    if (on) notify(`${name} is recording this screen`, 'Everything shown on this computer is saved on that device until it stops. Settings → Connected now shows who is recording.');
+  });
   await host.listen(Number(args.port) || DEFAULT_AGENT_PORT);
 
   account = new Account({ store });
@@ -363,8 +368,10 @@ function openSession(computerId) {
     win.maximize();
     win.show();
   });
+  const contentsId = win.webContents.id;
   win.on('closed', () => {
     if (sessionWins.get(win.jconnectComputerId) === win) sessionWins.delete(win.jconnectComputerId);
+    finishRecordings(contentsId);
   });
   return win;
 }
@@ -488,7 +495,9 @@ function snapshot() {
       shareRdp: s.shareRdp,
       autoUpdate: s.autoUpdate,
       hostAccounts: s.hostAccounts,
+      appearance: s.appearance || 'system',
     },
+    recordingsFolder: recordingsLabel(),
     computers: store.data.computers.map(computerView),
     sshHosts: ssh.hosts().filter((h) => !h.id.startsWith('ssh-host-')),
     nearby: discovery.list().filter((p) => !known.has(p.id) && p.state === 'ready').map((p) => ({
@@ -948,6 +957,7 @@ function registerIpc() {
       return;
     }
     sessionWins.delete(win.jconnectComputerId);
+    finishRecordings(win.webContents.id);
     win.jconnectComputerId = id;
     sessionWins.set(id, win);
     win.loadFile(path.join(RENDERER, 'session', 'session.html'), { query: { id } });
@@ -960,6 +970,32 @@ function registerIpc() {
     else if (action === 'fullscreen') win.setFullScreen(!win.isFullScreen());
     else if (action === 'close') win.close();
     else if (action === 'home') { win.close(); showMain(); }
+  });
+
+  // Session recordings: only a session window records, into a file named after its computer.
+  const recordingWindow = (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (!win || win.jconnectComputerId === undefined) throw new Error('Not allowed');
+    return win;
+  };
+  handle('jc:record-start', (event) => {
+    const computer = store.getComputer(recordingWindow(event).jconnectComputerId);
+    return recordings.start(event.sender.id, computer ? computer.name : 'Session');
+  });
+  handle('jc:record-write', async (event, id, bytes) => {
+    recordingWindow(event);
+    await recordings.write(event.sender.id, String(id), bytes);
+  });
+  handle('jc:record-stop', async (event, id, durationMs, announce) => {
+    recordingWindow(event);
+    const saved = await recordings.stop(event.sender.id, String(id), Number(durationMs));
+    if (saved && announce) notifyRecording(saved);
+    return saved && { name: saved.name, folder: recordingsLabel() };
+  });
+  handle('jc:record-folder', async () => {
+    await require('fs').promises.mkdir(recordings.dir, { recursive: true });
+    const problem = await shell.openPath(recordings.dir);
+    if (problem) throw new Error(problem);
   });
   handle('jc:report', (event, _id, state, info) => {
     if (selftest) selftest.report(BrowserWindow.fromWebContents(event.sender), state, info);
@@ -988,6 +1024,12 @@ function setSetting(key, value) {
   if (key === 'defaultVia') {
     if (!VIA_PATTERN.test(String(value)) || value === 'auto') throw new Error('Invalid network');
     store.setSetting('defaultVia', value);
+    return;
+  }
+  if (key === 'appearance') {
+    if (!['system', 'light', 'dark'].includes(value)) throw new Error('Invalid appearance');
+    store.setSetting('appearance', value);
+    applyAppearance();
     return;
   }
   if (key === 'sshPort') {
@@ -1193,6 +1235,41 @@ async function confirmStop(action) {
 
 function notify(title, body) {
   if (Notification.isSupported()) new Notification({ title, body, icon: ICON }).show();
+}
+
+// Light, Dark, or whatever the system uses. Every window's CSS follows it through prefers-color-scheme.
+function applyAppearance() {
+  const choice = store.settings.appearance;
+  nativeTheme.themeSource = choice === 'light' || choice === 'dark' ? choice : 'system';
+  if (mainWin && !mainWin.isDestroyed()) mainWin.setBackgroundColor(nativeTheme.shouldUseDarkColors ? '#0f1115' : '#f5f6fa');
+}
+
+function recordingsDir() {
+  let base;
+  try {
+    base = app.getPath('videos');
+  } catch {
+    base = path.join(app.getPath('home'), 'Videos');
+  }
+  return path.join(base, 'JConnect');
+}
+
+// "Videos › JConnect" on Windows and Linux, "Movies › JConnect" on macOS.
+function recordingsLabel() {
+  return recordings ? `${path.basename(path.dirname(recordings.dir))} › ${path.basename(recordings.dir)}` : '';
+}
+
+function notifyRecording(saved) {
+  if (!Notification.isSupported()) return;
+  const note = new Notification({ title: 'Recording saved', body: `${saved.name} is in ${recordingsLabel()}.`, icon: ICON });
+  note.on('click', () => shell.showItemInFolder(saved.file));
+  note.show();
+}
+
+// A session window closed or moved to another computer while recording: keep what it recorded.
+function finishRecordings(contentsId) {
+  if (!recordings) return;
+  recordings.stopAll(contentsId).then((saved) => saved.filter(Boolean).forEach(notifyRecording));
 }
 
 function applyLoginItem() {

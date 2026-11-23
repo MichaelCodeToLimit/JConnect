@@ -60,6 +60,39 @@
 .jv-drag { flex: 1; align-self: stretch; -webkit-app-region: drag; }
 .jv-win { width: 40px; padding: 0; justify-content: center; }
 
+/* Recording: a stop button with the time in the bar, and a badge while the bar is hidden. */
+.jv-rec { color: #ff8a8a; font-variant-numeric: tabular-nums; }
+.jv-rec-dot {
+  width: 10px;
+  height: 10px;
+  flex: none;
+  border-radius: 50%;
+  background: #ff4d4d;
+  animation: jv-rec-pulse 1.6s ease-in-out infinite;
+}
+@keyframes jv-rec-pulse { 50% { opacity: 0.35; } }
+.jv-rec-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px 3px 7px;
+  border-radius: 999px;
+  background: rgba(20, 22, 28, 0.7);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  pointer-events: none;
+  transition: opacity 0.18s ease;
+}
+.jv-rec-badge .jv-rec-dot { width: 8px; height: 8px; }
+.jv-bar[data-hidden="false"] ~ .jv-rec-badge { opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .jv-rec-dot { animation: none; } }
+
 .jv-menu {
   position: absolute;
   z-index: 6;
@@ -91,6 +124,8 @@
 .jv-item:hover:not(:disabled) { background: rgba(255, 255, 255, 0.1); }
 .jv-item:disabled { color: rgba(255, 255, 255, 0.5); cursor: default; }
 .jv-item.small { font-size: 12px; }
+.jv-item.info:disabled { color: #fff; }
+.jv-item.wrap { white-space: normal; line-height: 1.35; }
 .jv-item.danger { color: #ff8a8a; }
 .jv-check { width: 16px; flex: none; color: #7aa2ff; }
 .jv-sub { margin-left: auto; padding-left: 16px; color: rgba(255, 255, 255, 0.55); font-size: 12px; }
