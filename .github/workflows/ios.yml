@@ -7,6 +7,9 @@ name: iOS build
 #                            an App Store Connect API key with the App Manager or Admin role (Users and Access →
 #                            Integrations), and the full contents of its .p8 file
 # Push to the ios branch to try iOS changes without starting the desktop builds.
+#
+# The tests run on Ubuntu first, so the iOS code still gets checked and still reports to ci/ios when no Mac runner is
+# available. Mac runners cost ten times the minutes, so the Simulator build only starts once those tests pass.
 on:
   push:
     branches: [app, ios]
@@ -32,8 +35,52 @@ defaults:
     shell: bash
 
 jobs:
+  tests:
+    name: Check the iOS app's own code
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: 1
+        run: |
+          mkdir -p ci-logs
+          npm ci 2>&1 | tee ci-logs/1-install.log
+          (cd mobile && npm ci) 2>&1 | tee -a ci-logs/1-install.log
+
+      # These check the iOS WebSocket in mobile/src/native.js against the real host agent, so they don't need a Mac.
+      - name: Run the tests
+        run: node --test mobile/test/ios-sockets.test.js src/web/test/connection.test.js 2>&1 | tee ci-logs/2-tests.log
+
+      - name: Publish logs to the ci/ios branch
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATUS: ${{ job.status }}
+        run: |
+          mkdir -p ci-logs
+          {
+            echo "status: $STATUS"
+            echo "branch: $GITHUB_REF_NAME"
+            echo "commit: $GITHUB_SHA"
+            echo "run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo "note: the Simulator build reports separately to ci/ios-simulator"
+          } > ci-logs/summary.txt
+          cd ci-logs
+          git init -q -b ci/ios
+          git add -A
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "iOS tests $GITHUB_RUN_NUMBER on $GITHUB_REF_NAME: $STATUS"
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" ci/ios
+
   simulator:
     name: Build the app and check it in the Simulator
+    needs: tests
     runs-on: macos-26
     timeout-minutes: 45
     steps:
@@ -58,9 +105,6 @@ jobs:
           npm ci 2>&1 | tee ci-logs/1-install.log
           (cd mobile && npm ci) 2>&1 | tee -a ci-logs/1-install.log
 
-      - name: Run tests
-        run: node --test mobile/test/ios-sockets.test.js src/web/test/connection.test.js 2>&1 | tee ci-logs/2-tests.log
-
       - name: Build the app for the Simulator
         run: |
           cd mobile
@@ -74,7 +118,7 @@ jobs:
         timeout-minutes: 15
         run: bash mobile/scripts/ios-check.sh build/ios/Build/Products/Debug-iphonesimulator/App.app ci-logs 2>&1 | tee ci-logs/8-check.log
 
-      - name: Publish logs to the ci/ios branch
+      - name: Publish logs to the ci/ios-simulator branch
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
@@ -88,10 +132,10 @@ jobs:
             echo "run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
           } > ci-logs/summary.txt
           cd ci-logs
-          git init -q -b ci/ios
+          git init -q -b ci/ios-simulator
           git add -A
-          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "iOS build $GITHUB_RUN_NUMBER on $GITHUB_REF_NAME: $STATUS"
-          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" ci/ios
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "iOS Simulator check $GITHUB_RUN_NUMBER on $GITHUB_REF_NAME: $STATUS"
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" ci/ios-simulator
 
   testflight:
     name: Upload to TestFlight
