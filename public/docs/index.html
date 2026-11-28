@@ -14,7 +14,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../assets/css/site.css">
 </head>
 <body>
@@ -76,6 +76,7 @@
             <h6>Get started</h6>
             <a href="#overview">Overview</a>
             <a href="#install">Install</a>
+            <a href="#updates">Updates</a>
             <a href="#pair">Pair a computer</a>
             <a href="#connect">Connect and work</a>
             <a href="#phones">Phones, tablets and TVs</a>
@@ -90,6 +91,7 @@
           <div class="docs-group">
             <h6>Security</h6>
             <a href="#security">How it’s secured</a>
+            <a href="#protocol">Protocol v2 in depth</a>
             <a href="#devices">Trusted devices</a>
             <a href="#travel">Travel Mode and Lockdown</a>
           </div>
@@ -104,6 +106,12 @@
             <a href="#ports">Network ports</a>
             <a href="#troubleshooting">Troubleshooting</a>
             <a href="#limits">Known limits</a>
+            <a href="#glossary">Glossary</a>
+            <a href="#faq">FAQ</a>
+          </div>
+          <div class="docs-group">
+            <h6>Developers</h6>
+            <a href="#build">Build from source</a>
           </div>
         </nav>
       </aside>
@@ -134,6 +142,7 @@
             <span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9.5 17h-19z"/><path d="M12 10v4M12 17h.01"/></svg></span>
             <p>The beta isn’t code-signed yet, so SmartScreen may say “Windows protected your PC”. Choose <b>More info → Run anyway</b>.</p>
           </div>
+          <p><b>Portable version.</b> <code>JConnect-&lt;version&gt;-Portable.exe</code> runs without installing. It tells you about new versions, and you download them from the website.</p>
           <h3>Android</h3>
           <ol class="doc-steps">
             <li><a href="../download/#android">Download the Android app</a> on a phone or tablet running Android 8.0 or later.</li>
@@ -141,8 +150,19 @@
             <li>Open JConnect and tap <b>Add Computer</b>. Scan the code your computer shows under <b>Settings → Use this computer from a phone</b>, or type the computer’s address and the pairing code shown at the bottom of its JConnect window.</li>
           </ol>
           <p>The Android app connects to your computers. It doesn’t share the phone’s own screen.</p>
+          <h3>Android TV and Google TV</h3>
+          <p>The same APK installs on TVs and appears on the TV’s home screen. Install it with an app such as Downloader, or with <code>adb install</code>. On a TV, JConnect has a layout you move around with the remote:</p>
+          <ul>
+            <li><b>Add Computer</b> lists the computers on the network, so there’s no address to type.</li>
+            <li>In a session, the arrows move the pointer and <b>OK</b> clicks. Hold <b>OK</b> to right-click, or hold it while moving to drag.</li>
+            <li><b>Back</b> shows the session controls. There you can switch the arrows to scrolling or to arrow keys, or open the on-screen keyboard.</li>
+          </ul>
           <h3>Linux</h3>
           <p>Download the .deb from the <a href="../download/#linux">download page</a> and install it with <code>sudo apt install ./JConnect-Linux.deb</code>. It works on Ubuntu, Debian, Linux Mint and other Debian-based systems on 64-bit PCs, and JConnect starts when you sign in. Paired devices can control a Linux computer in an X11 session, such as <b>Ubuntu on Xorg</b>. Wayland sessions aren't supported yet.</p>
+          <h3>Other Linux distributions</h3>
+          <p>On other distributions, make the AppImage executable and open it: <code>chmod +x JConnect-&lt;version&gt;-x86_64.AppImage</code>. JConnect runs on 64-bit Intel and AMD PCs.</p>
+          <h3>Linux sessions: X11 and Wayland</h3>
+          <p>Paired devices can see and control a Linux computer in an <b>X11</b> session, such as Linux Mint, Xfce, or <b>Ubuntu on Xorg</b> on Ubuntu 24.04. Wayland sessions aren’t supported yet: paired devices can’t control the computer, and screen sharing hasn’t been tested. JConnect starts when you sign in, through <code>~/.config/autostart</code>, unless you turn that off in Settings.</p>
           <h3>Mac</h3>
           <ol>
             <li>Download the DMG for your Mac from the <a href="../download/#mac">download page</a>: <b>Apple silicon</b> or <b>Intel</b>. Apple menu → <b>About This Mac</b> shows <b>Chip</b> on Apple silicon Macs and <b>Processor</b> on Intel Macs. JConnect needs macOS 13 Ventura or later.</li>
@@ -150,10 +170,43 @@
             <li>Open JConnect. It isn’t notarized by Apple yet, so the first time macOS says it can’t check it. Close that message, open <b>System Settings → Privacy &amp; Security</b>, and choose <b>Open Anyway</b> next to JConnect.</li>
             <li>So your paired devices can see and control the Mac, open <b>Settings → Mac permissions</b> in JConnect and turn on <b>Screen Recording</b> and <b>Accessibility</b>.</li>
           </ol>
+          <h3>Mac permissions</h3>
+          <p>After you open JConnect on a Mac, allow what it asks for:</p>
+          <ul>
+            <li><b>Local Network</b>, so your other devices can find and reach this Mac.</li>
+            <li><b>Screen Recording</b> and <b>Accessibility</b>, so paired devices can see and control this Mac. JConnect lists both under <b>Settings → Mac permissions</b>. You don’t need them to use other computers from this Mac.</li>
+          </ul>
+          <p>On macOS 14 and earlier you can also Control-click JConnect in Applications and choose <b>Open</b> instead of using <b>Open Anyway</b>.</p>
+          <h3>iPhone and iPad</h3>
+          <p>iPhone and iPad use JConnect in Safari today: open <b>Settings → Use this computer from a phone</b> on your computer and scan the code with the Camera app.</p>
+          <p>A JConnect app for iPhone and iPad (iOS 15 or later) is coming through TestFlight and the App Store. It works like the Android app: tap <b>Add Computer</b>, then scan the code or type the computer’s address. It connects to your computers and doesn’t share the iPhone’s own screen.</p>
           <h3>Raspberry Pi</h3>
           <p>The Raspberry Pi app is coming soon. Until then you can reach your computers from a Raspberry Pi through its browser, the same way as from a phone.</p>
           <h3>Closing the window</h3>
           <p>Closing the JConnect window keeps the computer available. JConnect stays in the system tray, and <b>Start with this computer</b> in Settings starts it in the background when you sign in.</p>
+        </section>
+
+        <section class="doc" id="updates" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Get started</span>
+          <h2>Updates</h2>
+          <p>JConnect checks its website for a new version every few hours. <b>Settings → Updates</b> shows the version you have, and <b>Check now</b> checks straight away.</p>
+          <div class="doc-table-wrap">
+            <table class="doc-table">
+              <thead><tr><th>Where JConnect runs</th><th>What happens</th></tr></thead>
+              <tbody>
+                <tr><td><b>Windows</b></td><td>JConnect downloads the update and installs it when nobody is using the computer, then starts again. Turn off <b>Update automatically</b> to choose when instead.</td></tr>
+                <tr><td><b>Mac</b></td><td>JConnect downloads the update, and <b>Update</b> installs it. Afterwards, macOS asks you to allow Screen Recording and Accessibility for JConnect again.</td></tr>
+                <tr><td><b>Linux (.deb)</b></td><td>JConnect downloads the update, and <b>Update</b> installs it after your system asks for an administrator password.</td></tr>
+                <tr><td><b>Android, including TVs</b></td><td>The home screen shows <b>Update</b> when there’s a new version. The first time, Android asks you to allow JConnect to install apps.</td></tr>
+                <tr><td><b>iPhone and iPad</b></td><td>TestFlight and the App Store update the app.</td></tr>
+                <tr><td><b>Portable Windows app and AppImage</b></td><td>JConnect tells you about the new version, and you download it from the website.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout">
+            <span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></span>
+            <p>Before installing anything, JConnect checks that the download has exactly the size and SHA-256 that the website publishes for it.</p>
+          </div>
         </section>
 
         <section class="doc" id="pair" data-doc>
@@ -201,6 +254,34 @@
             </table>
           </div>
           <p>The computer you connect to also lowers the quality by itself when it’s working hard or running hot, and raises it again when it cools down.</p>
+          <h3>Several devices at once</h3>
+          <p>More than one paired device can use a computer at the same time, for example to work on something together or to help someone. Everyone sees the same screen, and everyone who can control it shares one pointer and keyboard.</p>
+          <ul>
+            <li>The bar shows <b>2 people</b> (or more). Click it to see who’s connected, whether they can control the computer, and whether they’re recording.</li>
+            <li>JConnect tells you when someone joins, leaves, or starts or stops recording. Phones, tablets and TVs are told too.</li>
+            <li>On the computer itself, <b>Settings → Connected now</b> lists everyone, and <b>Disconnect</b> ends one person’s session.</li>
+          </ul>
+          <h3>Recording a session</h3>
+          <p>In a session, open <b>⋯</b> and choose <b>Record session</b>. The time since you started shows at the top, with a small <b>REC</b> badge while the controls are hidden. Click the time, or choose <b>⋯ → Stop recording</b>, to stop.</p>
+          <ul>
+            <li>Recordings are video with sound, saved as WebM files in <b>Videos › JConnect</b> (<b>Movies › JConnect</b> on a Mac) and named after the computer and the time. <b>⋯ → Show recordings</b> and <b>Settings → Recordings</b> open the folder.</li>
+            <li>Windows, Linux and web browsers play WebM files. On a Mac, QuickTime Player doesn’t, so open them in Chrome or VLC.</li>
+            <li>Recording is never hidden. The computer you record shows a notification and marks you as recording under <b>Settings → Connected now</b>, and everyone else connected is told.</li>
+            <li>If the connection drops, what you recorded so far is kept, and recording carries on in a new file when JConnect reconnects. Closing the window keeps the recording too.</li>
+          </ul>
+          <div class="callout">
+            <span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></span>
+            <p>Sessions can be recorded only in the desktop app on Windows, macOS and Linux, not on phones, tablets or TVs. Recording has been tested on Windows.</p>
+          </div>
+          <h3>Displays and appearance</h3>
+          <p>On a computer with more than one display, <b>Display</b> switches between them. JConnect follows your system’s light or dark mode. To choose one yourself, open <b>Settings → Appearance</b>.</p>
+          <h3>Stopping everything</h3>
+          <p>Closing the window keeps the computer available, and JConnect stays in the system tray (the menu bar on macOS). To stop everything, press <b>⏻</b> at the top of the window, or use the tray menu:</p>
+          <ul>
+            <li><b>Terminate JConnect</b> ends every connection and task, stops all of JConnect’s background services and closes it.</li>
+            <li><b>Shut Down Computer</b> turns the computer off.</li>
+          </ul>
+          <p>Both ask first.</p>
           <h3>If the connection drops</h3>
           <p>JConnect reconnects by itself, trying every path it knows. If a paired computer is asleep and supports Wake-on-LAN, pressing Connect wakes it. You can also right-click it and choose <b>Wake</b>.</p>
           <h3>Organize your computers</h3>
@@ -254,6 +335,7 @@
                 <tr><td><b>Twingate</b></td><td>Starts the client</td><td>Resources, with a read-only API key</td></tr>
                 <tr><td><b>ZeroTier</b></td><td>Starts the service and joins your networks</td><td>Members, with a Central API token</td></tr>
                 <tr><td><b>WireGuard</b></td><td>Connects a tunnel file you add</td><td>Peers listed in the tunnel file</td></tr>
+                <tr><td><b>FortiClient</b></td><td>Connects a saved VPN connection. On Windows and macOS it opens FortiClient so you can sign in.</td><td>—</td></tr>
                 <tr><td><b>Windows VPN</b></td><td>Dials connections saved in Windows Settings</td><td>—</td></tr>
               </tbody>
             </table>
@@ -295,6 +377,27 @@
             <li><b>Secrets never cross the network.</b> Pairing codes and passwords become scrypt proofs bound to one connection.</li>
             <li><b>Stored safely.</b> Device keys, API keys, account tokens and SSH keys are encrypted with the operating system’s key store.</li>
             <li><b>Least exposure.</b> Discovery announces only a name and public key, and you can turn it off. The app’s windows only get the permissions they need, and the Windows app is hardened with Electron fuses.</li>
+          </ul>
+        </section>
+
+        <section class="doc" id="protocol" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Security</span>
+          <h2>Protocol v2 in depth</h2>
+          <p>Every connection between JConnect devices uses the same protocol, whether it travels over your local network, JVPN, Tailscale or another VPN. These are the parts, in the order a connection uses them.</p>
+          <h3>1. Fresh keys for every connection</h3>
+          <p>The client and the computer each send a hello with an ephemeral X25519 key and a nonce. The keys are used once and thrown away, so recording a connection today doesn’t help anyone decrypt it later. Separate keys are derived for each direction.</p>
+          <h3>2. Both sides prove who they are</h3>
+          <p>Every device has an Ed25519 identity key, and its ID is derived from that key. The computer signs the transcript of this exact conversation, and the other device checks the signature against the key it paired with. The connecting device signs the same transcript, so a stolen or replayed message can’t be reused on another connection. A changed computer is caught before anything is trusted.</p>
+          <h3>3. Every message is sealed and numbered</h3>
+          <p>After the hello, messages, remote-control input, SSH and Remote Desktop data are sealed with XSalsa20-Poly1305. Each frame carries a counter, so altered, replayed or reordered data closes the connection. Screen and sound travel over WebRTC, which is DTLS-SRTP encrypted, and its keys are signed inside the channel.</p>
+          <h3>4. Secrets never cross the network</h3>
+          <p>Pairing codes and passwords are turned into scrypt proofs bound to that one connection. The code isn’t sent, and an eavesdropper can’t replay the proof. “Ask for permission” pairing shows a matching verification code on both screens.</p>
+          <h3>5. Stored safely, exposed rarely</h3>
+          <ul>
+            <li>Device keys, API keys, account tokens and SSH keys are encrypted with the operating system’s key store (DPAPI on Windows, the Keychain on macOS).</li>
+            <li>Discovery announces only a name and public key, and you can turn that off.</li>
+            <li>The app’s windows only get the permissions they need. The packaged app has Electron fuses set: no Node mode, no inspector, and asar integrity checked.</li>
+            <li>Travel Mode and Emergency Lockdown still apply to every path, JVPN included.</li>
           </ul>
         </section>
 
@@ -343,19 +446,36 @@
         <section class="doc" id="account" data-doc>
           <span class="eyebrow"><i class="eyebrow-dot"></i>Account</span>
           <h2>Account and sync</h2>
-          <p>An account is optional. Click the person icon at the top of JConnect to sign in or create one on your <a href="#cloud">JConnect Cloud</a> server.</p>
+          <p>An account is optional. Click the person icon at the top of JConnect to sign in or create one, and choose where the account is kept.</p>
+          <h3>Where your account is kept</h3>
           <ul>
-            <li>Your password stays on the device. It becomes two keys: one the server checks, and one that encrypts your data before upload.</li>
-            <li>Computers, SSH hosts and your list of devices sync between your devices, and the server only stores them as ciphertext.</li>
-            <li>Two-step sign-in with an authenticator app is available under <b>Account</b>.</li>
-            <li>Signing in makes your computers reachable through <a href="#jvpn">JVPN</a> away from home.</li>
+            <li><b>JConnect Cloud</b> is JConnect’s own server, so <a href="#jvpn">JVPN</a> reaches your computers from anywhere. Signing in can take up to a minute when nobody has used it for a while.</li>
+            <li><b>This PC</b>: JConnect on this computer keeps the account. On your other devices, choose <b>Another PC</b> and enter the address shown under <b>Settings → Account → Keep accounts on this PC</b>. They can sign in and sync while this PC is on and they’re on the same network or Tailscale.</li>
+            <li><b>Another PC</b> is an account kept on one of your other computers.</li>
           </ul>
+          <p>You can also <a href="#cloud">host your own JConnect Cloud</a>.</p>
+          <h3>What stays private</h3>
+          <ul>
+            <li>Your password stays on the device. It’s turned into two keys: one the server checks, and one that encrypts your data before upload.</li>
+            <li>Computers, SSH hosts and your list of devices sync between your devices, stored on the server only as ciphertext.</li>
+            <li>Signing in makes your computers reachable through JVPN away from home.</li>
+          </ul>
+          <h3>Two-step sign-in</h3>
+          <p>Turn on two-step sign-in with an authenticator app under <b>Account</b>. When it’s on, changing your password or deleting your account asks for an authenticator code as well.</p>
+          <h3>Change password and delete account</h3>
+          <p>Both are under <b>Account</b>, and both ask for your password again.</p>
+          <ul>
+            <li>A new password re-encrypts your synced data and signs out your other devices, which then sign in with it.</li>
+            <li>A forgotten password can’t be recovered, because nothing on the server can open your data.</li>
+          </ul>
+          <h3>Trusting your own devices</h3>
+          <p><b>Trust my account’s devices</b> (off by default) lets your own signed-in devices connect without pairing.</p>
         </section>
 
         <section class="doc" id="cloud" data-doc>
           <span class="eyebrow"><i class="eyebrow-dot"></i>Account</span>
           <h2>Host JConnect Cloud</h2>
-          <p>JConnect Cloud handles accounts, sync, the JVPN relay and optional TURN. There’s no hosted service yet, so you run your own. The server is part of the JConnect source code and needs Node.js.</p>
+          <p>JConnect Cloud handles accounts, sync, the JVPN relay and optional TURN. JConnect has its own hosted server, and you can run your own instead. The server is part of the JConnect source code and needs Node.js.</p>
           <div class="doc-code"><pre><code>cd server/cloud
 npm install
 npm start          # listens on port 47900</code></pre></div>
@@ -367,12 +487,28 @@ npm start          # listens on port 47900</code></pre></div>
                 <tr><td><code>TLS_CERT</code>, <code>TLS_KEY</code></td><td>Serve https with this certificate and key. You can also put the server behind a reverse proxy.</td></tr>
                 <tr><td><code>TURN_PUBLIC_HOST</code></td><td>Turns on TURN to relay remote-desktop media when two networks block direct connections.</td></tr>
                 <tr><td><code>TURN_PORT</code></td><td>The TURN port. The default is 3478.</td></tr>
-                <tr><td><code>JCONNECT_CLOUD_DB</code></td><td>Where the accounts database is stored. The default is <code>server/cloud/data/cloud.db</code>.</td></tr>
+                <tr><td><code>JCONNECT_CLOUD_DB</code></td><td>Where the SQLite accounts database is stored. The default is <code>server/cloud/data/cloud.db</code>.</td></tr>
+                <tr><td><code>DATABASE_URL</code></td><td>A Postgres connection string. When it’s set, the data is kept there instead of in SQLite.</td></tr>
+                <tr><td><code>DATABASE_CA_CERT</code></td><td>A PEM file’s text or path, to check the database’s certificate against your own authority.</td></tr>
               </tbody>
             </table>
           </div>
           <div class="doc-code"><pre><code>TLS_CERT=/etc/jconnect/cert.pem TLS_KEY=/etc/jconnect/key.pem TURN_PUBLIC_HOST=cloud.example.com npm start</code></pre></div>
-          <p>Accounts, devices and sessions are stored in an SQLite database, which needs Node.js 22.13 or later. Accounts from an older <code>cloud.json</code> are imported the first time the server starts. JConnect only accepts <code>http://</code> cloud addresses on private networks. Everywhere else, use https.</p>
+          <h3>Storage</h3>
+          <ul>
+            <li>By default, accounts, devices and sessions are kept in an SQLite database, which needs Node.js 22.13 or later. Accounts from an older <code>cloud.json</code> are imported the first time the server starts, and the file is kept as <code>cloud.json.imported</code>.</li>
+            <li>With <code>DATABASE_URL</code> set, JConnect Cloud creates and updates its tables in a <code>jconnect</code> schema when it starts.</li>
+            <li>A Postgres database on another machine is reached over TLS. On a private network, such as Render’s internal addresses, the certificate isn’t checked, because those certificates are self-signed. Everywhere else it is. To turn TLS off on a private network, add <code>?sslmode=disable</code> to the connection string.</li>
+          </ul>
+          <h3>Plain http</h3>
+          <p>JConnect only accepts <code>http://</code> cloud addresses on private networks. Everywhere else, use https.</p>
+          <h3>Hosting on Render</h3>
+          <ul>
+            <li><b>Build command:</b> <code>npm ci --omit=dev --ignore-scripts &amp;&amp; npm ci --omit=dev --prefix server/cloud</code></li>
+            <li><b>Start command:</b> <code>node server/cloud/cloud.js</code></li>
+            <li><b>Database:</b> set <code>DATABASE_URL</code> to the Postgres database’s internal URL. JConnect Cloud won’t start on Render without it, because Render wipes a service’s disk on every deploy.</li>
+            <li><b>Free plan limits:</b> the service sleeps after 15 minutes without requests, and a free database expires 30 days after it’s created unless it’s upgraded.</li>
+          </ul>
         </section>
 
         <!-- Reference -->
@@ -454,14 +590,99 @@ npm start          # listens on port 47900</code></pre></div>
           <span class="eyebrow"><i class="eyebrow-dot"></i>Reference</span>
           <h2>Known limits</h2>
           <ul>
-            <li>The Windows, Mac, Linux and Android apps are early betas. There are no automatic updates yet, so download new versions from the <a href="../download/">download page</a>.</li>
-            <li>The Mac app isn’t notarized yet, so macOS asks you to confirm it the first time. It doesn’t share the Mac’s sound yet.</li>
-            <li>Windows can’t be controlled on the secure desktop: UAC prompts, Ctrl+Alt+Del and the lock screen.</li>
-            <li>SSH to a JConnect computer needs an SSH server running on it.</li>
-            <li>Accounts, sync and JVPN away from home need a JConnect Cloud server that you run yourself.</li>
-            <li>iPhone and iPad, Raspberry Pi and Apple TV apps are coming soon. iPhone and iPad work in Safari today.</li>
+            <li>The Windows, Mac, Linux and Android apps are early betas.</li>
+            <li>The Windows, Mac and Linux builds aren’t code-signed or notarized, so Windows SmartScreen and macOS ask you to confirm them the first time.</li>
+            <li>Windows can’t be controlled on the secure desktop: UAC prompts, Ctrl+Alt+Del and the lock screen. Apps running as administrator ignore input from JConnect unless JConnect also runs as administrator.</li>
+            <li>Linux computers can be controlled only in X11 sessions. On Wayland, paired devices can’t control them yet, and screen sharing hasn’t been tested there.</li>
+            <li>A Mac can’t be controlled at its lock screen or login window, and its sound isn’t shared yet. ⌘Tab, ⌘Space and other system shortcuts stay on the Mac you’re using.</li>
+            <li>SSH to a JConnect computer needs an SSH server running on it, for example OpenSSH Server on Windows.</li>
+            <li>The phone web page is served over plain http on your local network. The connection itself is still end-to-end encrypted, but use the desktop app on networks you don’t trust.</li>
+            <li>On a real iPhone or iPad, the iOS app can’t list the computers on the network until Apple grants the app the multicast networking entitlement. Scanning the code or typing the address works without it.</li>
+            <li>A device that joins a session doesn’t see anyone else’s pointer, only the pointer on the remote screen that everyone shares.</li>
+            <li>Sessions can be recorded only in the desktop app on Windows, macOS and Linux, not on phones, tablets or TVs.</li>
+            <li>The Raspberry Pi and Apple TV apps are coming soon. iPhone and iPad work in Safari today.</li>
             <li>Camera sharing isn’t built yet.</li>
           </ul>
+        </section>
+
+        <section class="doc" id="build" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Developers</span>
+          <h2>Build from source</h2>
+          <p>JConnect is an Electron app with a Node.js server. These commands run from the repository root.</p>
+          <div class="doc-code"><pre><code>npm install
+npm start                    # run JConnect
+npm run start:b              # a second copy with its own identity, for testing on one PC
+npm run dist:win             # build the Windows installer and the portable exe
+npm run dist:mac             # on a Mac: build the arm64 and x64 DMGs
+npm run dist:linux           # on Linux: build the AppImage and the .deb</code></pre></div>
+          <h3>Mobile apps</h3>
+          <div class="doc-code"><pre><code>cd mobile &amp;&amp; npm install &amp;&amp; npm run sync &amp;&amp; cd android &amp;&amp; ./gradlew assembleDebug    # Android APK (needs JDK 17 to 21)
+cd mobile &amp;&amp; npm install &amp;&amp; npm run sync:ios &amp;&amp; open ios/App/App.xcodeproj           # on a Mac: the iOS app in Xcode 26 or later</code></pre></div>
+          <h3>Tests</h3>
+          <div class="doc-code"><pre><code>node --test test/*.test.js src/web/test/connection.test.js server/relay/test/relay.test.js server/cloud/test/cloud.test.js
+cd server/cloud &amp;&amp; npm install &amp;&amp; npm test   # JConnect Cloud with SQLite and with Postgres (PGlite)</code></pre></div>
+          <h3>Platform notes</h3>
+          <ul>
+            <li><b>Releases and updates.</b> Build a release with the version it’s published as, so the updater can tell versions apart, for example <code>npm run dist:win -- -c.extraMetadata.version=0.1.0-beta.2</code>.</li>
+            <li><b>Mac.</b> DMGs can only be built on a Mac, because they need Apple’s tools. The Mac app icon is an Icon Composer document, <code>build/JConnect.icon</code>, so macOS 26 and later show it in Liquid Glass. Compiling it needs Xcode 26 or later running on macOS 26 or later. Anywhere else, <code>npm run dist:mac</code> uses the flat <code>assets/icon-mac.png</code> instead.</li>
+            <li><b>iOS.</b> The iOS app can only be built on a Mac too.</li>
+            <li><b>Linux.</b> The packages include an input helper written in C, which needs a compiler and the X11 and XTest headers: <code>sudo apt install build-essential libx11-dev libxtst-dev</code>.</li>
+          </ul>
+          <h3>Project layout</h3>
+          <div class="doc-table-wrap">
+            <table class="doc-table">
+              <thead><tr><th>Folder</th><th>What’s in it</th></tr></thead>
+              <tbody>
+                <tr><td><code>src/main</code></td><td>The Electron main process: the host agent, JVPN, account and sync, networks and VPNs, routes, SSH, security, input, tray and windows.</td></tr>
+                <tr><td><code>src/shared</code></td><td>The v2 secure channel, the client protocol and the remote-desktop viewer.</td></tr>
+                <tr><td><code>src/renderer</code></td><td>The main window, the remote session, the SSH terminal and the hidden screen-capture page.</td></tr>
+                <tr><td><code>src/web</code></td><td>The browser client for phones, tablets and TVs.</td></tr>
+                <tr><td><code>server/cloud</code></td><td>JConnect Cloud: accounts, sync, relay and TURN.</td></tr>
+                <tr><td><code>server/relay</code></td><td>The standalone relay.</td></tr>
+                <tr><td><code>native</code></td><td>The input helpers for macOS (Swift) and Linux (C).</td></tr>
+                <tr><td><code>mobile</code></td><td>The Android app for phones, tablets and TVs, and the iOS app for iPhone and iPad. Both wrap the browser client in <code>src/web</code> and add QR scanning, finding computers on the network and adding computers by address.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc" id="glossary" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Reference</span>
+          <h2>Glossary</h2>
+          <dl class="doc-glossary">
+            <dt>My Computers</dt><dd>The list of computers you’ve paired with or imported. Press <b>Connect</b> on one to use it.</dd>
+            <dt>Pairing code</dt><dd>The 6-digit code shown at the bottom of JConnect on a computer. It’s proven over the encrypted connection and never sent.</dd>
+            <dt>Verification code</dt><dd>The short code that “Ask for permission” shows on both screens. Someone at the computer checks that they match and presses <b>Allow</b>.</dd>
+            <dt>JVPN</dt><dd>JConnect’s built-in network. Devices connect directly at home and through the relay away from home.</dd>
+            <dt>Relay</dt><dd>The JConnect Cloud service that passes encrypted bytes between your devices when they aren’t on the same network. It can’t read, change or impersonate them.</dd>
+            <dt>Dial ticket</dt><dd>A one-minute pass the relay issues each time one of your devices connects to another.</dd>
+            <dt>Protocol v2</dt><dd>The secure channel every JConnect connection uses, whichever network carries it.</dd>
+            <dt>Travel Mode</dt><dd>A setting for unattended computers: no new pairing, capped streaming and stricter handling of suspicious activity.</dd>
+            <dt>Emergency Lockdown</dt><dd>What JConnect does when it rates suspicious activity high: every session ends and remote access turns off until you restore it.</dd>
+          </dl>
+        </section>
+
+        <section class="doc" id="faq" data-doc>
+          <span class="eyebrow"><i class="eyebrow-dot"></i>Reference</span>
+          <h2>Frequently asked questions</h2>
+          <h3>Do I need an account?</h3>
+          <p>No. An account is optional. You need one for sync and for JVPN away from home.</p>
+          <h3>Do I need to open ports on my router?</h3>
+          <p>No. Nothing needs to be opened to the internet. Away from home, JVPN uses outgoing connections. On a local network, <a href="#ports">allow the JConnect ports</a> through the firewall.</p>
+          <h3>Can the relay see what I do?</h3>
+          <p>No. The relay only passes encrypted bytes. It can’t read, change or impersonate anything.</p>
+          <h3>Does JVPN change my network settings?</h3>
+          <p>No. JVPN is built into JConnect and doesn’t install a system-wide network adapter, so other apps don’t see it as a VPN.</p>
+          <h3>Can two people use one computer at once?</h3>
+          <p>Yes. They see the same screen and share one pointer and keyboard. <a href="#connect">Several devices at once</a> explains how to see who’s connected.</p>
+          <h3>Can I record a session?</h3>
+          <p>Yes, in the desktop app. Recording is never hidden: the computer you record shows a notification, and everyone connected is told.</p>
+          <h3>Does the Android or iPhone app share my phone’s screen?</h3>
+          <p>No. The apps connect to your computers. They don’t share the phone’s own screen.</p>
+          <h3>Why does my computer warn me about JConnect?</h3>
+          <p>The builds aren’t code-signed or notarized yet, so Windows SmartScreen and macOS ask you to confirm them the first time. <a href="#install">The install steps</a> show where to confirm.</p>
+          <h3>What if I forget my account password?</h3>
+          <p>It can’t be recovered, because nothing on the server can open your data. Your devices still pair and connect without an account.</p>
         </section>
 
         <p class="docs-empty" id="docs-empty" hidden>Nothing in the docs matches that search. Try other words, or <a href="#troubleshooting">browse Troubleshooting</a>.</p>

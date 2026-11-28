@@ -1,0 +1,21 @@
+:root {
+  --space-3xs: 2px; --space-2xs: 4px; --space-xs: 8px; --space-sm: 12px; --space-md: 16px; --space-lg: 24px; --space-xl: 40px; --space-2xl: 64px; --space-3xl: 96px; --space-4xl: 144px;
+  --text-xs: 0.8125rem; --text-sm: 0.875rem; --text-md: 1rem; --text-lg: 1.25rem; --text-xl: 1.5625rem; --text-2xl: 1.953rem; --text-3xl: 2.441rem;
+  --text-display-s: clamp(2.25rem, 4vw + 0.5rem, 3.75rem); --text-display: clamp(2.75rem, 5vw + 1rem, 5.25rem);
+  --text-section: clamp(2rem, 2.5vw + 1rem, 3.5rem); --text-title: clamp(1.25rem, 0.75vw + 0.875rem, 1.625rem); --text-lead: clamp(1.125rem, 0.35vw + 1rem, 1.375rem);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1); --ease-in: cubic-bezier(0.7, 0, 0.84, 0); --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-micro: 120ms; --dur-short: 220ms; --dur-long: 420ms;
+  --color-error: oklch(52% 0.19 27); --color-success: oklch(50% 0.12 150);
+  --container: 1440px; --gutter: 64px; --gap-columns: 32px; --section-gap-s: 120px; --section-gap: 144px; --section-gap-l: 176px;
+  --z-base: 1; --z-raised: 10; --z-dropdown: 100; --z-sticky: 200; --z-sticky-nav: 300; --z-modal: 400; --z-toast: 500; --z-tooltip: 600;
+  --color-paper: oklch(0% 0 0); --color-paper-2: oklch(14% 0.015 264); --color-paper-3: oklch(19% 0.02 264);
+  --color-ink: oklch(97% 0.005 262); --color-ink-2: oklch(80% 0.015 262); --color-muted: oklch(66% 0.02 262);
+  --color-rule: oklch(28% 0.02 264);
+  --color-accent: oklch(56% 0.21 263); --color-accent-ink: oklch(99% 0.005 263); --color-focus: oklch(72% 0.17 263);
+  --color-night: oklch(12% 0.025 264); --color-night-2: oklch(18% 0.03 264); --color-night-3: oklch(24% 0.03 264); --color-night-rule: oklch(30% 0.03 264);
+  --color-night-ink: oklch(94% 0.01 262); --color-night-muted: oklch(74% 0.03 262); --color-night-accent: oklch(75% 0.13 263);
+  --color-ok: oklch(78% 0.15 155); --color-warn: oklch(82% 0.14 78); --color-bad: oklch(72% 0.16 25);
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif; --font-body: "Instrument Sans", "Segoe UI", system-ui, sans-serif; --font-outlier: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace; --display-weight: 600;
+  --radius-card: 16px; --radius-inner: 10px; --nav-h: 76px; --banner-height: 96px; --radius-pill: 999px; --rule-hair: 1px; --shadow-card: none;
+  --tracking-display: -0.03em;
+}
