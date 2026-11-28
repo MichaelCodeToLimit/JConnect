@@ -1,0 +1,56 @@
+/* Hallmark · shape: Index (a row per platform) · genre: modern-minimal · theme: brand · redesign: full · job: try
+ * paper: oklch(0% 0 0) · accent: oklch(56% 0.21 263) · display: Bricolage Grotesque · body: Instrument Sans · hero: Corridor · nav: masthead · footer: colophon block · signature: the moving mesh, with the visitor's own platform picked out below · surface: absolute
+ * axes: dark/grotesk-sans/chromatic-blue · posture: Restrained · contrast: pass · fold: pass · imagery: none, the platform icons are one inline set · motion: loops stop with the Pause motion button and under reduced motion · v2.0.0 */
+/* Hallmark · pre-emit critique: P4 H4 E4 S4 R4 V3 · weakest: V, it shares the home page's shell on purpose so the site reads as one; the platform rows and the picked-out device are this page's own */
+/* Hallmark · dropped the "JConnect 0.1.0 for Mac is here" pill, the spotlight cards and the "All systems ready" line · the Mac build is now one platform row, and the status line asserted a state nothing backs */
+@import url("./home.css");
+
+.dl-hero h1 { max-width: none; font-size: clamp(3rem, 7vw + 0.5rem, 6.5rem); }
+.dl-note { margin-top: var(--space-lg); font-size: var(--text-sm); color: var(--color-muted); max-width: 60ch; animation: rise 700ms var(--ease-out) 880ms both; }
+.dl-chips { margin-top: var(--space-xl); display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-sm); animation: rise 700ms var(--ease-out) 980ms both; }
+.dl-chips a { display: grid; justify-items: center; gap: var(--space-xs); min-width: 104px; padding: var(--space-md) var(--space-sm); border: 1px solid var(--color-rule); border-radius: var(--radius-inner); background: var(--color-paper); color: var(--color-ink-2); font-size: var(--text-sm); text-decoration: none; transition: background-color var(--dur-micro) var(--ease-out), border-color var(--dur-micro) var(--ease-out), color var(--dur-micro) var(--ease-out); }
+.dl-chips a:hover { background: var(--color-paper-2); color: var(--color-ink); }
+.dl-chips a:active { transform: translateY(1px); }
+.dl-chips a.is-current { border-color: var(--color-accent); color: var(--color-ink); }
+.dl-chips .icon { width: 28px; height: 28px; stroke-width: 1.5; }
+
+.dl-section { padding-block: var(--section-gap-s); }
+.dl-section--alt { background: var(--color-paper-2); color: var(--color-ink); }
+.dl-head { display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); gap: var(--gap-columns); align-items: end; margin-bottom: var(--space-2xl); }
+.dl-head .lead { max-width: 52ch; }
+
+.dl-list { list-style: none; margin: 0; padding: 0; }
+.dl-row { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 4fr) minmax(0, 4fr); gap: var(--gap-columns); padding: var(--space-xl) 0; border-top: var(--rule-hair) solid var(--color-rule); align-items: start; }
+.dl-row:first-child { border-top: 0; padding-top: 0; }
+.dl-row.is-current { padding-inline: var(--space-lg); margin-inline: calc(var(--space-lg) * -1); border-radius: var(--radius-inner); background: var(--color-night-2); border-top-color: transparent; }
+.dl-what { display: grid; gap: var(--space-xs); }
+.dl-what p, .dl-fine p { color: var(--color-ink-2); }
+.dl-get { display: grid; gap: var(--space-sm); justify-items: start; }
+.dl-status { padding: var(--space-3xs) var(--space-sm); border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-inner); font-size: var(--text-sm); color: var(--color-muted); }
+.dl-status--on { color: var(--color-ok); border-color: var(--color-night-rule); }
+.dl-status--web { color: var(--color-night-accent); border-color: var(--color-night-rule); }
+.dl-meta { font-size: var(--text-sm); color: var(--color-muted); }
+.dl-fine { display: grid; gap: var(--space-sm); }
+.dl-fine p { font-size: var(--text-sm); }
+.dl-hash code { font: 400 var(--text-xs)/1.5 var(--font-outlier); overflow-wrap: anywhere; color: var(--color-muted); }
+.dl-fine code { font: 400 var(--text-sm)/1.5 var(--font-outlier); overflow-wrap: anywhere; }
+.you { display: inline-block; margin-bottom: var(--space-xs); padding: var(--space-3xs) var(--space-sm); border: var(--rule-hair) solid var(--color-accent); border-radius: var(--radius-pill); color: var(--color-night-accent); font-size: var(--text-sm); font-weight: 600; justify-self: start; }
+.dl-fine a { color: var(--color-night-accent); }
+
+.dl-how { margin-top: var(--section-gap-s); }
+.dl-steps { list-style: none; margin: var(--space-xl) 0 0; padding: 0; counter-reset: how; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--gap-columns); }
+.dl-steps li { counter-increment: how; padding-top: var(--space-md); border-top: var(--rule-hair) solid var(--color-rule); display: grid; gap: var(--space-xs); }
+.dl-steps li::before { content: counter(how) "."; font-variant-numeric: tabular-nums; color: var(--color-muted); font-size: var(--text-sm); }
+.dl-steps h4 { margin: 0; font: 600 var(--text-title)/1.2 var(--font-display); letter-spacing: var(--tracking-display); }
+.dl-steps p { color: var(--color-ink-2); }
+
+@media (max-width: 60rem) {
+  .dl-head, .dl-row, .dl-steps { grid-template-columns: minmax(0, 1fr); }
+  .dl-row.is-current { margin-inline: 0; padding-inline: var(--space-md); }
+  .dl-row { gap: var(--space-md); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dl-note, .dl-chips { animation: none; }
+  .dl-chips a { transition: background-color var(--dur-short) linear; }
+  .dl-chips a:active { transform: none; }
+}

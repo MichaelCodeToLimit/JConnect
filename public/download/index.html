@@ -14,11 +14,12 @@
   <meta name="twitter:card" content="summary_large_image">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/css/site.css">
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600&family=Instrument+Sans:wght@400;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/download.css">
+  <script>document.documentElement.classList.add('js');</script>
 </head>
 <body>
-  <div class="noise" aria-hidden="true"></div>
+  <div class="progress" aria-hidden="true"></div>
 
   <svg width="0" height="0" style="position: absolute" aria-hidden="true">
     <defs>
@@ -27,264 +28,237 @@
       <symbol id="i-linux" viewBox="0 0 28 28"><rect x="3" y="5" width="22" height="18" rx="2.5"/><path d="M8 11l4 3-4 3M14.5 18H20"/></symbol>
       <symbol id="i-pi" viewBox="0 0 28 28"><rect x="4" y="7" width="20" height="16" rx="2"/><rect x="10" y="12" width="7" height="6" rx="1"/><path d="M8 4v3M12 4v3M16 4v3M20 4v3"/></symbol>
       <symbol id="i-android" viewBox="0 0 28 28"><rect x="8" y="3" width="12" height="22" rx="2.5"/><path d="M12.5 21.5h3"/></symbol>
-      <symbol id="i-ios" viewBox="0 0 28 28"><rect x="3" y="4" width="14" height="20" rx="2.5"/><rect x="15" y="11" width="10" height="14" rx="2" fill="#0b0d12"/></symbol>
+      <symbol id="i-ios" viewBox="0 0 28 28"><rect x="3" y="4" width="14" height="20" rx="2.5"/><rect x="15" y="11" width="10" height="14" rx="2" style="fill: var(--color-paper)"/></symbol>
       <symbol id="i-tv" viewBox="0 0 28 28"><rect x="3" y="5" width="22" height="14.5" rx="2"/><path d="M10 24h8M14 19.5V24"/></symbol>
       <symbol id="i-apple-tv" viewBox="0 0 28 28"><rect x="3" y="13" width="15" height="8" rx="2"/><rect x="21" y="6" width="4" height="16" rx="2"/><path d="M23 9.5v1"/></symbol>
     </defs>
   </svg>
 
   <header class="nav" id="nav">
-    <div class="container nav-inner">
-      <a class="brand" href="../" aria-label="JConnect home">
-        <img src="../assets/img/icon.png" alt="" width="26" height="26">
+    <div class="container nav__inner">
+      <a class="nav__brand" href="../" aria-label="JConnect home">
+        <img src="../assets/img/icon.png" alt="" width="32" height="32">
         <span>JConnect</span>
       </a>
-      <nav class="nav-links" id="nav-links" aria-label="Primary">
-        <a href="../#features">Features</a>
-        <a href="../#jvpn">JVPN</a>
-        <a href="../#security">Security</a>
-        <a href="../#networks">Networks</a>
-        <a href="../#ssh">SSH</a>
-        <a href="../docs/">Docs</a>
-        <a href="../about/">About</a>
+      <button class="nav__toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="nav-links"><span></span><span></span></button>
+      <nav class="nav__links" id="nav-links" aria-label="Primary">
+        <div class="nav__left">
+          <a href="../#features">Features</a>
+          <a href="../#jvpn">JVPN</a>
+          <a href="../#security">Security</a>
+          <a href="../#networks">Networks</a>
+        </div>
+        <div class="nav__right">
+          <a href="../#ssh">SSH</a>
+          <a href="../docs/">Docs</a>
+          <a href="../about/">About</a>
+          <a class="btn" href="#platforms">Download</a>
+        </div>
       </nav>
-      <div class="nav-cta">
-        <a class="btn btn-ghost btn-sm hide-sm" href="../#security">How it works</a>
-        <a class="btn btn-light btn-sm" href="#platforms">Download</a>
-        <button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="nav-links"><span></span><span></span></button>
-      </div>
     </div>
   </header>
 
   <main id="top">
+
     <section class="hero dl-hero">
-      <div class="hero-media" aria-hidden="true">
-        <canvas class="hero-canvas" id="hero-canvas"></canvas>
-        <div class="hero-glow"></div>
-        <div class="grid-lines"></div>
-        <div class="beam beam-1"></div>
-        <div class="beam beam-2"></div>
-      </div>
-
-      <div class="container hero-inner">
-        <a class="pill reveal" href="#platforms">
-          <span class="pill-tag">Beta</span>
-          <span>JConnect 0.1.0 for Mac is here</span>
-          <span class="arrow" aria-hidden="true">→</span>
-        </a>
-        <h1 class="hero-title reveal" style="--d: 80ms">Download<br><span class="gradient-text">JConnect.</span></h1>
-        <p class="hero-sub reveal" style="--d: 160ms">
-          Install it on the computers you want to reach. On Android, get the app, or open JConnect right in the browser on any phone, tablet or TV.
-        </p>
-        <div class="hero-actions reveal" style="--d: 240ms">
-          <a class="btn btn-light" href="/download/JConnect-Setup.exe" download data-download data-recommend-button>Download for Windows</a>
-          <a class="btn btn-ghost" href="#platforms">All platforms <span class="arrow" aria-hidden="true">↓</span></a>
+      <canvas class="hero__net" aria-hidden="true"></canvas>
+      <div class="container hero__inner">
+        <h1>Download JConnect.</h1>
+        <p class="lead">Install it on the computers you want to reach.</p>
+        <div class="actions">
+          <a class="btn" href="/download/JConnect-Setup.exe" download data-download data-recommend-button>Download for Windows</a>
+          <a class="btn btn--quiet" href="#platforms">All platforms</a>
         </div>
-        <p class="hero-note reveal" style="--d: 320ms" data-recommend-note>Version 0.1.0 beta · Windows 10 and 11 · 91 MB</p>
-
-        <nav class="dl-devices reveal" style="--d: 400ms" aria-label="Platforms">
-          <a href="#windows" style="--i: 0"><svg class="icon"><use href="#i-windows"/></svg><span>Windows</span></a>
-          <a href="#mac" style="--i: 1"><svg class="icon"><use href="#i-mac"/></svg><span>Mac</span></a>
-          <a href="#linux" style="--i: 2"><svg class="icon"><use href="#i-linux"/></svg><span>Linux</span></a>
-          <a href="#raspberry-pi" style="--i: 3"><svg class="icon"><use href="#i-pi"/></svg><span>Raspberry Pi</span></a>
-          <a href="#android" style="--i: 4"><svg class="icon"><use href="#i-android"/></svg><span>Android</span></a>
-          <a href="#ios" style="--i: 5"><svg class="icon"><use href="#i-ios"/></svg><span>iPhone &amp; iPad</span></a>
-          <a href="#tv" style="--i: 6"><svg class="icon"><use href="#i-tv"/></svg><span>TV</span></a>
-          <a href="#apple-tv" style="--i: 7"><svg class="icon"><use href="#i-apple-tv"/></svg><span>Apple TV</span></a>
+        <p class="dl-note" data-recommend-note>Version 0.1.0 beta, Windows 10 and 11, 91 MB</p>
+        <nav class="dl-chips" aria-label="Platforms">
+          <a href="#windows"><svg class="icon" aria-hidden="true"><use href="#i-windows"/></svg><span>Windows</span></a>
+          <a href="#mac"><svg class="icon" aria-hidden="true"><use href="#i-mac"/></svg><span>Mac</span></a>
+          <a href="#linux"><svg class="icon" aria-hidden="true"><use href="#i-linux"/></svg><span>Linux</span></a>
+          <a href="#raspberry-pi"><svg class="icon" aria-hidden="true"><use href="#i-pi"/></svg><span>Raspberry Pi</span></a>
+          <a href="#android"><svg class="icon" aria-hidden="true"><use href="#i-android"/></svg><span>Android</span></a>
+          <a href="#ios"><svg class="icon" aria-hidden="true"><use href="#i-ios"/></svg><span>iPhone &amp; iPad</span></a>
+          <a href="#tv"><svg class="icon" aria-hidden="true"><use href="#i-tv"/></svg><span>TV</span></a>
+          <a href="#apple-tv"><svg class="icon" aria-hidden="true"><use href="#i-apple-tv"/></svg><span>Apple TV</span></a>
         </nav>
       </div>
     </section>
 
-    <!-- Computers -->
-    <section class="section dl-section" id="platforms">
+    <section class="dl-section" id="platforms">
       <div class="container">
-        <div class="section-head reveal">
-          <span class="eyebrow"><i class="eyebrow-dot"></i>Computers</span>
-          <h2>Install it on the computers<br><span class="gradient-text">you want to reach.</span></h2>
-          <p>The desktop app shares a computer and connects you to your others.</p>
+        <div class="dl-head" data-reveal>
+          <h2>Install it on your computers</h2>
+          <p class="lead">The desktop app shares a computer and connects you to your others.</p>
         </div>
-
-        <div class="platforms">
-          <article class="platform available card spot reveal" id="windows" data-platform="windows">
-            <div class="platform-top">
-              <span class="platform-icon"><svg class="icon"><use href="#i-windows"/></svg></span>
-              <span class="status on"><i class="dot ok"></i>Available · Beta</span>
+        <ul class="dl-list">
+          <li class="dl-row" id="windows" data-platform="windows" data-reveal>
+            <div class="dl-what">
+              <h3>Windows</h3>
+              <p>Windows 10 and 11, 64-bit. Installs for your account in seconds, without admin rights.</p>
             </div>
-            <h3>Windows</h3>
-            <p>Windows 10 and 11, 64-bit. Installs for your account in seconds, without admin rights.</p>
-            <div class="platform-actions">
-              <a class="btn btn-light btn-sm" href="/download/JConnect-Setup.exe" download data-download>Download .exe</a>
-              <span class="platform-meta">v0.1.0 · 91 MB</span>
+            <div class="dl-get">
+              <span class="dl-status dl-status--on">Available, beta</span>
+              <div class="actions"><a class="btn" href="/download/JConnect-Setup.exe" download data-download>Download .exe</a></div>
+              <span class="dl-meta">v0.1.0, 91 MB</span>
             </div>
-            <span class="download-hash" data-sha256 data-sha256-src="/download/JConnect-Setup.exe.sha256" hidden>SHA-256 <code></code></span>
-            <p class="platform-note" data-download-note>Not code-signed yet. If SmartScreen warns you, choose <b>More info → Run anyway</b>.</p>
-            <p class="platform-note">Every release, with checksums, is also on <a href="https://github.com/MichaelCodeToLimit/JConnect-releases/releases">GitHub</a>.</p>
-          </article>
-
-          <article class="platform available card spot reveal" style="--d: 80ms" id="mac" data-platform="mac">
-            <div class="platform-top">
-              <span class="platform-icon"><svg class="icon"><use href="#i-mac"/></svg></span>
-              <span class="status on"><i class="dot ok"></i>Available · Beta</span>
+            <div class="dl-fine">
+              <p class="dl-hash" data-sha256 data-sha256-src="/download/JConnect-Setup.exe.sha256" hidden>SHA-256 <code></code></p>
+              <p data-download-note>Not code-signed yet. If SmartScreen warns you, choose <b>More info</b>, then <b>Run anyway</b>.</p>
+              <p>Every release, with checksums, is also on <a href="https://github.com/MichaelCodeToLimit/JConnect-releases/releases">GitHub</a>.</p>
             </div>
-            <h3>Mac</h3>
-            <p>macOS 13 Ventura or later. Choose the download for your Mac’s chip.</p>
-            <div class="platform-actions">
-              <a class="btn btn-light btn-sm" href="/download/JConnect-Mac-AppleSilicon.dmg" download data-download>Apple silicon</a>
-              <a class="btn btn-ghost btn-sm" href="/download/JConnect-Mac-Intel.dmg" download data-download>Intel</a>
-              <span class="platform-meta">v0.1.0 · 86 MB, Intel 97 MB</span>
+          </li>
+          <li class="dl-row" id="mac" data-platform="mac" data-reveal style="--i: 1">
+            <div class="dl-what">
+              <h3>Mac</h3>
+              <p>macOS 13 Ventura or later. Choose the download for your Mac’s chip.</p>
             </div>
-            <span class="download-hash" data-sha256 data-sha256-src="/download/JConnect-Mac-AppleSilicon.dmg.sha256" hidden>SHA-256, Apple silicon <code></code></span>
-            <span class="download-hash" data-sha256 data-sha256-src="/download/JConnect-Mac-Intel.dmg.sha256" hidden>SHA-256, Intel <code></code></span>
-            <p class="platform-note">Not sure which? Apple menu → <b>About This Mac</b> shows <b>Chip</b> on Apple silicon and <b>Processor</b> on Intel. It isn’t notarized yet, so the first time, open <b>System Settings → Privacy &amp; Security</b> and choose <b>Open Anyway</b>.</p>
-          </article>
-
-          <article class="platform available card spot reveal" style="--d: 160ms" id="linux" data-platform="linux">
-            <div class="platform-top">
-              <span class="platform-icon"><svg class="icon"><use href="#i-linux"/></svg></span>
-              <span class="status on"><i class="dot ok"></i>Available · Beta</span>
+            <div class="dl-get">
+              <span class="dl-status dl-status--on">Available, beta</span>
+              <div class="actions">
+                <a class="btn" href="/download/JConnect-Mac-AppleSilicon.dmg" download data-download>Apple silicon</a>
+                <a class="btn btn--quiet" href="/download/JConnect-Mac-Intel.dmg" download data-download>Intel</a>
+              </div>
+              <span class="dl-meta">v0.1.0, 86 MB, Intel 97 MB</span>
             </div>
-            <h3>Linux</h3>
-            <p>A .deb package for Ubuntu, Debian, Linux Mint and other Debian-based systems on 64-bit PCs.</p>
-            <div class="platform-actions">
-              <a class="btn btn-light btn-sm" href="/download/JConnect-Linux.deb" download data-download>Download .deb</a>
-              <span class="platform-meta">v0.1.0 · 96 MB</span>
+            <div class="dl-fine">
+              <p class="dl-hash" data-sha256 data-sha256-src="/download/JConnect-Mac-AppleSilicon.dmg.sha256" hidden>SHA-256, Apple silicon <code></code></p>
+              <p class="dl-hash" data-sha256 data-sha256-src="/download/JConnect-Mac-Intel.dmg.sha256" hidden>SHA-256, Intel <code></code></p>
+              <p>Not sure which? Apple menu, then <b>About This Mac</b> shows <b>Chip</b> on Apple silicon and <b>Processor</b> on Intel. It isn’t notarized yet, so the first time, open <b>System Settings</b>, then <b>Privacy &amp; Security</b> and choose <b>Open Anyway</b>.</p>
             </div>
-            <span class="download-hash" data-sha256 data-sha256-src="/download/JConnect-Linux.deb.sha256" hidden>SHA-256 <code></code></span>
-            <p class="platform-note">Install it with <b>sudo apt install ./JConnect-Linux.deb</b>. Remote control needs an X11 session, such as <b>Ubuntu on Xorg</b>.</p>
-          </article>
-
-          <article class="platform card spot reveal" style="--d: 240ms" id="raspberry-pi" data-platform="raspberry-pi">
-            <div class="platform-top">
-              <span class="platform-icon"><svg class="icon"><use href="#i-pi"/></svg></span>
-              <span class="status"><i class="dot warn"></i>Coming soon</span>
+          </li>
+          <li class="dl-row" id="linux" data-platform="linux" data-reveal style="--i: 2">
+            <div class="dl-what">
+              <h3>Linux</h3>
+              <p>A .deb package for Ubuntu, Debian, Linux Mint and other Debian-based systems on 64-bit PCs.</p>
             </div>
-            <h3>Raspberry Pi</h3>
-            <p>Raspberry Pi 4 and 5 on 64-bit Raspberry Pi OS, as an always-on computer on your network.</p>
-            <div class="platform-actions"><span class="btn btn-ghost btn-sm" aria-disabled="true">Coming soon</span></div>
-          </article>
-        </div>
+            <div class="dl-get">
+              <span class="dl-status dl-status--on">Available, beta</span>
+              <div class="actions"><a class="btn" href="/download/JConnect-Linux.deb" download data-download>Download .deb</a></div>
+              <span class="dl-meta">v0.1.0, 96 MB</span>
+            </div>
+            <div class="dl-fine">
+              <p class="dl-hash" data-sha256 data-sha256-src="/download/JConnect-Linux.deb.sha256" hidden>SHA-256 <code></code></p>
+              <p>Install it with <code>sudo apt install ./JConnect-Linux.deb</code>. Remote control needs an X11 session, such as <b>Ubuntu on Xorg</b>.</p>
+            </div>
+          </li>
+          <li class="dl-row" id="raspberry-pi" data-platform="raspberry-pi" data-reveal style="--i: 3">
+            <div class="dl-what">
+              <h3>Raspberry Pi</h3>
+              <p>Raspberry Pi 4 and 5 on 64-bit Raspberry Pi OS, as an always-on computer on your network.</p>
+            </div>
+            <div class="dl-get">
+              <span class="dl-status">Coming soon</span>
+              <div class="actions"><span class="btn btn--quiet" aria-disabled="true">Coming soon</span></div>
+            </div>
+            <div class="dl-fine"></div>
+          </li>
+        </ul>
       </div>
     </section>
 
-    <!-- Phones, tablets and TVs -->
-    <section class="section dl-section" id="browser">
+    <section class="dl-section dl-section--alt" id="browser">
       <div class="container">
-        <div class="section-head reveal">
-          <span class="eyebrow"><i class="eyebrow-dot"></i>Phones, tablets and TVs</span>
-          <h2>Nothing to install.<br><span class="gradient-text">Just open it.</span></h2>
-          <p>Your JConnect computer serves the app to the browser. The device only needs to be on the same network, or the same private network such as Tailscale. Every connection is still end-to-end encrypted.</p>
+        <div class="dl-head" data-reveal>
+          <h2>Nothing to install on phones and TVs</h2>
+          <p class="lead">Your JConnect computer serves the app to the browser. The device only needs the same network, or the same private network such as Tailscale. Every connection is still end-to-end encrypted.</p>
         </div>
-
-        <div class="platforms">
-          <article class="platform available card spot reveal" id="android" data-platform="android">
-            <div class="platform-top">
-              <span class="platform-icon"><svg class="icon"><use href="#i-android"/></svg></span>
-              <span class="status on"><i class="dot ok"></i>Available · Beta</span>
+        <ul class="dl-list">
+          <li class="dl-row" id="android" data-platform="android" data-reveal>
+            <div class="dl-what">
+              <h3>Android</h3>
+              <p>The JConnect app for phones, tablets, Android TV and Google TV on Android 8.0 or later. You can also use JConnect in Chrome without installing anything.</p>
             </div>
-            <h3>Android</h3>
-            <p>The JConnect app for phones, tablets, Android TV and Google TV on Android 8.0 or later. You can also use JConnect in Chrome without installing anything.</p>
-            <div class="platform-actions">
-              <a class="btn btn-light btn-sm" href="/download/JConnect-Android.apk" download data-download>Download .apk</a>
-              <span class="platform-meta">v0.1.0 beta 3 · 31 MB</span>
+            <div class="dl-get">
+              <span class="dl-status dl-status--on">Available, beta</span>
+              <div class="actions"><a class="btn" href="/download/JConnect-Android.apk" download data-download>Download .apk</a></div>
+              <span class="dl-meta">v0.1.0 beta 3, 31 MB</span>
             </div>
-            <span class="download-hash" data-sha256 data-sha256-src="/download/JConnect-Android.apk.sha256" hidden>SHA-256 <code></code></span>
-            <p class="platform-note">Have beta 1 or 2? Uninstall it first: beta 3 is signed with JConnect&rsquo;s new release key, so it can&rsquo;t install over them. The first time, Android asks you to allow installing apps from your browser. <a href="#how">Or open JConnect in the browser</a>.</p>
-          </article>
-
-          <article class="platform card spot reveal" style="--d: 80ms" id="ios" data-platform="ios">
-            <div class="platform-top">
-              <span class="platform-icon"><svg class="icon"><use href="#i-ios"/></svg></span>
-              <span class="status web"><i class="dot ok"></i>In the browser</span>
+            <div class="dl-fine">
+              <p class="dl-hash" data-sha256 data-sha256-src="/download/JConnect-Android.apk.sha256" hidden>SHA-256 <code></code></p>
+              <p>Have beta 1 or 2? Uninstall it first: beta 3 is signed with JConnect’s new release key, so it can’t install over them. The first time, Android asks you to allow installing apps from your browser. <a href="#how">Or open JConnect in the browser</a>.</p>
             </div>
-            <h3>iPhone &amp; iPad</h3>
-            <p>iPhone and iPad, in Safari, with nothing to install.</p>
-            <div class="platform-actions"><a class="btn btn-ghost btn-sm" href="#how">How to open it <span class="arrow" aria-hidden="true">↓</span></a></div>
-            <p class="platform-note">A JConnect app for iPhone and iPad is coming soon through TestFlight and the App Store.</p>
-          </article>
-
-          <article class="platform card spot reveal" style="--d: 160ms" id="tv" data-platform="tv">
-            <div class="platform-top">
-              <span class="platform-icon"><svg class="icon"><use href="#i-tv"/></svg></span>
-              <span class="status web"><i class="dot ok"></i>In the browser</span>
+          </li>
+          <li class="dl-row" id="ios" data-platform="ios" data-reveal style="--i: 1">
+            <div class="dl-what">
+              <h3>iPhone &amp; iPad</h3>
+              <p>iPhone and iPad, in Safari, with nothing to install.</p>
             </div>
-            <h3>TV</h3>
-            <p>Google TV, Android TV and other TVs with a modern web browser.</p>
-            <div class="platform-actions"><a class="btn btn-ghost btn-sm" href="#how">How to open it <span class="arrow" aria-hidden="true">↓</span></a></div>
-            <p class="platform-note">Google TV and Android TV can also install <a href="#android">the Android app</a>, which has a layout for the remote.</p>
-          </article>
-
-          <article class="platform card spot reveal" style="--d: 240ms" id="apple-tv" data-platform="apple-tv">
-            <div class="platform-top">
-              <span class="platform-icon"><svg class="icon"><use href="#i-apple-tv"/></svg></span>
-              <span class="status"><i class="dot warn"></i>Coming soon</span>
+            <div class="dl-get">
+              <span class="dl-status dl-status--web">In the browser</span>
+              <div class="actions"><a class="btn btn--quiet" href="#how">How to open it</a></div>
             </div>
-            <h3>Apple TV</h3>
-            <p>Apple TV has no web browser, so it needs its own app.</p>
-            <div class="platform-actions"><span class="btn btn-ghost btn-sm" aria-disabled="true">Coming soon</span></div>
-          </article>
-        </div>
+            <div class="dl-fine"><p>A JConnect app for iPhone and iPad is coming soon through TestFlight and the App Store.</p></div>
+          </li>
+          <li class="dl-row" id="tv" data-platform="tv" data-reveal style="--i: 2">
+            <div class="dl-what">
+              <h3>TV</h3>
+              <p>Google TV, Android TV and other TVs with a modern web browser.</p>
+            </div>
+            <div class="dl-get">
+              <span class="dl-status dl-status--web">In the browser</span>
+              <div class="actions"><a class="btn btn--quiet" href="#how">How to open it</a></div>
+            </div>
+            <div class="dl-fine"><p>Google TV and Android TV can also install <a href="#android">the Android app</a>, which has a layout for the remote.</p></div>
+          </li>
+          <li class="dl-row" id="apple-tv" data-platform="apple-tv" data-reveal style="--i: 3">
+            <div class="dl-what">
+              <h3>Apple TV</h3>
+              <p>Apple TV has no web browser, so it needs its own app.</p>
+            </div>
+            <div class="dl-get">
+              <span class="dl-status">Coming soon</span>
+              <div class="actions"><span class="btn btn--quiet" aria-disabled="true">Coming soon</span></div>
+            </div>
+            <div class="dl-fine"></div>
+          </li>
+        </ul>
 
         <div class="dl-how" id="how">
-          <h3 class="dl-how-title reveal">Open JConnect on a phone, tablet or TV</h3>
-          <div class="dl-steps">
-            <article class="dl-step card spot reveal" style="--d: 0ms">
-              <span class="step-num">01</span>
-              <h4>Set up a computer</h4>
-              <p>Install JConnect on the computer you want to use, and keep <b>Remote access</b> on.</p>
-            </article>
-            <article class="dl-step card spot reveal" style="--d: 100ms">
-              <span class="step-num">02</span>
-              <h4>Show the code</h4>
-              <p>In JConnect, open <b>Settings → Use this computer from a phone</b>. It shows a QR code and the address.</p>
-            </article>
-            <article class="dl-step card spot reveal" style="--d: 200ms">
-              <span class="step-num">03</span>
-              <h4>Open it and pair</h4>
-              <p>Scan the code with your camera, or type the address on a tablet or TV. Then tap <b>Pair</b>.</p>
-            </article>
-          </div>
+          <h3 data-reveal>Open JConnect on a phone, tablet or TV</h3>
+          <ol class="dl-steps">
+            <li data-reveal><h4>Set up a computer</h4><p>Install JConnect on the computer you want to use, and keep <b>Remote access</b> on.</p></li>
+            <li data-reveal style="--i: 1"><h4>Show the code</h4><p>In JConnect, open <b>Settings → Use this computer from a phone</b>. It shows a QR code and the address.</p></li>
+            <li data-reveal style="--i: 2"><h4>Open it and pair</h4><p>Scan the code with your camera, or type the address on a tablet or TV. Then tap <b>Pair</b>.</p></li>
+          </ol>
         </div>
       </div>
     </section>
 
-    <!-- CTA -->
-    <section class="cta dl-cta">
-      <div class="cta-media" aria-hidden="true">
-        <img data-src="../media/cta.jpg" alt="">
-        <div class="cta-glow"></div>
-        <div class="grid-lines"></div>
-      </div>
-      <div class="container cta-inner">
-        <img class="cta-icon reveal" src="../assets/img/icon.png" alt="" width="72" height="72">
-        <h2 class="reveal" style="--d: 80ms">Install once.<br><span class="gradient-text">Connect from your other screens.</span></h2>
-        <p class="reveal" style="--d: 160ms">Start with the computers you want to reach. Your phone, tablet and TV connect to them.</p>
-        <div class="hero-actions reveal" style="--d: 240ms">
-          <a class="btn btn-light" href="/download/JConnect-Setup.exe" download data-download>Download for Windows</a>
-          <a class="btn btn-ghost" href="../#security">How it stays private <span class="arrow" aria-hidden="true">→</span></a>
+    <section class="night close" id="download">
+      <div class="container close__grid">
+        <div class="close__main" data-reveal>
+          <h2>Install once. Connect from your other screens.</h2>
+          <p class="lead">Start with the computers you want to reach. Your phone, tablet and TV connect to them.</p>
+          <div class="actions">
+            <a class="btn" href="/download/JConnect-Setup.exe" download data-download>Download for Windows</a>
+            <a class="btn btn--quiet" href="../#security">How it stays private</a>
+          </div>
         </div>
+        <svg class="close__mark" viewBox="84 144 344 224" role="img" aria-label="JConnect logo" data-observe><g class="mark__rings"><circle class="ring ring--l" cx="196" cy="256" r="83"/><circle class="ring ring--r" cx="316" cy="256" r="83"/></g><path class="mark__lens" d="M256 233.73A64 64 0 0 1 256 278.27A64 64 0 0 1 256 233.73Z"/></svg>
       </div>
     </section>
   </main>
 
   <footer class="footer">
-    <div class="container footer-inner">
-      <div class="footer-brand">
-        <a class="brand" href="../"><img src="../assets/img/icon.png" alt="" width="22" height="22"><span>JConnect</span></a>
+    <div class="container footer__grid">
+      <div class="footer__brand">
+        <a class="nav__brand" href="../" aria-label="JConnect home"><img src="../assets/img/icon.png" alt="" width="32" height="32"><span>JConnect</span></a>
         <p>Open. Connect. Work.</p>
       </div>
-      <div class="footer-cols">
-        <div><h5>Product</h5><a href="../#features">Features</a><a href="../#jvpn">JVPN</a><a href="../#networks">Networks</a><a href="../#ssh">SSH</a></div>
-        <div><h5>Security</h5><a href="../#security">Protocol v2</a><a href="../#security">Pairing</a><a href="../#jvpn">Relay</a></div>
-        <div><h5>Project</h5><a href="../about/">About</a><a href="../press/">Press kit</a><a href="../about/#status">Status</a><a href="../privacy/">Privacy</a></div>
-        <div><h5>Get started</h5><a href="#platforms">Download</a><a href="../docs/">Docs</a><a href="#how">Phones and TVs</a></div>
-      </div>
-    </div>
-    <div class="container footer-base">
-      <span>© 2026 JConnect</span>
-      <span class="footer-status"><i class="dot ok pulse"></i> All systems ready</span>
+      <ul class="footer__links">
+        <li><a href="#platforms">Download</a></li>
+        <li><a href="../docs/">Docs</a></li>
+        <li><a href="../about/">About</a></li>
+        <li><a href="../about/#status">Status</a></li>
+        <li><a href="../press/">Press kit</a></li>
+        <li><a href="../privacy/">Privacy</a></li>
+      </ul>
+      <p class="footer__legal">© 2026 JConnect</p>
     </div>
   </footer>
 
-  <script src="../assets/js/site.js" defer></script>
+  <button class="motion" type="button" aria-pressed="false">Pause motion</button>
+
+  <script src="../assets/js/home.js" defer></script>
+  <script src="../assets/js/download.js" defer></script>
 </body>
 </html>
